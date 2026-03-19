@@ -4,8 +4,10 @@ import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestor
 import { db } from '../../src/lib/firebase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, MessageCircle, Repeat2, Heart, Share, Plus } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [tweets, setTweets] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -30,7 +32,9 @@ export default function HomeScreen() {
 
   const renderTweet = ({ item }: { item: any }) => (
     <View style={styles.tweetContainer}>
-      <View style={styles.avatarContainer}>
+      {/* Header with User Info */}
+      <View style={styles.tweetHeader}>
+        <View style={styles.userInfo}>
           <View style={styles.avatarPlaceholder}>
              {item.authorAvatar ? (
                <Image source={{ uri: item.authorAvatar }} style={styles.avatar} />
@@ -38,33 +42,53 @@ export default function HomeScreen() {
                <User size={24} color="#71767b" />
              )}
           </View>
+          <View style={styles.nameContainer}>
+            <Text style={styles.displayName}>{item.authorName || "User"}</Text>
+            <Text style={styles.username}>@{item.authorUsername || "username"}</Text>
+          </View>
+        </View>
+        <TouchableOpacity>
+          <Text style={styles.dot}>···</Text>
+        </TouchableOpacity>
       </View>
-      <View style={styles.contentContainer}>
-        <View style={styles.header}>
-          <Text style={styles.displayName}>{item.authorName || "User"}</Text>
-          <Text style={styles.username}>@{item.authorUsername || "username"}</Text>
-          <Text style={styles.dot}>·</Text>
-          <Text style={styles.time}>1h</Text>
-        </View>
+
+      {/* Content Text */}
+      <View style={styles.contentPadding}>
         <Text style={styles.tweetText}>{item.content}</Text>
-        
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.footerAction}>
-            <MessageCircle size={18} color="#71767b" />
-            <Text style={styles.footerText}>12</Text>
+      </View>
+
+      {/* Media Content (Instagram Style) */}
+      {(item.imageUrl || item.image) && (
+        <View style={styles.mediaContainer}>
+          <Image 
+            source={{ uri: item.imageUrl || item.image }} 
+            style={styles.mainMedia} 
+            resizeMode="cover"
+          />
+        </View>
+      )}
+
+      {/* Footer Actions */}
+      <View style={styles.footer}>
+        <View style={styles.leftActions}>
+          <TouchableOpacity style={styles.actionButton}>
+            <Heart size={22} color={item.isLiked ? "#f91880" : "#fff"} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.footerAction}>
-            <Repeat2 size={18} color="#71767b" />
-            <Text style={styles.footerText}>5</Text>
+          <TouchableOpacity style={styles.actionButton}>
+            <MessageCircle size={22} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.footerAction}>
-            <Heart size={18} color="#71767b" />
-            <Text style={styles.footerText}>{item.likesCount || 0}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.footerAction}>
-            <Share size={18} color="#71767b" />
+          <TouchableOpacity style={styles.actionButton}>
+            <Repeat2 size={22} color="#fff" />
           </TouchableOpacity>
         </View>
+        <TouchableOpacity style={styles.actionButton}>
+          <Share size={22} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Likes Count */}
+      <View style={styles.likesPadding}>
+        <Text style={styles.likesCountText}>{item.likesCount || 0} likes</Text>
       </View>
     </View>
   );
@@ -75,11 +99,16 @@ export default function HomeScreen() {
         data={tweets}
         renderItem={renderTweet}
         keyExtractor={item => item.id}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />
         }
       />
-      <TouchableOpacity style={styles.fab}>
+      <TouchableOpacity 
+        style={styles.fab} 
+        activeOpacity={0.8}
+        onPress={() => router.push('/compose')}
+      >
         <Plus size={30} color="#fff" strokeWidth={3} />
       </TouchableOpacity>
     </SafeAreaView>
@@ -92,72 +121,92 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   tweetContainer: {
+    marginBottom: 20,
+    backgroundColor: '#000',
+  },
+  tweetHeader: {
     flexDirection: 'row',
-    padding: 15,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#2f3336',
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatarPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#16181c',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
+    padding: 12,
   },
-  contentContainer: {
-    flex: 1,
-  },
-  header: {
+  userInfo: {
     flexDirection: 'row',
-    marginBottom: 4,
+    alignItems: 'center',
+  },
+  nameContainer: {
+    marginLeft: 12,
   },
   displayName: {
     color: '#fff',
     fontWeight: 'bold',
-    marginRight: 5,
+    fontSize: 15,
   },
   username: {
     color: '#71767b',
+    fontSize: 13,
   },
-  dot: {
-    color: '#71767b',
-    marginHorizontal: 4,
+  avatarPlaceholder: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#16181c',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
-  time: {
-    color: '#71767b',
+  avatar: {
+    width: 38,
+    height: 38,
+  },
+  contentPadding: {
+    paddingHorizontal: 12,
+    paddingBottom: 10,
   },
   tweetText: {
     color: '#fff',
     fontSize: 15,
     lineHeight: 20,
-    marginBottom: 10,
   },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  mediaContainer: {
+    width: '100%',
+    aspectRatio: 1, // Instagram style 1:1
+    backgroundColor: '#16181c',
+  },
+  mainMedia: {
+    width: '100%',
+    height: '100%',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingRight: 40,
+    alignItems: 'center',
+    padding: 12,
   },
-  footerAction: {
+  leftActions: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  footerText: {
+  actionButton: {
+    marginRight: 16,
+  },
+  likesPadding: {
+    paddingHorizontal: 12,
+    paddingBottom: 4,
+  },
+  likesCountText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  dot: {
     color: '#71767b',
-    fontSize: 13,
-    marginLeft: 4,
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   fab: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 24,
     right: 20,
     width: 56,
     height: 56,
@@ -165,10 +214,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#1d9bf0',
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    elevation: 8,
+    shadowColor: '#1d9bf0',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
   },
 });

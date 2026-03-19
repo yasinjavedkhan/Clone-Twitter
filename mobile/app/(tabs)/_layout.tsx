@@ -55,6 +55,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Mail size={26} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <User size={26} color={color} />,
+          headerTitle: 'Profile',
+        }}
+      />
     </Tabs>
   );
 }
