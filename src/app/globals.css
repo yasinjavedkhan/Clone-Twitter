@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --color-twitter-blue: #ffffff;
+  --color-twitter-black: #000000;
+  --color-twitter-gray: #16181c;
+  --color-twitter-border: #2f3336;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-twitter-black);
+    color: #e7e9ea;
+  }
+}
+
+@layer components {
+  .twitter-button {
+    @apply inline-flex items-center justify-center rounded-full font-bold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .twitter-button-primary {
+    @apply bg-white text-black hover:bg-gray-200 active:bg-gray-300;
+  }
+
+  .twitter-input {
+    @apply bg-transparent border border-[var(--color-twitter-border)] rounded-md p-3 text-white focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition duration-200 w-full;
+  }
+}
+
+/* Total annihilation of Next.js Dev Indicators/Overlays */
+#nextjs-dev-indicator,
+[data-nextjs-toast-wrapper],
+.nextjs-static-indicator-container,
+[class*="nextjs-dev-indicator"],
+[class*="next-dev-overlay"],
+nextjs-portal,
+#nextjs-portal {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
