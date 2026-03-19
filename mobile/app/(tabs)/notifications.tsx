@@ -1,42 +1,72 @@
-import { StyleSheet, Text, View, FlatList } from 'react-native';
+import { StyleSheet, Text, View, FlatList, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, Heart, User, Repeat2 } from 'lucide-react-native';
+import { Heart, User, Repeat2, MessageCircle } from 'lucide-react-native';
 
 export default function NotificationsScreen() {
   const notifications = [
-    { id: '1', type: 'like', text: 'Yasin Khan liked your post' },
-    { id: '2', type: 'follow', text: 'Maaz Khan followed you' },
-    { id: '3', type: 'retweet', text: 'Someone reposted your post' },
+    { 
+      id: '1', 
+      type: 'like', 
+      user: 'alex.dev', 
+      avatar: 'https://picsum.photos/seed/a/200/200',
+      text: 'liked your photo',
+      time: '2h',
+      media: 'https://picsum.photos/seed/post1/200/200'
+    },
+    { 
+      id: '2', 
+      type: 'follow', 
+      user: 'sarah_m', 
+      avatar: 'https://picsum.photos/seed/b/200/200',
+      text: 'started following you',
+      time: '5h',
+      isFollowing: false
+    },
+    { 
+      id: '3', 
+      type: 'comment', 
+      user: 'tech_guru', 
+      avatar: 'https://picsum.photos/seed/c/200/200',
+      text: 'commented: "This looks amazing! 🔥"',
+      time: '1d',
+      media: 'https://picsum.photos/seed/post2/200/200'
+    },
   ];
 
   const renderNotification = ({ item }: { item: any }) => {
-    let Icon = Bell;
-    let iconColor = "#fff";
-
-    if (item.type === 'like') { Icon = Heart; iconColor = "#f91880"; }
-    else if (item.type === 'follow') { Icon = User; iconColor = "#1d9bf0"; }
-    else if (item.type === 'retweet') { Icon = Repeat2; iconColor = "#00ba7c"; }
-
     return (
-      <View style={styles.notificationItem}>
-        <View style={styles.iconContainer}>
-          <Icon size={24} color={iconColor} fill={item.type === 'like' ? iconColor : "transparent"} />
-        </View>
+      <TouchableOpacity style={styles.notificationItem}>
+        <Image source={{ uri: item.avatar }} style={styles.avatar} />
+        
         <View style={styles.content}>
-          <View style={styles.avatarPlaceholder} />
-          <Text style={styles.notificationText}>{item.text}</Text>
+          <Text style={styles.notificationText}>
+            <Text style={styles.username}>{item.user}</Text> {item.text} <Text style={styles.time}>{item.time}</Text>
+          </Text>
         </View>
-      </View>
+
+        {item.type === 'follow' ? (
+          <TouchableOpacity style={[styles.actionButton, item.isFollowing && styles.followingButton]}>
+            <Text style={styles.actionButtonText}>
+              {item.isFollowing ? 'Following' : 'Follow'}
+            </Text>
+          </TouchableOpacity>
+        ) : item.media ? (
+          <Image source={{ uri: item.media }} style={styles.mediaThumbnail} />
+        ) : null}
+      </TouchableOpacity>
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Activity</Text>
+      </View>
       <FlatList
         data={notifications}
         renderItem={renderNotification}
         keyExtractor={item => item.id}
-        ListHeaderComponent={<Text style={styles.headerTitle}>Notifications</Text>}
+        showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
   );
@@ -47,38 +77,61 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
+  header: {
+    padding: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#333',
+  },
   headerTitle: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    padding: 15,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#2f3336',
   },
   notificationItem: {
     flexDirection: 'row',
-    padding: 15,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#2f3336',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 0.2,
+    borderBottomColor: '#222',
   },
-  iconContainer: {
-    paddingLeft: 30,
-    paddingRight: 10,
-    paddingTop: 5,
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginRight: 12,
   },
   content: {
     flex: 1,
-  },
-  avatarPlaceholder: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#16181c',
-    marginBottom: 8,
+    marginRight: 8,
   },
   notificationText: {
     color: '#fff',
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  username: {
+    fontWeight: 'bold',
+  },
+  time: {
+    color: '#71767b',
+  },
+  mediaThumbnail: {
+    width: 44,
+    height: 44,
+    borderRadius: 4,
+  },
+  actionButton: {
+    backgroundColor: '#1d9bf0',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  followingButton: {
+    backgroundColor: '#333',
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 });
