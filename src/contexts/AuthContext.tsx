@@ -115,23 +115,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
     }, []);
 
-    const isMobile = () => {
-        if (typeof window === 'undefined') return false;
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    };
+
 
     const signInWithGoogle = async () => {
         setLoading(true);
         const provider = new GoogleAuthProvider();
         try {
-            if (isMobile()) {
-                await signInWithRedirect(auth, provider);
-            } else {
-                await signInWithPopup(auth, provider);
-                // IF successful, DO NOT set loading to false here.
-                // The onAuthStateChanged listener will fetch Firestore data and then set loading to false.
-                return;
-            }
+            await signInWithPopup(auth, provider);
+            // IF successful, DO NOT set loading to false here.
+            // The onAuthStateChanged listener will fetch Firestore data and then set loading to false.
+            return;
         } catch (error: any) {
             if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
                 setLoading(false);
