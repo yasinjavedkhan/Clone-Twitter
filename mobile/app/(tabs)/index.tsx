@@ -45,7 +45,7 @@ export default function HomeScreen() {
 
   const renderHeader = () => (
     <View style={styles.headerWrapper}>
-      <TouchableOpacity style={styles.quickInputContainer} onPress={() => router.push('/compose')}>
+      <TouchableOpacity style={styles.quickInputContainer} onPress={() => router.push('/compose' as any)}>
         <Image source={{ uri: 'https://picsum.photos/seed/you/200/200' }} style={styles.miniAvatar} />
         <View style={styles.quickInput}>
           <Text style={styles.quickInputText}>What's on your mind?</Text>
@@ -153,7 +153,7 @@ export default function HomeScreen() {
       <TouchableOpacity 
         style={styles.fab} 
         activeOpacity={0.8}
-        onPress={() => router.push('/compose')}
+        onPress={() => router.push('/compose' as any)}
       >
         <Plus size={30} color="#fff" strokeWidth={3} />
       </TouchableOpacity>
