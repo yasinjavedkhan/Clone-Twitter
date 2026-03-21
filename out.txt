@@ -1,0 +1,15 @@
+file:///D:/twitter/scripts/delete_user.mjs:2
+import { loadEnvConfig } from "@next/env";
+         ^^^^^^^^^^^^^
+SyntaxError: Named export 'loadEnvConfig' not found. The requested module '@next/env' is a CommonJS module, which may not support all module.exports as named exports.
+CommonJS modules can always be imported via the default export, for example using:
+
+import pkg from '@next/env';
+const { loadEnvConfig } = pkg;
+
+    at ModuleJob._instantiate (node:internal/modules/esm/module_job:134:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:217:5)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:316:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:123:5)
+
+Node.js v20.13.1

@@ -130,7 +130,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } else {
                 // Desktop: use popup
                 await signInWithPopup(auth, provider);
-                window.location.reload();
             }
         } catch (error: any) {
             if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
