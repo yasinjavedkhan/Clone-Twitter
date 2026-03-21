@@ -125,18 +125,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const provider = new GoogleAuthProvider();
         try {
             if (isMobile()) {
-                // Mobile: use redirect (popups don't work on mobile browsers)
                 await signInWithRedirect(auth, provider);
             } else {
-                // Desktop: use popup
                 await signInWithPopup(auth, provider);
+                // IF successful, DO NOT set loading to false here.
+                // The onAuthStateChanged listener will fetch Firestore data and then set loading to false.
+                return;
             }
         } catch (error: any) {
             if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
+                setLoading(false);
                 return;
             }
             console.error("Error signing in with Google:", error);
-        } finally {
             setLoading(false);
         }
     };
