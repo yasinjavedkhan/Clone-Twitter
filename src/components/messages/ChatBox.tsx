@@ -15,9 +15,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const [otherUser, setOtherUser] = useState<any>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    // Fetch messages
     useEffect(() => {
-        if (!conversationId) return;
+        if (!conversationId || !user?.uid) return;
 
         const q = query(
             collection(db, "conversations", conversationId, "messages")
@@ -29,6 +28,15 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     id: doc.id,
                     ...doc.data()
                 }));
+
+                // Mark unread messages as read
+                msgs.forEach((msg: any) => {
+                    if (msg.senderId !== user.uid && !msg.read) {
+                        updateDoc(doc(db, "conversations", conversationId, "messages", msg.id), {
+                            read: true
+                        }).catch(console.error);
+                    }
+                });
 
                 // Sort in memory to avoid missing index errors
                 const sorted = msgs.sort((a: any, b: any) => {
@@ -50,7 +58,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         });
 
         return () => unsubscribe();
-    }, [conversationId]);
+    }, [conversationId, user?.uid]);
 
     // Fetch other user info
     useEffect(() => {
@@ -88,6 +96,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             await addDoc(collection(db, "conversations", conversationId, "messages"), {
                 senderId: user.uid,
                 text,
+                read: false,
                 createdAt: serverTimestamp(),
             });
 
@@ -153,8 +162,14 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                 }`}>
                                 {msg.text}
                             </div>
-                            <span className="text-gray-500 text-[11px] mt-1 px-1">
+                            <span className="text-gray-500 text-[11px] mt-1 px-1 flex items-center">
                                 {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), 'p') : '...'}
+                                {isMe && msg.read && (
+                                    <span className="text-twitter-blue font-bold ml-1.5 flex items-center gap-0.5">
+                                        <div className="w-1 h-1 rounded-full bg-twitter-blue"></div>
+                                        Seen
+                                    </span>
+                                )}
                             </span>
                         </div>
                     );
