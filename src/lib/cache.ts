@@ -6,8 +6,8 @@ class UserCache {
   private pending: Record<string, Promise<any>> = {};
 
   async fetchUser(uid: string) {
-    if (this.cache[uid]) return this.cache[uid];
-    if (this.pending[uid]) return this.pending[uid];
+    if (this.cache[uid] !== undefined) return this.cache[uid];
+    if (this.pending[uid] !== undefined) return this.pending[uid];
 
     this.pending[uid] = (async () => {
       try {
