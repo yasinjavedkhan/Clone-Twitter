@@ -106,6 +106,10 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                     lastMessage: "",
                     lastTimestamp: serverTimestamp(),
                     createdAt: serverTimestamp(),
+                    unreadCount: {
+                        [user.uid]: 0,
+                        [targetUserId]: 0
+                    }
                 });
             }
             setSearchTerm("");

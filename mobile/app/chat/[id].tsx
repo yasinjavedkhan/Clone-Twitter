@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment } from 'firebase/firestore';
 import { db, auth } from '../../src/lib/firebase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Send, ChevronLeft } from 'lucide-react-native';
@@ -38,6 +38,11 @@ export default function ChatDetailScreen() {
                         }).catch(console.error);
                     }
                 });
+
+                // Clear my unread count for this conversation
+                updateDoc(doc(db, "conversations", id as string), {
+                    [`unreadCount.${user.uid}`]: 0
+                }).catch(() => {});
             }
 
             setMessages(msgs);
@@ -58,6 +63,18 @@ export default function ChatDetailScreen() {
 
         setNewMessage("");
         await addDoc(collection(db, `conversations/${id}/messages`), msg);
+
+        // Update unread count for the other user
+        const convDoc = await getDoc(doc(db, "conversations", id as string));
+        const participants = convDoc.data()?.participants || [];
+        const otherId = participants.find((p: string) => p !== user.uid);
+        if (otherId) {
+            await updateDoc(doc(db, "conversations", id as string), {
+                lastMessage: newMessage,
+                lastTimestamp: serverTimestamp(),
+                [`unreadCount.${otherId}`]: increment(1)
+            });
+        }
     };
 
     const renderMessage = ({ item }: { item: any }) => {

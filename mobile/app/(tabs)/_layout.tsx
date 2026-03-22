@@ -35,6 +35,7 @@ export default function TabLayout() {
                 }
             });
             setUnreadMessages(count);
+            console.log("MOBILE_DEBUG: Total unread messages count:", count);
         });
 
         return () => {

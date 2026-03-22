@@ -106,12 +106,17 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             });
 
             // 2. Update conversation last message
-            const otherId = conversationId.replace(user.uid, "").replace("_", "");
-            await updateDoc(doc(db, "conversations", conversationId), {
-                lastMessage: text,
-                lastTimestamp: serverTimestamp(),
-                [`unreadCount.${otherId}`]: increment(1)
-            });
+            const convDoc = await getDoc(doc(db, "conversations", conversationId));
+            const participants = convDoc.data()?.participants || [];
+            const otherId = participants.find((p: string) => p !== user.uid);
+
+            if (otherId) {
+                await updateDoc(doc(db, "conversations", conversationId), {
+                    lastMessage: text,
+                    lastTimestamp: serverTimestamp(),
+                    [`unreadCount.${otherId}`]: increment(1)
+                });
+            }
 
             // 3. Send push notification to the other user
             if (otherUser?.userId) {

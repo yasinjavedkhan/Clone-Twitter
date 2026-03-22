@@ -2,8 +2,10 @@
 
 import { ArrowLeft, Bell, Settings2, Mail, Info, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function NotificationSettings() {
+    const { user } = useAuth();
     return (
         <div className="flex flex-col min-h-screen border-r border-gray-800">
             {/* Header */}
@@ -36,6 +38,35 @@ export default function NotificationSettings() {
                         <span className="text-gray-500 text-[13px]">Select your preferences by notification type.</span>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-500" />
+                </div>
+                
+                <div className="p-6 border-b border-gray-800 flex flex-col items-center gap-4">
+                    <button 
+                        onClick={async () => {
+                            try {
+                                if (user?.uid) {
+                                    const { requestNotificationPermission } = await import("@/lib/notifications");
+                                    const token = await requestNotificationPermission(user.uid);
+                                    if (token) {
+                                        alert("Notifications enabled successfully!");
+                                    } else {
+                                        alert("Please allow notification permissions in your browser settings.");
+                                    }
+                                } else {
+                                    alert("Please sign in first.");
+                                }
+                            } catch (err) {
+                                console.error(err);
+                                alert("Failed to enable notifications. Try refreshing.");
+                            }
+                        }}
+                        className="w-full bg-white text-black font-bold py-3 rounded-full hover:bg-gray-200 transition"
+                    >
+                        Enable Push Notifications
+                    </button>
+                    <p className="text-[13px] text-gray-500">
+                        Get instant alerts when someone sends you a message or interacts with your posts.
+                    </p>
                 </div>
             </div>
 
