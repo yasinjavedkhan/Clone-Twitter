@@ -236,7 +236,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             {isCalling && (
                 <div className="fixed inset-0 z-[100] bg-black flex flex-col">
                     <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black">
-                        <h3 className="text-white font-bold">Call with {otherUser?.displayName || "User"}</h3>
+                        <h3 className="text-white font-bold flex items-center gap-2">
+                            <span className="bg-twitter-blue text-black text-[10px] px-1.5 py-0.5 rounded uppercase font-black">Direct</span>
+                            Call with {otherUser?.displayName || "User"}
+                        </h3>
                         <button 
                             onClick={() => setIsCalling(false)}
                             className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full font-bold transition flex items-center gap-2"
