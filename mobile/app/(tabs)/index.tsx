@@ -87,7 +87,7 @@ export default function HomeScreen() {
   const handleTabPress = (tab: 'foryou' | 'following') => {
     setActiveTab(tab);
     horizontalScrollRef.current?.scrollTo({
-      x: tab === 'foryou' ? 0 : screenWidth,
+      x: tab === 'following' ? 0 : screenWidth,
       animated: true,
     });
   };
@@ -95,8 +95,18 @@ export default function HomeScreen() {
   const handleScrollEnd = (event: any) => {
     const contentOffset = event.nativeEvent.contentOffset.x;
     const tabIndex = Math.round(contentOffset / screenWidth);
-    setActiveTab(tabIndex === 0 ? 'foryou' : 'following');
+    setActiveTab(tabIndex === 0 ? 'following' : 'foryou');
   };
+
+  // Initial scroll to "For You" (Index 1)
+  useEffect(() => {
+    setTimeout(() => {
+      horizontalScrollRef.current?.scrollTo({
+        x: screenWidth,
+        animated: false,
+      });
+    }, 500);
+  }, [screenWidth]);
 
   const renderTabBar = () => (
     <View style={styles.tabBar}>
@@ -306,20 +316,11 @@ export default function HomeScreen() {
         pagingEnabled 
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleScrollEnd}
+        scrollEventThrottle={16}
+        decelerationRate="fast"
         style={styles.horizontalPager}
+        contentContainerStyle={{ width: screenWidth * 2 }}
       >
-        {/* For You Feed */}
-        <View style={{ width: screenWidth }}>
-          <FlatList
-            data={allTweets}
-            renderItem={({ item }) => <TweetItem item={item} />}
-            keyExtractor={item => `foryou-${item.id}`}
-            showsVerticalScrollIndicator={false}
-            ListHeaderComponent={renderHeader}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#06b6d4" />}
-          />
-        </View>
-
         {/* Following Feed */}
         <View style={{ width: screenWidth }}>
           <FlatList
@@ -334,6 +335,18 @@ export default function HomeScreen() {
                 <Text style={styles.emptySubtitle}>Follow some people to see their posts here!</Text>
               </View>
             }
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#06b6d4" />}
+          />
+        </View>
+
+        {/* For You Feed */}
+        <View style={{ width: screenWidth }}>
+          <FlatList
+            data={allTweets}
+            renderItem={({ item }) => <TweetItem item={item} />}
+            keyExtractor={item => `foryou-${item.id}`}
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={renderHeader}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#06b6d4" />}
           />
         </View>
