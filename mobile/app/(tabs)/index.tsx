@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View, FlatList, TouchableOpacity, RefreshControl, Image, ScrollView, Dimensions } from 'react-native';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { auth, db } from '../../src/lib/firebase';
 import { doc, getDoc, collection, query, orderBy, limit, onSnapshot, getDocs, where } from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,9 +8,14 @@ import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [tweets, setTweets] = useState<any[]>([]);
+  const [allTweets, setAllTweets] = useState<any[]>([]);
+  const [followingTweets, setFollowingTweets] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'foryou' | 'following'>('foryou');
   const [refreshing, setRefreshing] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+  const [followingIds, setFollowingIds] = useState<string[]>([]);
+  const horizontalScrollRef = useRef<ScrollView>(null);
+  const { width: screenWidth } = Dimensions.get('window');
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -26,15 +31,201 @@ export default function HomeScreen() {
     return () => unsubscribe();
   }, []);
 
-  // Mock Stories Data (Instagram Style)
-  const stories = [
-    { id: '1', name: 'Your Story', avatar: 'https://picsum.photos/seed/you/200/200', isMe: true },
-    { id: '2', name: 'alex.dev', avatar: 'https://picsum.photos/seed/a/200/200' },
-    { id: '3', name: 'sarah_m', avatar: 'https://picsum.photos/seed/b/200/200' },
-    { id: '4', name: 'tech_guru', avatar: 'https://picsum.photos/seed/c/200/200' },
-    { id: '5', name: 'nature_pix', avatar: 'https://picsum.photos/seed/d/200/200' },
-    { id: '6', name: 'pixel_artist', avatar: 'https://picsum.photos/seed/e/200/200' },
-  ];
+  // Fetch Following IDs
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    const q = query(collection(db, "follows"), where("followerId", "==", auth.currentUser.uid));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const ids = snapshot.docs.map(doc => doc.data().followingId);
+      setFollowingIds(ids);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch "For You" Tweets (All)
+  useEffect(() => {
+    const q = query(collection(db, "tweets"), orderBy("createdAt", "desc"), limit(30));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const tweetsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setAllTweets(tweetsData);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch "Following" Tweets
+  useEffect(() => {
+    if (followingIds.length === 0) {
+      setFollowingTweets([]);
+      return;
+    }
+    // Firestore "in" query limited to 30 ids
+    const batchIds = followingIds.slice(0, 30);
+    const q = query(
+      collection(db, "tweets"), 
+      where("userId", "in", batchIds),
+      orderBy("createdAt", "desc"), 
+      limit(30)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const tweetsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setFollowingTweets(tweetsData);
+    });
+    return () => unsubscribe();
+  }, [followingIds]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
+  };
+
+  const handleTabPress = (tab: 'foryou' | 'following') => {
+    setActiveTab(tab);
+    horizontalScrollRef.current?.scrollTo({
+      x: tab === 'foryou' ? 0 : screenWidth,
+      animated: true,
+    });
+  };
+
+  const handleScrollEnd = (event: any) => {
+    const contentOffset = event.nativeEvent.contentOffset.x;
+    const tabIndex = Math.round(contentOffset / screenWidth);
+    setActiveTab(tabIndex === 0 ? 'foryou' : 'following');
+  };
+
+  const renderTabBar = () => (
+    <View style={styles.tabBar}>
+      <TouchableOpacity 
+        style={styles.tabItem} 
+        onPress={() => handleTabPress('foryou')}
+      >
+        <Text style={[styles.tabText, activeTab === 'foryou' && styles.activeTabText]}>For You</Text>
+        {activeTab === 'foryou' && <View style={styles.tabUnderline} />}
+      </TouchableOpacity>
+      <TouchableOpacity 
+        style={styles.tabItem} 
+        onPress={() => handleTabPress('following')}
+      >
+        <Text style={[styles.tabText, activeTab === 'following' && styles.activeTabText]}>Following</Text>
+        {activeTab === 'following' && <View style={styles.tabUnderline} />}
+      </TouchableOpacity>
+    </View>
+  );
+
+  const TweetItem = ({ item }: { item: any }) => {
+    const [canReply, setCanReply] = useState(true);
+    const [canSee, setCanSee] = useState(true);
+    const [isChecking, setIsChecking] = useState(false);
+    const [replyError, setReplyError] = useState<string | null>(null);
+    const currentUserId = auth.currentUser?.uid;
+
+    useEffect(() => {
+      const checkPermissions = async () => {
+        if (!item.replySetting || item.replySetting === 'everyone') {
+          setCanReply(true);
+          setCanSee(true);
+          return;
+        }
+        if (item.userId === currentUserId) {
+          setCanReply(true);
+          setCanSee(true);
+          return;
+        }
+        setIsChecking(true);
+        try {
+          if (item.replySetting === 'following') {
+            const q1 = query(collection(db, "follows"), where("followerId", "==", item.userId), where("followingId", "==", currentUserId || ""));
+            const q2 = query(collection(db, "follows"), where("followerId", "==", currentUserId || ""), where("followingId", "==", item.userId));
+            const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+            const authorFollowsMe = !snap1.empty;
+            const iFollowAuthor = !snap2.empty;
+            setCanSee(authorFollowsMe || iFollowAuthor);
+            setCanReply(authorFollowsMe);
+            if (!authorFollowsMe) setReplyError("The author only allows people they follow to reply.");
+          } else if (item.replySetting === 'followers') {
+            const q = query(collection(db, "follows"), where("followerId", "==", currentUserId || ""), where("followingId", "==", item.userId));
+            const snap = await getDocs(q);
+            const iFollowAuthor = !snap.empty;
+            setCanSee(iFollowAuthor);
+            setCanReply(iFollowAuthor);
+            if (!iFollowAuthor) setReplyError("Only followers of the author can reply.");
+          } else if (item.replySetting === 'mentions') {
+            if (userData?.username) {
+              const username = userData.username.toLowerCase();
+              const content = item.content.toLowerCase();
+              const isMentioned = new RegExp(`@${username}\\b`).test(content);
+              setCanReply(isMentioned);
+              setCanSee(isMentioned);
+              if (!isMentioned) setReplyError("Only people mentioned by the author can reply.");
+            } else {
+              setCanReply(false);
+              setCanSee(false);
+            }
+          }
+        } catch (e) {
+          console.error(e);
+          setCanSee(false);
+        } finally {
+          setIsChecking(false);
+        }
+      };
+      checkPermissions();
+    }, [item.id, item.replySetting, item.userId, currentUserId, userData?.username]);
+
+    if (!canSee) return null;
+
+    return (
+      <View style={styles.tweetContainer}>
+        <View style={styles.tweetHeader}>
+          <TouchableOpacity 
+            style={styles.userInfo}
+            onPress={() => router.push({ pathname: '/profile', params: { id: item.userId } } as any)}
+          >
+            <View style={styles.avatarPlaceholder}>
+               {item.authorAvatar ? (
+                 <Image source={{ uri: item.authorAvatar }} style={styles.avatar} />
+               ) : (
+                 <User size={24} color="#71767b" />
+               )}
+            </View>
+            <View style={styles.nameContainer}>
+              <Text style={styles.displayName}>{item.authorName || "User"}</Text>
+              <Text style={styles.username}>@{item.authorUsername || "username"}</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.contentPadding}>
+          <Text style={styles.tweetText}>{item.content}</Text>
+        </View>
+        {(item.imageUrl || item.image) && (
+          <View style={styles.mediaContainer}>
+            <Image source={{ uri: item.imageUrl || item.image }} style={styles.mainMedia} resizeMode="cover" />
+          </View>
+        )}
+        <View style={styles.footer}>
+          <View style={styles.leftActions}>
+            <TouchableOpacity style={styles.actionButton}>
+              <Heart size={22} color={item.isLiked ? "#f91880" : "#fff"} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, !canReply && { opacity: 0.3 }]}
+              onPress={() => !canReply && alert(replyError || "You cannot reply.")}
+            >
+              <MessageCircle size={22} color={canReply ? "#fff" : "#444"} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton}>
+              <Repeat2 size={22} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  };
 
   const renderStories = () => (
     <View style={styles.storiesContainer}>
@@ -74,216 +265,80 @@ export default function HomeScreen() {
           <Text style={styles.quickInputText}>What's on your mind?</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.push('/compose' as any)}>
-          <ImageIcon size={24} color="#1d9bf0" />
+          <ImageIcon size={24} color="#06b6d4" />
         </TouchableOpacity>
       </View>
       {renderStories()}
     </View>
   );
 
-  useEffect(() => {
-    const q = query(collection(db, "tweets"), orderBy("createdAt", "desc"), limit(20));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const tweetsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setTweets(tweetsData);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    // Refresh logic here
-    setTimeout(() => setRefreshing(false), 1000);
-  };
-
-  const TweetItem = ({ item }: { item: any }) => {
-    const [canReply, setCanReply] = useState(true);
-    const [canSee, setCanSee] = useState(true);
-    const [isChecking, setIsChecking] = useState(false);
-    const [replyError, setReplyError] = useState<string | null>(null);
-    const currentUserId = auth.currentUser?.uid;
-
-    useEffect(() => {
-      const checkPermissions = async () => {
-        if (!item.replySetting || item.replySetting === 'everyone') {
-          setCanReply(true);
-          setCanSee(true);
-          return;
-        }
-
-        if (item.userId === currentUserId) {
-          setCanReply(true);
-          setCanSee(true);
-          return;
-        }
-        
-        setIsChecking(true);
-        try {
-          if (item.replySetting === 'following') {
-            // Check 1: Author follows Me
-            const q1 = query(
-              collection(db, "follows"), 
-              where("followerId", "==", item.userId),
-              where("followingId", "==", currentUserId || "")
-            );
-            
-            // Check 2: I follow Author (Follow Back)
-            const q2 = query(
-              collection(db, "follows"),
-              where("followerId", "==", currentUserId || ""),
-              where("followingId", "==", item.userId)
-            );
-
-            const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-            const authorFollowsMe = !snap1.empty;
-            const iFollowAuthor = !snap2.empty;
-            
-            setCanSee(authorFollowsMe || iFollowAuthor);
-            setCanReply(authorFollowsMe);
-            if (!authorFollowsMe) {
-              setReplyError("You can't reply to this post. The author only allows people they follow to reply.");
-            }
-          } else if (item.replySetting === 'followers') {
-            const q = query(
-              collection(db, "follows"),
-              where("followerId", "==", currentUserId || ""),
-              where("followingId", "==", item.userId)
-            );
-            const snap = await getDocs(q);
-            const iFollowAuthor = !snap.empty;
-            
-            setCanSee(iFollowAuthor);
-            setCanReply(iFollowAuthor);
-            if (!iFollowAuthor) {
-              setReplyError("You can't reply to this post. Only followers of the author can reply.");
-            }
-          } else if (item.replySetting === 'mentions') {
-            if (userData?.username) {
-              const username = userData.username.toLowerCase();
-              const content = item.content.toLowerCase();
-              const mentionRegex = new RegExp(`@${username}\\b`);
-              const isMentioned = mentionRegex.test(content);
-              setCanReply(isMentioned);
-              setCanSee(isMentioned);
-              if (!isMentioned) {
-                setReplyError("You can't reply to this post. Only people mentioned by the author can reply.");
-              }
-            } else {
-              setCanReply(false);
-              setCanSee(false);
-            }
-          }
-        } catch (e) {
-          console.error("Error checking permissions:", e);
-          setCanSee(false);
-        } finally {
-          setIsChecking(false);
-        }
-      };
-      
-      checkPermissions();
-    }, [item.id, item.replySetting, item.userId, currentUserId, userData?.username]);
-
-    const isRestrictive = item.replySetting && item.replySetting !== 'everyone';
-    if (item.userId !== currentUserId && isRestrictive && isChecking) {
-      return null;
-    }
-
-    if (!canSee) return null;
-
-    return (
-      <View style={styles.tweetContainer}>
-        {/* Header with User Info */}
-        <View style={styles.tweetHeader}>
-          <TouchableOpacity 
-            style={styles.userInfo}
-            onPress={() => router.push({ pathname: '/profile', params: { id: item.userId } } as any)}
-          >
-            <View style={styles.avatarPlaceholder}>
-               {item.authorAvatar ? (
-                 <Image source={{ uri: item.authorAvatar }} style={styles.avatar} />
-               ) : (
-                 <User size={24} color="#71767b" />
-               )}
-            </View>
-            <View style={styles.nameContainer}>
-              <Text style={styles.displayName}>{item.authorName || "User"}</Text>
-              <Text style={styles.username}>@{item.authorUsername || "username"}</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Text style={styles.dot}>···</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Content Text */}
-        <View style={styles.contentPadding}>
-          <Text style={styles.tweetText}>{item.content}</Text>
-        </View>
-
-        {/* Media Content (Instagram Style) */}
-        {(item.imageUrl || item.image) && (
-          <View style={styles.mediaContainer}>
-            <Image 
-              source={{ uri: item.imageUrl || item.image }} 
-              style={styles.mainMedia} 
-              resizeMode="cover"
-            />
-          </View>
-        )}
-
-        {/* Footer Actions */}
-        <View style={styles.footer}>
-          <View style={styles.leftActions}>
-            <TouchableOpacity style={styles.actionButton}>
-              <Heart size={22} color={item.isLiked ? "#f91880" : "#fff"} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.actionButton, !canReply && { opacity: 0.3 }]}
-              onPress={() => {
-                if (canReply) {
-                  // Navigate to comments or open modal
-                  alert("Opening replies...");
-                } else {
-                  alert(replyError || "You cannot reply to this post.");
-                }
-              }}
-            >
-              <MessageCircle size={22} color={canReply ? "#fff" : "#444"} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
-              <Repeat2 size={22} color="#fff" />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity style={styles.actionButton}>
-            <Share size={22} color="#fff" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Likes Count */}
-        <View style={styles.likesPadding}>
-          <Text style={styles.likesCountText}>{item.likesCount || 0} likes</Text>
-        </View>
-      </View>
-    );
-  };
+  const stories = [
+    { id: '1', name: 'Your Story', avatar: 'https://picsum.photos/seed/you/200/200', isMe: true },
+    { id: '2', name: 'alex.dev', avatar: 'https://picsum.photos/seed/a/200/200' },
+    { id: '3', name: 'sarah_m', avatar: 'https://picsum.photos/seed/b/200/200' },
+    { id: '4', name: 'tech_guru', avatar: 'https://picsum.photos/seed/c/200/200' },
+    { id: '5', name: 'nature_pix', avatar: 'https://picsum.photos/seed/d/200/200' },
+  ];
 
   return (
     <SafeAreaView style={styles.container}>
-      <FlatList
-        data={tweets}
-        renderItem={({ item }) => <TweetItem item={item} />}
-        keyExtractor={item => item.id}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={renderHeader}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />
-        }
-      />
+      {/* Search/Profile Header */}
+      <View style={styles.fixedHeader}>
+        <View style={styles.navRow}>
+          <TouchableOpacity onPress={() => router.push('/profile')}>
+            <View style={styles.smallAvatarPlaceholder}>
+              {userData?.profileImage ? (
+                <Image source={{ uri: userData.profileImage }} style={styles.smallAvatar} />
+              ) : (
+                <User size={18} color="#94a3b8" />
+              )}
+            </View>
+          </TouchableOpacity>
+          <Text style={styles.logoText}>JD</Text>
+          <View style={{ width: 32 }} />
+        </View>
+        {renderTabBar()}
+      </View>
+
+      <ScrollView 
+        ref={horizontalScrollRef}
+        horizontal 
+        pagingEnabled 
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleScrollEnd}
+        style={styles.horizontalPager}
+      >
+        {/* For You Feed */}
+        <View style={{ width: screenWidth }}>
+          <FlatList
+            data={allTweets}
+            renderItem={({ item }) => <TweetItem item={item} />}
+            keyExtractor={item => `foryou-${item.id}`}
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={renderHeader}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#06b6d4" />}
+          />
+        </View>
+
+        {/* Following Feed */}
+        <View style={{ width: screenWidth }}>
+          <FlatList
+            data={followingTweets}
+            renderItem={({ item }) => <TweetItem item={item} />}
+            keyExtractor={item => `following-${item.id}`}
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={renderHeader}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyTitle}>No posts yet</Text>
+                <Text style={styles.emptySubtitle}>Follow some people to see their posts here!</Text>
+              </View>
+            }
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#06b6d4" />}
+          />
+        </View>
+      </ScrollView>
+
       <TouchableOpacity 
         style={styles.fab} 
         activeOpacity={0.8}
@@ -483,5 +538,83 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 10,
+  },
+  fixedHeader: {
+    backgroundColor: '#020617',
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  logoText: {
+    color: '#06b6d4',
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  smallAvatarPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  smallAvatar: {
+    width: 32,
+    height: 32,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    height: 48,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  tabText: {
+    color: '#94a3b8',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#f8fafc',
+  },
+  tabUnderline: {
+    position: 'absolute',
+    bottom: 0,
+    width: 60,
+    height: 4,
+    backgroundColor: '#06b6d4',
+    borderRadius: 2,
+  },
+  horizontalPager: {
+    flex: 1,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+    marginTop: 100,
+  },
+  emptyTitle: {
+    color: '#f8fafc',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    color: '#94a3b8',
+    fontSize: 14,
+    textAlign: 'center',
   },
 });
