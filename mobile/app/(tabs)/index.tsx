@@ -1,5 +1,5 @@
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, RefreshControl, Image, ScrollView, Dimensions } from 'react-native';
-import { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, RefreshControl, Image, ScrollView, Dimensions, PanResponder } from 'react-native';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { auth, db } from '../../src/lib/firebase';
 import { doc, getDoc, collection, query, orderBy, limit, onSnapshot, getDocs, where } from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,7 +14,6 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
-  const horizontalScrollRef = useRef<ScrollView>(null);
   const { width: screenWidth } = Dimensions.get('window');
 
   useEffect(() => {
@@ -86,27 +85,24 @@ export default function HomeScreen() {
 
   const handleTabPress = (tab: 'foryou' | 'following') => {
     setActiveTab(tab);
-    horizontalScrollRef.current?.scrollTo({
-      x: tab === 'following' ? 0 : screenWidth,
-      animated: true,
-    });
   };
 
-  const handleScrollEnd = (event: any) => {
-    const contentOffset = event.nativeEvent.contentOffset.x;
-    const tabIndex = Math.round(contentOffset / screenWidth);
-    setActiveTab(tabIndex === 0 ? 'following' : 'foryou');
-  };
-
-  // Initial scroll to "For You" (Index 1)
-  useEffect(() => {
-    setTimeout(() => {
-      horizontalScrollRef.current?.scrollTo({
-        x: screenWidth,
-        animated: false,
-      });
-    }, 500);
-  }, [screenWidth]);
+  // PanResponder for swipe gesture
+  const panResponder = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gestureState) => {
+      // Only capture clearly horizontal swipes
+      return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 2;
+    },
+    onPanResponderRelease: (_, gestureState) => {
+      if (gestureState.dx < -50) {
+        // Swipe Left -> For You
+        setActiveTab('foryou');
+      } else if (gestureState.dx > 50) {
+        // Swipe Right -> Following
+        setActiveTab('following');
+      }
+    },
+  }), []);
 
   const renderTabBar = () => (
     <View style={styles.tabBar}>
@@ -292,7 +288,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Search/Profile Header */}
+      {/* Fixed Tab Header */}
       <View style={styles.fixedHeader}>
         <View style={styles.navRow}>
           <TouchableOpacity onPress={() => router.push('/profile')}>
@@ -310,19 +306,18 @@ export default function HomeScreen() {
         {renderTabBar()}
       </View>
 
-      <ScrollView 
-        ref={horizontalScrollRef}
-        horizontal 
-        pagingEnabled 
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={handleScrollEnd}
-        scrollEventThrottle={16}
-        decelerationRate="fast"
-        style={styles.horizontalPager}
-        contentContainerStyle={{ width: screenWidth * 2 }}
-      >
-        {/* Following Feed */}
-        <View style={{ width: screenWidth }}>
+      {/* Swipeable Feed Area */}
+      <View style={styles.horizontalPager} {...panResponder.panHandlers}>
+        {activeTab === 'foryou' ? (
+          <FlatList
+            data={allTweets}
+            renderItem={({ item }) => <TweetItem item={item} />}
+            keyExtractor={item => `foryou-${item.id}`}
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={renderHeader}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#06b6d4" />}
+          />
+        ) : (
           <FlatList
             data={followingTweets}
             renderItem={({ item }) => <TweetItem item={item} />}
@@ -337,20 +332,8 @@ export default function HomeScreen() {
             }
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#06b6d4" />}
           />
-        </View>
-
-        {/* For You Feed */}
-        <View style={{ width: screenWidth }}>
-          <FlatList
-            data={allTweets}
-            renderItem={({ item }) => <TweetItem item={item} />}
-            keyExtractor={item => `foryou-${item.id}`}
-            showsVerticalScrollIndicator={false}
-            ListHeaderComponent={renderHeader}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#06b6d4" />}
-          />
-        </View>
-      </ScrollView>
+        )}
+      </View>
 
       <TouchableOpacity 
         style={styles.fab} 
