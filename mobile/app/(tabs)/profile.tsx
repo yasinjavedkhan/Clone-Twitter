@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   linkText: {
-    color: '#f472b6',
+    color: '#ffffff',
     fontSize: 14,
     marginLeft: 4,
   },
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   },
   activeTabBorder: {
     borderBottomWidth: 2,
-    borderBottomColor: '#f472b6',
+    borderBottomColor: '#ffffff',
   },
   gridContainer: {
     paddingTop: 2,

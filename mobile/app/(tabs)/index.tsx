@@ -289,7 +289,7 @@ export default function HomeScreen() {
         activeOpacity={0.8}
         onPress={() => router.push('/compose' as any)}
       >
-        <Plus size={30} color="#fff" strokeWidth={3} />
+        <Plus size={30} color="#0f071a" strokeWidth={3} />
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     padding: 2,
     borderWidth: 2,
-    borderColor: '#f472b6', // Pink ring
+    borderColor: '#ffffff', // White ring
     marginBottom: 6,
     position: 'relative',
   },
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#f472b6',
+    backgroundColor: '#ffffff',
     width: 18,
     height: 18,
     borderRadius: 9,
@@ -475,11 +475,11 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#f472b6',
+    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 8,
-    shadowColor: '#f472b6',
+    shadowColor: '#ffffff',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 10,

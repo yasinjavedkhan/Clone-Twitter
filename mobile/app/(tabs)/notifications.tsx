@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   actionButton: {
-    backgroundColor: '#f472b6',
+    backgroundColor: '#ffffff',
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 20,
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   actionButtonText: {
-    color: '#fff',
+    color: '#0f071a',
     fontWeight: 'bold',
     fontSize: 14,
   },

@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   postButton: {
-    backgroundColor: '#f472b6',
+    backgroundColor: '#ffffff',
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   postButtonText: {
-    color: '#fff',
+    color: '#0f071a',
     fontWeight: 'bold',
     fontSize: 16,
   },
