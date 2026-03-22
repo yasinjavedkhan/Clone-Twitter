@@ -164,10 +164,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             </div>
                             <span className="text-gray-500 text-[11px] mt-1 px-1 flex items-center">
                                 {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), 'p') : '...'}
-                                {isMe && msg.read && (
-                                    <span className="text-twitter-blue font-bold ml-1.5 flex items-center gap-0.5">
-                                        <div className="w-1 h-1 rounded-full bg-twitter-blue"></div>
-                                        Seen
+                                {isMe && (
+                                    <span className={`font-bold ml-1.5 flex items-center gap-0.5 ${msg.read ? 'text-twitter-blue' : 'text-gray-500'}`}>
+                                        <div className={`w-1 h-1 rounded-full ${msg.read ? 'bg-twitter-blue' : 'bg-gray-500'}`}></div>
+                                        {msg.read ? 'Seen' : 'Sent'}
                                     </span>
                                 )}
                             </span>
