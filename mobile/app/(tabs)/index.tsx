@@ -89,9 +89,11 @@ export default function HomeScreen() {
 
   // PanResponder for swipe gesture
   const panResponder = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_, gestureState) => {
-      // Only capture clearly horizontal swipes
-      return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 2;
+    // Capture phase: intercept BEFORE FlatList can respond
+    onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+      const { dx, dy } = gestureState;
+      // Only take over if clearly horizontal (dx much bigger than dy)
+      return Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 3;
     },
     onPanResponderRelease: (_, gestureState) => {
       if (gestureState.dx < -50) {
