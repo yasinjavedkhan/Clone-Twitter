@@ -175,7 +175,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                     <button 
                         onClick={async () => { 
-                            const generatedRoom = `Room_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`;
+                            const generatedRoom = `Call_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
                             setCallType('voice'); 
                             setRoomName(generatedRoom);
                             setIsCalling(true);
@@ -203,7 +203,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     </button>
                     <button 
                         onClick={async () => { 
-                            const generatedRoom = `Room_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`;
+                            const generatedRoom = `Call_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
                             setCallType('video'); 
                             setRoomName(generatedRoom);
                             setIsCalling(true);
@@ -245,7 +245,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         </button>
                     </div>
                     <iframe 
-                        src={`https://8x8.vc/${roomName}#config.prejoinPageEnabled=false&config.prejoinConfig.enabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=${callType === 'voice' ? 'true' : 'false'}&userInfo.displayName="${encodeURIComponent(user?.displayName || "User")}"&config.disableDeepLinking=true&config.disableInviteFunctions=true&config.enableInsecureRoomNameWarning=false&config.enableWelcomePage=false&interfaceConfig.SHOW_JITSI_WATERMARK=false&interfaceConfig.SHOW_WATERMARK_FOR_GUESTS=false`}
+                        src={`https://meet.jit.si/${roomName}#config.prejoinPageEnabled=false&config.prejoinConfig.enabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=${callType === 'voice' ? 'true' : 'false'}&config.p2p.enabled=true&config.p2p.useStunTurn=true&config.disableModeratorIndicator=true&config.makeJsonPost=true&userInfo.displayName="${encodeURIComponent(user?.displayName || "User")}"&config.disableDeepLinking=true&config.disableInviteFunctions=true&config.enableInsecureRoomNameWarning=false&config.enableWelcomePage=false&interfaceConfig.SHOW_JITSI_WATERMARK=false&interfaceConfig.SHOW_WATERMARK_FOR_GUESTS=false`}
                         allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
                         className="flex-grow w-full h-full border-none"
                     />
