@@ -75,24 +75,24 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#020617',
   },
   header: {
     padding: 16,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#333',
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   headerTitle: {
-    color: '#fff',
-    fontSize: 24,
+    color: '#f8fafc',
+    fontSize: 22,
     fontWeight: 'bold',
   },
   notificationItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 0.2,
-    borderBottomColor: '#222',
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   avatar: {
     width: 44,
@@ -105,29 +105,30 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   notificationText: {
-    color: '#fff',
+    color: '#f1f5f9',
     fontSize: 14,
     lineHeight: 18,
   },
   username: {
     fontWeight: 'bold',
+    color: '#f8fafc',
   },
   time: {
-    color: '#71767b',
+    color: '#94a3b8',
   },
   mediaThumbnail: {
     width: 44,
     height: 44,
-    borderRadius: 4,
-  },
-  actionButton: {
-    backgroundColor: '#1d9bf0',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
     borderRadius: 8,
   },
+  actionButton: {
+    backgroundColor: '#06b6d4',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
   followingButton: {
-    backgroundColor: '#333',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   actionButtonText: {
     color: '#fff',

@@ -134,7 +134,7 @@ export default function ComposeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#020617',
   },
   header: {
     flexDirection: 'row',
@@ -142,10 +142,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#2f3336',
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   postButton: {
-    backgroundColor: '#1d9bf0',
+    backgroundColor: '#06b6d4',
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: '#fff',
+    color: '#f8fafc',
     fontSize: 18,
     paddingTop: 8,
     minHeight: 100,
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
     borderTopWidth: 0.5,
-    borderTopColor: '#2f3336',
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
   },
   tools: {
     flexDirection: 'row',
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     marginRight: 20,
   },
   charCount: {
-    color: '#71767b',
+    color: '#94a3b8',
     fontSize: 12,
   },
 });

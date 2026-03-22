@@ -77,14 +77,16 @@ export default function MessagesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#020617',
   },
   searchContainer: {
     padding: 15,
   },
   searchBar: {
-    backgroundColor: '#16181c',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     padding: 10,
     flexDirection: 'row',
     alignItems: 'center',
@@ -94,14 +96,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 15,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#2f3336',
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
   },
   avatarPlaceholder: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#16181c',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -115,15 +117,15 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   name: {
-    color: '#fff',
+    color: '#f8fafc',
     fontWeight: 'bold',
   },
   time: {
-    color: '#71767b',
+    color: '#94a3b8',
     fontSize: 13,
   },
   lastMessage: {
-    color: '#71767b',
+    color: '#94a3b8',
     fontSize: 14,
   },
   emptyContainer: {
@@ -134,14 +136,14 @@ const styles = StyleSheet.create({
     marginTop: 50,
   },
   emptyTitle: {
-    color: '#fff',
+    color: '#f8fafc',
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
   },
   emptySubtitle: {
-    color: '#71767b',
+    color: '#94a3b8',
     fontSize: 15,
     textAlign: 'center',
   },

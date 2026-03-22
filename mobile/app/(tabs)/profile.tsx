@@ -105,7 +105,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#020617',
   },
   header: {
     padding: 16,
@@ -122,9 +122,9 @@ const styles = StyleSheet.create({
     width: 86,
     height: 86,
     borderRadius: 43,
-    backgroundColor: '#16181c',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 2,
-    borderColor: '#2f3336',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
   },
   avatar: {
@@ -140,29 +140,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statNumber: {
-    color: '#fff',
+    color: '#f8fafc',
     fontSize: 18,
     fontWeight: 'bold',
   },
   statLabel: {
-    color: '#71767b',
+    color: '#94a3b8',
     fontSize: 13,
   },
   bioContainer: {
     marginBottom: 16,
   },
   displayName: {
-    color: '#fff',
+    color: '#f8fafc',
     fontSize: 18,
     fontWeight: 'bold',
   },
   username: {
-    color: '#71767b',
+    color: '#94a3b8',
     fontSize: 14,
     marginBottom: 8,
   },
   bio: {
-    color: '#fff',
+    color: '#f1f5f9',
     fontSize: 15,
     lineHeight: 20,
     marginBottom: 12,
@@ -172,12 +172,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   locationText: {
-    color: '#71767b',
+    color: '#94a3b8',
     fontSize: 14,
     marginLeft: 4,
   },
   linkText: {
-    color: '#1d9bf0',
+    color: '#06b6d4',
     fontSize: 14,
     marginLeft: 4,
   },
@@ -186,20 +186,21 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#71767b',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 10,
   },
   editButtonText: {
-    color: '#fff',
+    color: '#f8fafc',
     fontWeight: 'bold',
     fontSize: 14,
   },
   tabContainer: {
     flexDirection: 'row',
     borderTopWidth: 0.5,
-    borderTopColor: '#2f3336',
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
     marginTop: 10,
   },
   tab: {
@@ -210,7 +211,7 @@ const styles = StyleSheet.create({
   },
   activeTabBorder: {
     borderBottomWidth: 2,
-    borderBottomColor: '#fff',
+    borderBottomColor: '#06b6d4',
   },
   gridContainer: {
     paddingTop: 2,

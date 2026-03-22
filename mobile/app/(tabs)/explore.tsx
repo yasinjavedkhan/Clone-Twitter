@@ -74,29 +74,31 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#020617',
   },
   header: {
     padding: 12,
     paddingBottom: 8,
   },
   searchBar: {
-    backgroundColor: '#16181c',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 25,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     padding: 10,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 15,
   },
   searchInput: {
-    color: '#fff',
+    color: '#f8fafc',
     fontSize: 15,
     flex: 1,
   },
   tabsContainer: {
     paddingBottom: 10,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#2f3336',
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   tab: {
     paddingHorizontal: 20,
@@ -104,15 +106,15 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#1d9bf0',
+    borderBottomColor: '#06b6d4',
   },
   tabText: {
-    color: '#71767b',
+    color: '#94a3b8',
     fontSize: 15,
     fontWeight: '600',
   },
   activeTabText: {
-    color: '#fff',
+    color: '#f8fafc',
   },
   gridContainer: {
     paddingTop: 1,
