@@ -175,7 +175,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                     <button 
                         onClick={async () => { 
-                            const generatedRoom = `TwitterClone_${Math.random().toString(36).substring(2, 15)}_${Math.random().toString(36).substring(2, 15)}`;
+                            const generatedRoom = `Room_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`;
                             setCallType('voice'); 
                             setRoomName(generatedRoom);
                             setIsCalling(true);
@@ -203,7 +203,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     </button>
                     <button 
                         onClick={async () => { 
-                            const generatedRoom = `TwitterClone_${Math.random().toString(36).substring(2, 15)}_${Math.random().toString(36).substring(2, 15)}`;
+                            const generatedRoom = `Room_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`;
                             setCallType('video'); 
                             setRoomName(generatedRoom);
                             setIsCalling(true);
