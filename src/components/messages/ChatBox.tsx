@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Send, Image, User, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2, Minimize2 } from "lucide-react";
 import { format } from "date-fns";
 import { sendPushNotification } from "@/lib/notifications";
+import AgoraCall from "./AgoraCall";
 
 export default function ChatBox({ conversationId }: { conversationId: string }) {
     const { user } = useAuth();
@@ -232,7 +233,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 </div>
             </div>
 
-            {/* Real Call Overlay (Jitsi) */}
+            {/* Real Call Overlay (Agora) */}
             {isCalling && (
                 <div className="fixed inset-0 z-[100] bg-black flex flex-col">
                     <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black">
@@ -244,10 +245,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             <X className="w-5 h-5" /> End Call
                         </button>
                     </div>
-                    <iframe 
-                        src={`https://meet.jit.si/${roomName}#config.prejoinPageEnabled=false&config.prejoinConfig.enabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=${callType === 'voice' ? 'true' : 'false'}&config.p2p.enabled=true&config.disableModeratorIndicator=true&config.makeJsonPost=true&userInfo.displayName="${encodeURIComponent(user?.displayName || "User")}"&config.disableDeepLinking=true&config.disableInviteFunctions=true&config.enableInsecureRoomNameWarning=false&config.enableWelcomePage=false&interfaceConfig.SHOW_JITSI_WATERMARK=false&interfaceConfig.SHOW_WATERMARK_FOR_GUESTS=false`}
-                        allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
-                        className="flex-grow w-full h-full border-none"
+                    <AgoraCall 
+                        roomName={roomName} 
+                        callType={callType} 
+                        onEndCall={() => setIsCalling(false)} 
                     />
                 </div>
             )}
