@@ -146,12 +146,19 @@ const styles = StyleSheet.create({
   },
   postButton: {
     backgroundColor: '#06b6d4',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+    borderRadius: 25,
+    shadowColor: '#06b6d4',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   disabledButton: {
-    opacity: 0.5,
+    backgroundColor: 'rgba(6, 182, 212, 0.3)',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   postButtonText: {
     color: '#fff',
