@@ -1,7 +1,7 @@
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, RefreshControl, Image, ScrollView, Dimensions, PanResponder } from 'react-native';
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, RefreshControl, Image, ScrollView, Dimensions, PanResponder, TouchableWithoutFeedback } from 'react-native';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { auth, db } from '../../src/lib/firebase';
-import { doc, getDoc, collection, query, orderBy, limit, onSnapshot, getDocs, where } from 'firebase/firestore';
+import { doc, getDoc, collection, query, orderBy, limit, onSnapshot, getDocs, where, setDoc, deleteDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, MessageCircle, Repeat2, Heart, Share, Plus, Image as ImageIcon } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -83,7 +83,7 @@ export default function HomeScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   };
 
-  const [touchStartX, setTouchStartX] = useState(0);
+
 
   const handleTabPress = (tab: 'foryou' | 'following') => {
     setActiveTab(tab);
@@ -99,11 +99,11 @@ export default function HomeScreen() {
     },
     onPanResponderRelease: (_, gestureState) => {
       if (gestureState.dx < -50) {
-        // Swipe Left -> For You
-        setActiveTab('foryou');
-      } else if (gestureState.dx > 50) {
-        // Swipe Right -> Following
+        // Swipe Left -> Following (Right)
         setActiveTab('following');
+      } else if (gestureState.dx > 50) {
+        // Swipe Right -> For You (Left)
+        setActiveTab('foryou');
       }
     },
   }), []);
@@ -132,7 +132,74 @@ export default function HomeScreen() {
     const [canSee, setCanSee] = useState(true);
     const [isChecking, setIsChecking] = useState(false);
     const [replyError, setReplyError] = useState<string | null>(null);
+    const [localLiked, setLocalLiked] = useState(false);
+    const [localLikesCount, setLocalLikesCount] = useState(item.likesCount || 0);
+
+    // Sync local count with prop updates (e.g. from other users' likes)
+    useEffect(() => {
+      setLocalLikesCount(item.likesCount || 0);
+    }, [item.likesCount]);
+
     const currentUserId = auth.currentUser?.uid;
+
+    const handleLike = async () => {
+      if (!currentUserId || !item.id) return;
+      
+      const newLikedStatus = !localLiked;
+      const newLikesCount = newLikedStatus ? localLikesCount + 1 : Math.max(0, localLikesCount - 1);
+      
+      // Optimistic Update
+      setLocalLiked(newLikedStatus);
+      setLocalLikesCount(newLikesCount);
+
+      const likeRef = doc(db, "likes", `${currentUserId}_${item.id}`);
+      const tweetRef = doc(db, "tweets", item.id);
+      try {
+        if (!newLikedStatus) {
+          await deleteDoc(likeRef);
+          await updateDoc(tweetRef, { likesCount: increment(-1) });
+        } else {
+          await setDoc(likeRef, { userId: currentUserId, tweetId: item.id, createdAt: serverTimestamp() });
+          await updateDoc(tweetRef, { likesCount: increment(1) });
+        }
+      } catch (e) {
+        console.error("Like error:", e);
+        // Rollback on error
+        setLocalLiked(!newLikedStatus);
+        setLocalLikesCount(localLikesCount);
+      }
+    };
+
+    const tapCount = useRef(0);
+    const tapTimer = useRef<any>(null);
+
+      const handleTap = () => {
+        tapCount.current += 1;
+        
+        if (tapCount.current === 2) {
+          // Instant reaction on 2nd tap
+          if (tapTimer.current) clearTimeout(tapTimer.current);
+          handleLike();
+          // Don't reset to 0 yet, allow 3rd tap
+          tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 400); 
+          return;
+        }
+
+        if (tapCount.current === 3) {
+          // Instant reaction on 3rd tap
+          if (tapTimer.current) clearTimeout(tapTimer.current);
+          if (canReply) {
+            router.push({ pathname: '/compose', params: { replyTo: item.id } } as any);
+          }
+          tapCount.current = 0;
+          return;
+        }
+
+        if (tapTimer.current) clearTimeout(tapTimer.current);
+        tapTimer.current = setTimeout(() => {
+          tapCount.current = 0;
+        }, 400);
+      };
 
     useEffect(() => {
       const checkPermissions = async () => {
@@ -185,6 +252,14 @@ export default function HomeScreen() {
         }
       };
       checkPermissions();
+
+      // Check if current user liked this tweet
+      const checkLikeStatus = async () => {
+        if (!currentUserId || !item.id) return;
+        const likeDoc = await getDoc(doc(db, "likes", `${currentUserId}_${item.id}`));
+        if (likeDoc.exists()) setLocalLiked(true);
+      };
+      checkLikeStatus();
     }, [item.id, item.replySetting, item.userId, currentUserId, userData?.username]);
 
     if (!canSee) return null;
@@ -209,27 +284,34 @@ export default function HomeScreen() {
             </View>
           </TouchableOpacity>
         </View>
-        <View style={styles.contentPadding}>
-          <Text style={styles.tweetText}>{item.content}</Text>
-        </View>
-        {(item.imageUrl || item.image) && (
-          <View style={styles.mediaContainer}>
-            <Image source={{ uri: item.imageUrl || item.image }} style={styles.mainMedia} resizeMode="cover" />
+        <TouchableWithoutFeedback onPress={handleTap}>
+          <View>
+            <View style={styles.contentPadding}>
+              <Text style={styles.tweetText}>{item.content}</Text>
+            </View>
+            {(item.imageUrl || item.image) && (
+              <View style={styles.mediaContainer}>
+                <Image source={{ uri: item.imageUrl || item.image }} style={styles.mainMedia} resizeMode="cover" />
+              </View>
+            )}
           </View>
-        )}
+        </TouchableWithoutFeedback>
         <View style={styles.footer}>
           <View style={styles.leftActions}>
-            <TouchableOpacity style={styles.actionButton}>
-              <Heart size={22} color={item.isLiked ? "#f91880" : "#fff"} />
+            <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
+              <Heart size={20} color={localLiked ? "#f91880" : "#71767b"} fill={localLiked ? "#f91880" : "transparent"} />
+              <Text style={[styles.actionText, localLiked && { color: "#f91880" }]}>{localLikesCount}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.actionButton, !canReply && { opacity: 0.3 }]}
               onPress={() => !canReply && alert(replyError || "You cannot reply.")}
             >
-              <MessageCircle size={22} color={canReply ? "#fff" : "#444"} />
+              <MessageCircle size={20} color="#71767b" />
+              <Text style={styles.actionText}>{item.commentsCount || 0}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton}>
-              <Repeat2 size={22} color="#fff" />
+              <Repeat2 size={20} color="#71767b" />
+              <Text style={styles.actionText}>{item.retweetsCount || 0}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -314,12 +396,6 @@ export default function HomeScreen() {
       <View 
         style={styles.horizontalPager} 
         {...panResponder.panHandlers}
-        onTouchStart={(e) => setTouchStartX(e.nativeEvent.pageX)}
-        onTouchEnd={(e) => {
-          const dx = e.nativeEvent.pageX - touchStartX;
-          if (dx > 50) setActiveTab('following');
-          else if (dx < -50) setActiveTab('foryou');
-        }}
       >
         {activeTab === 'foryou' ? (
           <FlatList
@@ -426,15 +502,22 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    marginTop: 8,
   },
   leftActions: {
     flexDirection: 'row',
-    alignItems: 'center',
+    gap: 20,
   },
   actionButton: {
-    marginRight: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  actionText: {
+    color: '#71767b',
+    fontSize: 13,
   },
   likesPadding: {
     paddingHorizontal: 12,
