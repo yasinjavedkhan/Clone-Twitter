@@ -20,12 +20,18 @@ function getAdminApp() {
         throw new Error("Missing Firebase Admin credentials");
     }
 
+    let formattedKey = privateKey;
+    if (formattedKey.startsWith('"') && formattedKey.endsWith('"')) {
+        formattedKey = formattedKey.slice(1, -1);
+    }
+    formattedKey = formattedKey.replace(/\\n/g, '\n');
+
     // Use Application Default Credentials or service account
     return initializeApp({
         credential: cert({
             projectId,
             clientEmail,
-            privateKey: privateKey.replace(/\\n/g, '\n'),
+            privateKey: formattedKey,
         }),
         projectId,
     });
