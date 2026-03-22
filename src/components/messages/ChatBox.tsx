@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Send, Image, User } from "lucide-react";
@@ -37,6 +37,11 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         }).catch(console.error);
                     }
                 });
+
+                // Clear my unread count for this conversation
+                updateDoc(doc(db, "conversations", conversationId), {
+                    [`unreadCount.${user.uid}`]: 0
+                }).catch(() => {});
 
                 // Sort in memory to avoid missing index errors
                 const sorted = msgs.sort((a: any, b: any) => {
@@ -101,9 +106,11 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             });
 
             // 2. Update conversation last message
+            const otherId = conversationId.replace(user.uid, "").replace("_", "");
             await updateDoc(doc(db, "conversations", conversationId), {
                 lastMessage: text,
                 lastTimestamp: serverTimestamp(),
+                [`unreadCount.${otherId}`]: increment(1)
             });
 
             // 3. Send push notification to the other user

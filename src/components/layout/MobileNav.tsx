@@ -12,6 +12,7 @@ export default function MobileNav() {
     const pathname = usePathname();
     const { user, signInWithGoogle } = useAuth();
     const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
     const [isNavVisible, setIsNavVisible] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -28,7 +29,26 @@ export default function MobileNav() {
             setUnreadCount(snapshot.size);
         });
 
-        return () => unsubscribe();
+        const qMessages = query(
+            collection(db, "conversations"),
+            where("participants", "array-contains", user.uid)
+        );
+
+        const unsubscribeMessages = onSnapshot(qMessages, (snapshot) => {
+            let count = 0;
+            snapshot.docs.forEach((doc) => {
+                const data = doc.data();
+                if (data.unreadCount && data.unreadCount[user.uid]) {
+                    count += data.unreadCount[user.uid];
+                }
+            });
+            setUnreadMessagesCount(count);
+        });
+
+        return () => {
+            unsubscribe();
+            unsubscribeMessages();
+        };
     }, [user]);
 
     useEffect(() => {
@@ -52,8 +72,8 @@ export default function MobileNav() {
     const items = [
         { icon: Home, href: "/", label: "Home" },
         { icon: Search, href: "/explore", label: "Explore" },
-        { icon: Bell, href: "/notifications", label: "Notifications", hasBadge: true },
-        { icon: Mail, href: "/messages", label: "Messages" },
+        { icon: Bell, href: "/notifications", label: "Notifications", hasBadge: true, badgeType: 'notifications' },
+        { icon: Mail, href: "/messages", label: "Messages", hasBadge: true, badgeType: 'messages' },
         { icon: Bookmark, href: "/bookmarks", label: "Bookmarks" },
     ];
 
@@ -76,9 +96,9 @@ export default function MobileNav() {
                             fill={isActive ? "currentColor" : "none"}
                             strokeWidth={isActive ? 2.5 : 2}
                         />
-                        {item.hasBadge && unreadCount > 0 && (
+                        {item.hasBadge && (item.badgeType === 'messages' ? unreadMessagesCount : unreadCount) > 0 && (
                             <div className="absolute top-1 right-1 bg-twitter-blue text-white text-[10px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center border-2 border-black px-0.5">
-                                {unreadCount > 9 ? "9+" : unreadCount}
+                                {(item.badgeType === 'messages' ? unreadMessagesCount : unreadCount) > 9 ? "9+" : (item.badgeType === 'messages' ? unreadMessagesCount : unreadCount)}
                             </div>
                         )}
                     </Link>

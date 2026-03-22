@@ -234,9 +234,14 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                                 </div>
                                 <div className="flex flex-col min-w-0 flex-1">
                                     <div className="flex justify-between items-baseline gap-2">
-                                        <span className={`font-bold truncate text-[15px] ${isActive ? 'text-white' : 'text-white'}`}>
-                                            {otherUser?.displayName || otherUser?.username || "Unknown"}
-                                        </span>
+                                        <div className="flex items-center gap-1.5 min-w-0">
+                                            <span className={`font-bold truncate text-[15px] ${isActive ? 'text-white' : 'text-white'}`}>
+                                                {otherUser?.displayName || otherUser?.username || "Unknown"}
+                                            </span>
+                                            {user && conv.unreadCount && conv.unreadCount[user.uid] > 0 && (
+                                                <div className="w-2 h-2 rounded-full bg-[var(--color-twitter-blue)] shrink-0"></div>
+                                            )}
+                                        </div>
                                         <span className="text-gray-500 text-[13px] shrink-0">
                                             {conv.lastTimestamp?.toDate ? formatDistanceToNow(conv.lastTimestamp.toDate(), { addSuffix: false }) : 'now'}
                                         </span>

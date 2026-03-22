@@ -22,8 +22,8 @@ import { useEffect, useState } from "react";
 const NAV_ITEMS = [
     { label: "Home", href: "/", icon: Home, activeIcon: Home },
     { label: "Explore", href: "/explore", icon: Search, activeIcon: Search },
-    { label: "Notifications", href: "/notifications", icon: Bell, activeIcon: Bell, hasBadge: true },
-    { label: "Messages", href: "/messages", icon: Mail, activeIcon: Mail },
+    { label: "Notifications", href: "/notifications", icon: Bell, activeIcon: Bell, hasBadge: true, badgeType: "notifications" },
+    { label: "Messages", href: "/messages", icon: Mail, activeIcon: Mail, hasBadge: true, badgeType: "messages" },
     { label: "Bookmarks", href: "/bookmarks", icon: Bookmark, activeIcon: Bookmark },
     { label: "Profile", href: "/profile", icon: User, activeIcon: User },
     { label: "Settings", href: "/settings", icon: Settings, activeIcon: Settings },
@@ -38,6 +38,7 @@ export default function Sidebar({ onOpenCompose }: SidebarProps) {
     const router = useRouter();
     const { user, userData, loading, signInWithGoogle, signOut } = useAuth();
     const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
 
     useEffect(() => {
         if (!user) return;
@@ -52,7 +53,26 @@ export default function Sidebar({ onOpenCompose }: SidebarProps) {
             setUnreadCount(snapshot.size);
         });
 
-        return () => unsubscribe();
+        const qMessages = query(
+            collection(db, "conversations"),
+            where("participants", "array-contains", user.uid)
+        );
+
+        const unsubscribeMessages = onSnapshot(qMessages, (snapshot) => {
+            let count = 0;
+            snapshot.docs.forEach((doc) => {
+                const data = doc.data();
+                if (data.unreadCount && data.unreadCount[user.uid]) {
+                    count += data.unreadCount[user.uid];
+                }
+            });
+            setUnreadMessagesCount(count);
+        });
+
+        return () => {
+            unsubscribe();
+            unsubscribeMessages();
+        };
     }, [user]);
 
     return (
@@ -75,9 +95,9 @@ export default function Sidebar({ onOpenCompose }: SidebarProps) {
                         >
                             <div className="relative">
                                 <Icon className={`w-7 h-7 shrink-0 ${isActive ? 'fill-current' : ''}`} fill={isActive ? "currentColor" : "none"} strokeWidth={isActive ? 2.5 : 2} />
-                                {item.hasBadge && unreadCount > 0 && (
+                                {item.hasBadge && (item.badgeType === 'messages' ? unreadMessagesCount : unreadCount) > 0 && (
                                     <div className="absolute -top-1 -right-1 bg-twitter-blue text-white text-[11px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-black px-1">
-                                        {unreadCount > 9 ? "9+" : unreadCount}
+                                        {(item.badgeType === 'messages' ? unreadMessagesCount : unreadCount) > 9 ? "9+" : (item.badgeType === 'messages' ? unreadMessagesCount : unreadCount)}
                                     </div>
                                 )}
                             </div>
