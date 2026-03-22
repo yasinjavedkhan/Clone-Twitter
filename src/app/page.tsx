@@ -552,8 +552,10 @@ export default function Home() {
         onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
         onTouchEnd={(e) => {
           const dx = e.changedTouches[0].clientX - touchStartX.current;
-          if (dx > 60) setActiveTab('following');      // swipe right
-          else if (dx < -60) setActiveTab('foryou');   // swipe left
+          // For You tab: only right swipe → Following
+          if (activeTab === 'foryou' && dx > 60) setActiveTab('following');
+          // Following tab: only left swipe → For You
+          else if (activeTab === 'following' && dx < -60) setActiveTab('foryou');
         }}
       >
         {(() => {

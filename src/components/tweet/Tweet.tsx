@@ -355,21 +355,25 @@ export default function Tweet({ tweet }: TweetProps) {
                     )}
                 </div>
 
-                {/* Content */}
-                <p className="text-white mt-1 whitespace-pre-wrap break-words">{tweet.content}</p>
+                {/* Content - double tap to like, triple tap for comments */}
+                <p 
+                    className="text-white mt-1 whitespace-pre-wrap break-words"
+                >{tweet.content}</p>
 
-                {/* Media */}
+                {/* Media - double tap to like, triple tap for comments */}
                 {tweet.mediaUrls && tweet.mediaUrls.length > 0 && (
-                    <div className={cn(
-                        "mt-3 mr-2 overflow-hidden rounded-2xl border border-gray-800 grid gap-0.5",
-                        tweet.mediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2",
-                        tweet.mediaUrls.length === 3 ? "grid-rows-2" : ""
-                    )}>
+                    <div 
+                        className={cn(
+                            "mt-3 mr-2 overflow-hidden rounded-2xl border border-gray-800 grid gap-0.5",
+                            tweet.mediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2",
+                            tweet.mediaUrls.length === 3 ? "grid-rows-2" : ""
+                        )}
+                    >
                         {tweet.mediaUrls.map((url, index) => {
                             const isVideo = url.toLowerCase().includes('.mp4') || 
                                            url.toLowerCase().includes('.mov') || 
                                            url.toLowerCase().includes('.webm') ||
-                                           url.includes('video'); // Backup check for the way we name files
+                                           url.includes('video');
 
                             return (
                                 <div 
@@ -384,14 +388,12 @@ export default function Tweet({ tweet }: TweetProps) {
                                             src={url}
                                             controls
                                             className="w-full h-full object-cover"
-                                            onClick={(e) => e.stopPropagation()}
                                         />
                                     ) : (
                                         <img
                                             src={url}
                                             alt="Tweet media"
                                             className="w-full h-full object-cover hover:opacity-95 transition"
-                                            onClick={(e) => e.stopPropagation()}
                                         />
                                     )}
                                 </div>
