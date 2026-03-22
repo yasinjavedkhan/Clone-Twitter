@@ -26,9 +26,10 @@ function getAdminApp() {
     }
     // Handle both single and escaped backslashes for newlines
     formattedKey = formattedKey.replace(/\\n/g, '\n');
-    if (!formattedKey.includes('\n') && formattedKey.includes(' ')) {
-        // Fallback for some environments that mangle newlines into spaces
-        formattedKey = formattedKey.replace(/ /g, '\n'); 
+    
+    // Ensure the key has proper BEGIN/END markers if they got stripped
+    if (!formattedKey.includes("-----BEGIN PRIVATE KEY-----")) {
+        formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`;
     }
 
     // Use Application Default Credentials or service account
