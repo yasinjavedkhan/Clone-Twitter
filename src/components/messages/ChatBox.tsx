@@ -151,7 +151,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         (otherUser?.displayName || otherUser?.username || "?")[0]
                     )}
                 </div>
-                <div className="flex flex-col min-w-0 flex-grow">
+                <div className="flex flex-col min-w-0 flex-grow mr-2">
                     <h2 className="font-bold text-white text-[17px] leading-tight truncate">
                         {otherUser?.displayName || otherUser?.username || (conversationId ? "..." : "Select a chat")}
                     </h2>
@@ -159,7 +159,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         <p className="text-gray-500 text-[13px] truncate">@{otherUser.username}</p>
                     )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                     <button 
                         onClick={async () => { 
                             setCallType('voice'); 
