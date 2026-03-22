@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Sidebar from "@/components/layout/Sidebar";
 import RightSidebar from "@/components/layout/RightSidebar";
 import MobileNav from "@/components/layout/MobileNav";
@@ -10,8 +10,6 @@ import MainLayout from "@/components/layout/MainLayout";
 const outfit = Outfit({ subsets: ["latin"] });
 
 import IncomingCallOverlay from "@/components/messages/IncomingCallOverlay";
-import { useEffect } from "react";
-import { requestNotificationPermission } from "@/lib/notifications";
 
 export const metadata: Metadata = {
   title: "Twitter Clone",
@@ -23,13 +21,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { user } = useAuth();
-
-  useEffect(() => {
-    if (user?.uid) {
-      requestNotificationPermission(user.uid);
-    }
-  }, [user?.uid]);
 
   return (
     <html lang="en">
