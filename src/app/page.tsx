@@ -37,6 +37,7 @@ export default function Home() {
   const [lastScrollY, setLastScrollY] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef<number>(0);
 
   useEffect(() => {
     const q = query(collection(db, "tweets"), orderBy("createdAt", "desc"));
@@ -546,7 +547,15 @@ export default function Home() {
       )}
 
       {/* Feed Area */}
-      <div className="flex flex-col pb-20">
+      <div 
+        className="flex flex-col pb-20"
+        onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+        onTouchEnd={(e) => {
+          const dx = e.changedTouches[0].clientX - touchStartX.current;
+          if (dx > 60) setActiveTab('following');      // swipe right
+          else if (dx < -60) setActiveTab('foryou');   // swipe left
+        }}
+      >
         {(() => {
           const displayTweets = activeTab === 'following' 
             ? tweets.filter(t => followingIds.includes(t.userId)) 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Heart, MessageCircle, Repeat2, Share, Trash2, User, Image, List, Smile, Calendar, MapPin, Globe, X, Bookmark } from "lucide-react";
 import Link from "next/link";
@@ -49,6 +49,19 @@ export default function Tweet({ tweet }: TweetProps) {
     const [canReply, setCanReply] = useState(!isRestrictive || isOwner);
     const [replyError, setReplyError] = useState<string | null>(null);
     const [isChecking, setIsChecking] = useState(isRestrictive && !isOwner);
+    const tapCount = useRef(0);
+    const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleTap = () => {
+        tapCount.current += 1;
+        if (tapTimer.current) clearTimeout(tapTimer.current);
+        tapTimer.current = setTimeout(() => {
+            if (tapCount.current === 2) handleLike();
+            if (tapCount.current >= 3 && canReply) setIsCommentModalOpen(true);
+            tapCount.current = 0;
+        }, 400);
+    };
+
 
     useEffect(() => {
         if (!tweet.replySetting || tweet.replySetting === 'everyone') {
@@ -294,7 +307,10 @@ export default function Tweet({ tweet }: TweetProps) {
     if (!canSee) return null;
 
     return (
-        <article className="border-b border-gray-800 p-4 hover:bg-gray-900/50 transition cursor-pointer flex gap-4">
+        <article 
+            className="border-b border-gray-800 p-4 hover:bg-gray-900/50 transition cursor-pointer flex gap-4"
+            onClick={handleTap}
+        >
             {/* Avatar */}
             <Link href={`/profile/${tweet.userId}`} onClick={(e) => e.stopPropagation()} className="shrink-0">
                 <Avatar
