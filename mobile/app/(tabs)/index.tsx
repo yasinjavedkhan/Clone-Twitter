@@ -298,11 +298,11 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#020617',
+    backgroundColor: '#0f071a',
   },
   tweetContainer: {
     marginBottom: 8,
-    backgroundColor: '#020617',
+    backgroundColor: '#0f071a',
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   headerWrapper: {
-    backgroundColor: '#020617',
+    backgroundColor: '#0f071a',
   },
   quickInputContainer: {
     flexDirection: 'row',
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(255, 255, 255, 0.05)',
-    backgroundColor: '#020617',
+    backgroundColor: '#0f071a',
   },
   storyItem: {
     alignItems: 'center',
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     padding: 2,
     borderWidth: 2,
-    borderColor: '#06b6d4', // Cyan ring
+    borderColor: '#f472b6', // Pink ring
     marginBottom: 6,
     position: 'relative',
   },
@@ -459,12 +459,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#06b6d4',
+    backgroundColor: '#f472b6',
     width: 18,
     height: 18,
     borderRadius: 9,
     borderWidth: 2,
-    borderColor: '#020617',
+    borderColor: '#0f071a',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -475,11 +475,11 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#06b6d4',
+    backgroundColor: '#f472b6',
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 8,
-    shadowColor: '#06b6d4',
+    shadowColor: '#f472b6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 10,

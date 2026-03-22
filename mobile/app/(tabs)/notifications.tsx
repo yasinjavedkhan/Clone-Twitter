@@ -75,7 +75,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#020617',
+    backgroundColor: '#0f071a',
   },
   header: {
     padding: 16,
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   actionButton: {
-    backgroundColor: '#06b6d4',
+    backgroundColor: '#f472b6',
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 20,
