@@ -9,7 +9,7 @@ import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, getDoc
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { Button } from "@/components/ui/Button";
 import Tweet from "@/components/tweet/Tweet";
-import { Image, List, Smile, Calendar, MapPin, Globe, X, User } from "lucide-react";
+import { Image, List, Smile, Calendar, MapPin, Globe, X, User, Users } from "lucide-react";
 import { useRef } from "react";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import Avatar from "@/components/ui/Avatar";
@@ -23,7 +23,7 @@ export default function Home() {
   const [tweets, setTweets] = useState<any[]>([]);
   const [mediaFiles, setMediaFiles] = useState<{ file: File; type: 'image' | 'video'; preview: string }[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [replySetting, setReplySetting] = useState<'everyone' | 'following' | 'mentions'>('everyone');
+  const [replySetting, setReplySetting] = useState<'everyone' | 'following' | 'mentions' | 'followers'>('everyone');
   const [showReplySettings, setShowReplySettings] = useState(false);
   const [showPoll, setShowPoll] = useState(false);
   const [pollOptions, setPollOptions] = useState(["", ""]);
@@ -325,6 +325,7 @@ export default function Home() {
                   <Globe className="w-4 h-4" />
                   <span>
                     {replySetting === 'everyone' ? 'Everyone can reply' : 
+                     replySetting === 'followers' ? 'Only people who follow you can reply' :
                      replySetting === 'following' ? 'People you follow can reply' : 
                      'Only people you mention can reply'}
                   </span>
@@ -343,6 +344,13 @@ export default function Home() {
                       >
                         <div className="bg-blue-500 text-white p-2 rounded-full"><Globe className="w-5 h-5" /></div>
                         <span className="font-bold text-[15px] text-white">Everyone</span>
+                      </button>
+                      <button 
+                        onClick={() => { setReplySetting('followers'); setShowReplySettings(false); }} 
+                        className={cn("w-full text-left px-4 py-3 hover:bg-white/5 transition flex items-center gap-3", replySetting === 'followers' && "bg-white/5")}
+                      >
+                        <div className="bg-blue-500 text-white p-2 rounded-full"><Users className="w-5 h-5" /></div>
+                        <span className="font-bold text-[15px] text-white">Followers</span>
                       </button>
                       <button 
                         onClick={() => { setReplySetting('following'); setShowReplySettings(false); }} 

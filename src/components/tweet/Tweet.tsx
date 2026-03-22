@@ -18,7 +18,7 @@ interface TweetProps {
         userId: string;
         content: string;
         mediaUrls?: string[];
-        replySetting?: 'everyone' | 'following' | 'mentions';
+        replySetting?: 'everyone' | 'following' | 'mentions' | 'followers';
         likesCount: number;
         commentsCount: number;
         retweetsCount: number;
@@ -104,6 +104,21 @@ export default function Tweet({ tweet }: TweetProps) {
                     setCanReply(authorFollowsMe);
                     if (!authorFollowsMe) {
                         setReplyError("You can't reply to this post. The author only allows people they follow to reply.");
+                    }
+                } else if (tweet.replySetting === 'followers') {
+                    // Check: Do I follow the Author?
+                    const q = query(
+                        collection(db, "follows"),
+                        where("followerId", "==", user?.uid || ""),
+                        where("followingId", "==", tweet.userId)
+                    );
+                    const snap = await getDocs(q);
+                    const iFollowAuthor = !snap.empty;
+                    
+                    setCanSee(iFollowAuthor);
+                    setCanReply(iFollowAuthor);
+                    if (!iFollowAuthor) {
+                        setReplyError("You can't reply to this post. Only followers of the author can reply.");
                     }
                 } else if (tweet.replySetting === 'mentions') {
                     if (userData?.username) {

@@ -147,6 +147,20 @@ export default function HomeScreen() {
             if (!authorFollowsMe) {
               setReplyError("You can't reply to this post. The author only allows people they follow to reply.");
             }
+          } else if (item.replySetting === 'followers') {
+            const q = query(
+              collection(db, "follows"),
+              where("followerId", "==", currentUserId || ""),
+              where("followingId", "==", item.userId)
+            );
+            const snap = await getDocs(q);
+            const iFollowAuthor = !snap.empty;
+            
+            setCanSee(iFollowAuthor);
+            setCanReply(iFollowAuthor);
+            if (!iFollowAuthor) {
+              setReplyError("You can't reply to this post. Only followers of the author can reply.");
+            }
           } else if (item.replySetting === 'mentions') {
             if (userData?.username) {
               const username = userData.username.toLowerCase();
