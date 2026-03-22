@@ -6,11 +6,28 @@ import { db } from "@/lib/firebase";
 // Your VAPID key from Firebase Console → Project Settings → Cloud Messaging
 const VAPID_KEY = process.env.NEXT_PUBLIC_FCM_VAPID_KEY?.replace(/['"]/g, '').trim();
 
+function urlBase64ToUint8Array(base64String: string) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
 export async function requestNotificationPermission(userId: string): Promise<string | null> {
     try {
         if (typeof window === "undefined" || !("Notification" in window)) {
             return null;
         }
+
+        console.log("Twitter Calling System - v22 (Initializing FCM)");
 
         const permission = await Notification.requestPermission();
         if (permission !== "granted") {
@@ -20,11 +37,13 @@ export async function requestNotificationPermission(userId: string): Promise<str
 
         const messaging = getMessaging(app);
 
-        // Register service worker
+        // Register service worker if not already handled
         const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
         
+        const vapidKeyArray = VAPID_KEY ? urlBase64ToUint8Array(VAPID_KEY) : undefined;
+
         const token = await getToken(messaging, {
-            vapidKey: VAPID_KEY,
+            vapidKey: VAPID_KEY, // Firebase JS SDK usually takes the string, but we'll try standard string first with v22 label
             serviceWorkerRegistration: registration,
         });
 
