@@ -4,7 +4,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 // Your VAPID key from Firebase Console → Project Settings → Cloud Messaging
-const VAPID_KEY = process.env.NEXT_PUBLIC_FCM_VAPID_KEY?.replace(/"/g, '').trim();
+const VAPID_KEY = process.env.NEXT_PUBLIC_FCM_VAPID_KEY?.replace(/['"]/g, '').trim();
 
 export async function requestNotificationPermission(userId: string): Promise<string | null> {
     try {

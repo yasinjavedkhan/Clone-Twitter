@@ -13,7 +13,7 @@ export default function CallScreen() {
     
     // Construct Jitsi URL with advanced config overrides for a truly direct experience
     const displayName = user?.displayName || user?.email?.split('@')[0] || "User";
-    const jitsiUrl = `https://meet.ffmuc.net/${roomName}#config.prejoinPageEnabled=false&config.prejoinConfig.enabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=${type === 'voice' ? 'true' : 'false'}&config.p2p.enabled=true&config.disableModeratorIndicator=true&config.makeJsonPost=true&userInfo.displayName="${encodeURIComponent(displayName)}"&config.disableDeepLinking=true&config.disableInviteFunctions=true&config.enableInsecureRoomNameWarning=false&config.enableWelcomePage=false&interfaceConfig.SHOW_JITSI_WATERMARK=false&interfaceConfig.SHOW_WATERMARK_FOR_GUESTS=false&interfaceConfig.DEFAULT_BACKGROUND='#000000'`;
+    const jitsiUrl = `https://meet.jit.si/${roomName}#config.prejoinPageEnabled=false&config.prejoinConfig.enabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=${type === 'voice' ? 'true' : 'false'}&config.p2p.enabled=true&config.disableModeratorIndicator=true&config.makeJsonPost=true&userInfo.displayName="${encodeURIComponent(displayName)}"&config.disableDeepLinking=true&config.disableInviteFunctions=true&config.enableInsecureRoomNameWarning=false&config.enableWelcomePage=false&interfaceConfig.SHOW_JITSI_WATERMARK=false&interfaceConfig.SHOW_WATERMARK_FOR_GUESTS=false&interfaceConfig.DEFAULT_BACKGROUND='#000000'`;
 
     return (
         <SafeAreaView style={styles.container}>
