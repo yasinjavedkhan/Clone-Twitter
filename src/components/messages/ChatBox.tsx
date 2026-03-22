@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Send, Image, User } from "lucide-react";
+import { Send, Image, User, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2, Minimize2 } from "lucide-react";
 import { format } from "date-fns";
 import { sendPushNotification } from "@/lib/notifications";
 
@@ -14,6 +14,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const [newMessage, setNewMessage] = useState("");
     const [otherUser, setOtherUser] = useState<any>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const [isCalling, setIsCalling] = useState(false);
+    const [callType, setCallType] = useState<'voice' | 'video'>('voice');
 
     useEffect(() => {
         if (!conversationId || !user?.uid) return;
@@ -78,7 +80,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     if (otherId) {
                         const userDoc = await getDoc(doc(db, "users", otherId));
                         if (userDoc.exists()) {
-                            setOtherUser(userDoc.data());
+                            setOtherUser({ userId: userDoc.id, ...userDoc.data() });
                         }
                     }
                 }
@@ -149,7 +151,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         (otherUser?.displayName || otherUser?.username || "?")[0]
                     )}
                 </div>
-                <div className="flex flex-col min-w-0">
+                <div className="flex flex-col min-w-0 flex-grow">
                     <h2 className="font-bold text-white text-[17px] leading-tight truncate">
                         {otherUser?.displayName || otherUser?.username || (conversationId ? "..." : "Select a chat")}
                     </h2>
@@ -157,7 +159,77 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         <p className="text-gray-500 text-[13px] truncate">@{otherUser.username}</p>
                     )}
                 </div>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={async () => { 
+                            setCallType('voice'); 
+                            setIsCalling(true);
+                            // Signal
+                            if (otherUser?.userId) {
+                                await sendPushNotification({
+                                    toUserId: otherUser.userId,
+                                    title: "Incoming Voice Call",
+                                    body: `${user?.displayName || 'Someone'} is calling...`,
+                                    data: {
+                                        type: 'call',
+                                        callType: 'voice',
+                                        conversationId,
+                                        roomName: `twitter_clone_${conversationId}`
+                                    }
+                                });
+                            }
+                        }}
+                        className="p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200"
+                        title="Audio Call"
+                    >
+                        <Phone className="w-5 h-5" />
+                    </button>
+                    <button 
+                        onClick={async () => { 
+                            setCallType('video'); 
+                            setIsCalling(true);
+                            // Signal
+                            if (otherUser?.userId) {
+                                await sendPushNotification({
+                                    toUserId: otherUser.userId,
+                                    title: "Incoming Video Call",
+                                    body: `${user?.displayName || 'Someone'} is video calling...`,
+                                    data: {
+                                        type: 'call',
+                                        callType: 'video',
+                                        conversationId,
+                                        roomName: `twitter_clone_${conversationId}`
+                                    }
+                                });
+                            }
+                        }}
+                        className="p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200"
+                        title="Video Call"
+                    >
+                        <Video className="w-6 h-6" />
+                    </button>
+                </div>
             </div>
+
+            {/* Real Call Overlay (Jitsi) */}
+            {isCalling && (
+                <div className="fixed inset-0 z-[100] bg-black flex flex-col">
+                    <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black">
+                        <h3 className="text-white font-bold">Call with {otherUser?.displayName || "User"}</h3>
+                        <button 
+                            onClick={() => setIsCalling(false)}
+                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full font-bold transition flex items-center gap-2"
+                        >
+                            <X className="w-5 h-5" /> End Call
+                        </button>
+                    </div>
+                    <iframe 
+                        src={`https://meet.jit.si/twitter_clone_${conversationId}#config.prejoinPageEnabled=false&config.prejoinConfig.enabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=${callType === 'voice' ? 'true' : 'false'}&userInfo.displayName="${encodeURIComponent(user?.displayName || "User")}"&config.disableDeepLinking=true&config.disableInviteFunctions=true&config.enableInsecureRoomNameWarning=false&config.enableWelcomePage=false&interfaceConfig.SHOW_JITSI_WATERMARK=false&interfaceConfig.SHOW_WATERMARK_FOR_GUESTS=false`}
+                        allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
+                        className="flex-grow w-full h-full border-none"
+                    />
+                </div>
+            )}
 
             {/* Messages Area */}
             <div className="flex-grow overflow-y-auto p-4 flex flex-col gap-3">

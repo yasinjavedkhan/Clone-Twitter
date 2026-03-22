@@ -1,11 +1,12 @@
-import { StyleSheet, Text, View, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, Text, View, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Modal, Image } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment } from 'firebase/firestore';
 import { db, auth } from '../../src/lib/firebase';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Send, ChevronLeft } from 'lucide-react-native';
+import { Send, ChevronLeft, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { BlurView } from 'expo-blur';
 
 export default function ChatDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -14,6 +15,24 @@ export default function ChatDetailScreen() {
     const user = auth.currentUser;
     const router = useRouter();
     const flatListRef = useRef<FlatList>(null);
+    const [otherUserData, setOtherUserData] = useState<any>(null);
+
+    // Fetch other user info for the call screen
+    useEffect(() => {
+        if (!id || !user) return;
+        const fetchOther = async () => {
+            const convDoc = await getDoc(doc(db, "conversations", id as string));
+            const participants = convDoc.data()?.participants || [];
+            const otherId = participants.find((p: string) => p !== user.uid);
+            if (otherId) {
+                const userSnapshot = await getDoc(doc(db, "users", otherId));
+                if (userSnapshot.exists()) {
+                    setOtherUserData({ userId: userSnapshot.id, ...userSnapshot.data() });
+                }
+            }
+        };
+        fetchOther();
+    }, [id, user]);
 
     useEffect(() => {
         if (!id) return;
@@ -101,10 +120,64 @@ export default function ChatDetailScreen() {
 
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <ChevronLeft size={28} color="#fff" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Chat</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                        <ChevronLeft size={28} color="#fff" />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Chat</Text>
+                </View>
+                <View style={styles.headerActions}>
+                    <TouchableOpacity style={styles.headerIcon} onPress={async () => {
+                        const otherId = otherUserData?.userId || otherUserData?.id;
+                        if (!otherId) return alert("User data not loaded yet.");
+                        
+                        // Signal via backend API
+                        fetch("http://10.0.2.2:3000/api/notify", { // Replace with production URL when deployed
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                toUserId: otherId,
+                                title: "Incoming Voice Call",
+                                body: `${user?.email || 'Someone'} is calling...`,
+                                data: {
+                                    type: 'call',
+                                    callType: 'voice',
+                                    conversationId: id,
+                                    roomName: `twitter_clone_${id}`
+                                }
+                            })
+                        }).catch(err => console.error("Notification error:", err));
+                        
+                        router.push(`/call/${id}?type=voice` as any);
+                    }}>
+                        <Phone size={22} color="#1d9bf0" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.headerIcon} onPress={async () => {
+                        const otherId = otherUserData?.userId || otherUserData?.id;
+                        if (!otherId) return alert("User data not loaded yet.");
+
+                        // Signal via backend API
+                        fetch("http://10.0.2.2:3000/api/notify", { // Replace with production URL when deployed
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                toUserId: otherId,
+                                title: "Incoming Video Call",
+                                body: `${user?.email || 'Someone'} is video calling...`,
+                                data: {
+                                    type: 'call',
+                                    callType: 'video',
+                                    conversationId: id,
+                                    roomName: `twitter_clone_${id}`
+                                }
+                            })
+                        }).catch(err => console.error("Notification error:", err));
+
+                        router.push(`/call/${id}?type=video` as any);
+                    }}>
+                        <Video size={24} color="#1d9bf0" />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <FlatList
@@ -207,6 +280,14 @@ const styles = StyleSheet.create({
     },
     sendButton: {
         marginLeft: 10,
+        padding: 5,
+    },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 20,
+    },
+    headerIcon: {
         padding: 5,
     },
 });
