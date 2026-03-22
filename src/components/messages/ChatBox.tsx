@@ -156,7 +156,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     return (
         <div className="flex flex-col h-screen flex-grow border-r border-gray-800 bg-black">
             {/* Header */}
-            <div className="p-4 border-b border-gray-800 flex items-center gap-4 bg-black/80 backdrop-blur sticky top-0 z-10">
+            <div className="p-4 border-b border-blue-400 flex items-center gap-4 bg-blue-600 sticky top-0 z-10">
+                <div className="text-white font-black text-xs mr-2 border-2 border-white px-1 animate-pulse">V2</div>
                 <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0 font-bold text-white uppercase overflow-hidden text-lg">
                     {otherUser?.profileImage ? (
                         <img src={otherUser.profileImage} className="w-full h-full rounded-full object-cover" alt="Avatar" />
