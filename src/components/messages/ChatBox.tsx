@@ -14,8 +14,18 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const [newMessage, setNewMessage] = useState("");
     const [otherUser, setOtherUser] = useState<any>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
-    const [isCalling, setIsCalling] = useState(false);
     const [callType, setCallType] = useState<'voice' | 'video'>('voice');
+    const [isCalling, setIsCalling] = useState(false);
+
+    useEffect(() => {
+        // Check for call in query params
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('call') === 'true') {
+            const type = params.get('type') as any;
+            if (type) setCallType(type);
+            setIsCalling(true);
+        }
+    }, [conversationId]);
 
     useEffect(() => {
         if (!conversationId || !user?.uid) return;
@@ -174,7 +184,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                         type: 'call',
                                         callType: 'voice',
                                         conversationId,
-                                        roomName: `twitter_clone_${conversationId}`
+                                        roomName: `twitter_clone_${conversationId}`,
+                                        fromUserName: user?.displayName || user?.email?.split('@')[0] || 'Someone',
+                                        fromUserAvatar: (user as any)?.profileImage || ''
                                     }
                                 });
                             }
@@ -198,7 +210,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                         type: 'call',
                                         callType: 'video',
                                         conversationId,
-                                        roomName: `twitter_clone_${conversationId}`
+                                        roomName: `twitter_clone_${conversationId}`,
+                                        fromUserName: user?.displayName || user?.email?.split('@')[0] || 'Someone',
+                                        fromUserAvatar: (user as any)?.profileImage || ''
                                     }
                                 });
                             }

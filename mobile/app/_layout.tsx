@@ -1,9 +1,13 @@
 import { Stack } from 'expo-router';
-import { useCallback } from 'react';
+import { View, Platform } from 'react-native';
+import IncomingCallOverlay from '../src/components/IncomingCallOverlay';
+import * as Notifications from 'expo-notifications';
+import { auth, db } from '../src/lib/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { useCallback, useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
-import { View } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -19,6 +23,29 @@ export default function RootLayout() {
     }
   }, [fontsLoaded]);
 
+  useEffect(() => {
+    async function registerForPushNotificationsAsync() {
+      if (Platform.OS === 'web') return;
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== 'granted') return;
+
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      if (auth.currentUser) {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+          fcmToken: token,
+          fcmTokenUpdated: new Date(),
+        });
+      }
+    }
+
+    registerForPushNotificationsAsync();
+  }, []);
+
   if (!fontsLoaded) return null;
 
   return (
@@ -27,6 +54,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
+      <IncomingCallOverlay />
     </View>
   );
 }

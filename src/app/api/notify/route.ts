@@ -24,7 +24,12 @@ function getAdminApp() {
     if (formattedKey.startsWith('"') && formattedKey.endsWith('"')) {
         formattedKey = formattedKey.slice(1, -1);
     }
+    // Handle both single and escaped backslashes for newlines
     formattedKey = formattedKey.replace(/\\n/g, '\n');
+    if (!formattedKey.includes('\n') && formattedKey.includes(' ')) {
+        // Fallback for some environments that mangle newlines into spaces
+        formattedKey = formattedKey.replace(/ /g, '\n'); 
+    }
 
     // Use Application Default Credentials or service account
     return initializeApp({
