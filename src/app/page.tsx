@@ -2,6 +2,8 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, getDocs, where } from "firebase/firestore";
 import { uploadToCloudinary } from "@/lib/cloudinary";
@@ -14,6 +16,7 @@ import Avatar from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
 
 export default function Home() {
+  const router = useRouter();
   const { user, userData, signInWithGoogle } = useAuth();
   const [content, setContent] = useState("");
   const [isTweeting, setIsTweeting] = useState(false);
@@ -253,6 +256,20 @@ export default function Home() {
                 </button>
             </div>
         )}
+        {user && (
+            <div className="shrink-0 sm:hidden pr-2 z-50">
+                <button 
+                  onClick={() => router.push(`/profile/${user.uid}`)}
+                  className="flex items-center justify-center p-1 rounded-full active:bg-white/10 transition cursor-pointer"
+                >
+                    <Avatar
+                        src={userData?.profileImage}
+                        fallbackText={userData?.displayName || userData?.username}
+                        size="md"
+                    />
+                </button>
+            </div>
+        )}
         <button
           onClick={() => setActiveTab('foryou')}
           className="flex-1 hover:bg-white/5 transition flex justify-center"
@@ -280,13 +297,13 @@ export default function Home() {
       {/* Tweet Input */}
       {user && (
         <div className="p-4 border-b border-gray-800 flex gap-4">
-          <div className="shrink-0">
+          <Link href={`/profile/${user.uid}`} className="shrink-0 hover:opacity-90 transition">
             <Avatar
               src={userData?.profileImage}
               fallbackText={userData?.displayName || userData?.username}
               size="lg"
             />
-          </div>
+          </Link>
           <div className="flex-grow">
             <textarea
               className="w-full bg-transparent text-xl outline-none resize-none placeholder-gray-500 min-h-[50px]"

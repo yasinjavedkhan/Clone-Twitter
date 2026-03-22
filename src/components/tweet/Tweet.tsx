@@ -40,12 +40,15 @@ export default function Tweet({ tweet }: TweetProps) {
     const [isLiking, setIsLiking] = useState(false);
     const [isRetweeting, setIsRetweeting] = useState(false);
     const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
-    const [canReply, setCanReply] = useState(true);
     const [hasBookmarked, setHasBookmarked] = useState(false);
     const [isBookmarking, setIsBookmarking] = useState(false);
     const [showBookmarkToast, setShowBookmarkToast] = useState(false);
-
+    const isRestrictive = tweet.replySetting && tweet.replySetting !== 'everyone';
     const isOwner = user?.uid === tweet.userId;
+    const [canSee, setCanSee] = useState(!isRestrictive || isOwner);
+    const [canReply, setCanReply] = useState(!isRestrictive || isOwner);
+    const [replyError, setReplyError] = useState<string | null>(null);
+    const [isChecking, setIsChecking] = useState(isRestrictive && !isOwner);
 
     useEffect(() => {
         if (!tweet.replySetting || tweet.replySetting === 'everyone') {
@@ -63,24 +66,70 @@ export default function Tweet({ tweet }: TweetProps) {
             return;
         }
 
-        const checkReplyPermission = async () => {
-            if (tweet.replySetting === 'following') {
-                const q = query(
-                    collection(db, "follows"), 
-                    where("followerId", "==", tweet.userId),
-                    where("followingId", "==", user.uid)
-                );
-                const snap = await getDocs(q);
-                setCanReply(!snap.empty);
-            } else if (tweet.replySetting === 'mentions') {
-                if (userData?.username && tweet.content.includes(`@${userData.username}`)) {
-                    setCanReply(true);
-                } else {
-                    setCanReply(false);
+        const checkPermissions = async () => {
+            if (isOwner) {
+                setCanReply(true);
+                setCanSee(true);
+                return;
+            }
+
+            if (!tweet.replySetting || tweet.replySetting === 'everyone') {
+                setCanReply(true);
+                setCanSee(true);
+                return;
+            }
+
+            setIsChecking(true);
+            try {
+                if (tweet.replySetting === 'following') {
+                    // Check 1: Does Author follow Current User?
+                    const q1 = query(
+                        collection(db, "follows"), 
+                        where("followerId", "==", tweet.userId),
+                        where("followingId", "==", user?.uid || "")
+                    );
+                    
+                    // Check 2: Does Current User follow Author? (Follow Back)
+                    const q2 = query(
+                        collection(db, "follows"),
+                        where("followerId", "==", user?.uid || ""),
+                        where("followingId", "==", tweet.userId)
+                    );
+
+                    const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+                    const authorFollowsMe = !snap1.empty;
+                    const iFollowAuthor = !snap2.empty;
+                    
+                    setCanSee(authorFollowsMe || iFollowAuthor);
+                    setCanReply(authorFollowsMe);
+                    if (!authorFollowsMe) {
+                        setReplyError("You can't reply to this post. The author only allows people they follow to reply.");
+                    }
+                } else if (tweet.replySetting === 'mentions') {
+                    if (userData?.username) {
+                        const username = userData.username.toLowerCase();
+                        const content = tweet.content.toLowerCase();
+                        const mentionRegex = new RegExp(`@${username}\\b`);
+                        const isMentioned = mentionRegex.test(content);
+                        setCanReply(isMentioned);
+                        setCanSee(isMentioned); // For mentions, usually only mentioned can see/reply if restricted
+                        if (!isMentioned) {
+                            setReplyError("You can't reply to this post. Only people mentioned by the author can reply.");
+                        }
+                    } else {
+                        setCanReply(false);
+                        setCanSee(false);
+                    }
                 }
+            } catch (err) {
+                console.error("Permission check error:", err);
+                // On error, default to private if restrictive
+                setCanSee(false);
+            } finally {
+                setIsChecking(false);
             }
         };
-        checkReplyPermission();
+        checkPermissions();
     }, [tweet.replySetting, isOwner, user, userData?.username, tweet.userId, tweet.content]);
 
     useEffect(() => {
@@ -223,6 +272,12 @@ export default function Tweet({ tweet }: TweetProps) {
         }
     };
 
+    if (!isOwner && isRestrictive && isChecking) {
+        return null; // Don't show while checking
+    }
+
+    if (!canSee) return null;
+
     return (
         <article className="border-b border-gray-800 p-4 hover:bg-gray-900/50 transition cursor-pointer flex gap-4">
             {/* Avatar */}
@@ -320,8 +375,11 @@ export default function Tweet({ tweet }: TweetProps) {
                         className={cn("flex items-center gap-1 transition group", canReply ? 'hover:text-blue-500 cursor-pointer' : 'opacity-50 cursor-not-allowed')}
                         onClick={(e) => { 
                             e.stopPropagation(); 
-                            if (canReply) setIsCommentModalOpen(true); 
-                            else alert("You do not have permission to reply to this tweet based on the author's settings.");
+                            if (canReply) {
+                                setIsCommentModalOpen(true); 
+                            } else {
+                                alert(replyError || "You do not have permission to reply to this post.");
+                            }
                         }}
                         title={canReply ? "Reply" : "You can't reply to this tweet"}
                     >

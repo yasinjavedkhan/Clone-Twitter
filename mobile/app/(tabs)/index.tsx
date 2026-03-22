@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, FlatList, TouchableOpacity, RefreshControl, Image, ScrollView, Dimensions } from 'react-native';
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { db } from '../../src/lib/firebase';
+import { auth, db } from '../../src/lib/firebase';
+import { doc, getDoc, collection, query, orderBy, limit, onSnapshot, getDocs, where } from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, MessageCircle, Repeat2, Heart, Share, Plus, Image as ImageIcon } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -10,6 +10,21 @@ export default function HomeScreen() {
   const router = useRouter();
   const [tweets, setTweets] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setUserData(userDoc.data());
+        }
+      } else {
+        setUserData(null);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Mock Stories Data (Instagram Style)
   const stories = [
@@ -45,13 +60,23 @@ export default function HomeScreen() {
 
   const renderHeader = () => (
     <View style={styles.headerWrapper}>
-      <TouchableOpacity style={styles.quickInputContainer} onPress={() => router.push('/compose' as any)}>
-        <Image source={{ uri: 'https://picsum.photos/seed/you/200/200' }} style={styles.miniAvatar} />
-        <View style={styles.quickInput}>
+      <View style={styles.quickInputContainer}>
+        <TouchableOpacity onPress={() => router.push('/profile')}>
+          {userData?.profileImage ? (
+            <Image source={{ uri: userData.profileImage }} style={styles.miniAvatar} />
+          ) : (
+            <View style={[styles.miniAvatar, { backgroundColor: '#333', alignItems: 'center', justifyContent: 'center' }]}>
+              <User size={20} color="#71767b" />
+            </View>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.quickInput} onPress={() => router.push('/compose' as any)}>
           <Text style={styles.quickInputText}>What's on your mind?</Text>
-        </View>
-        <ImageIcon size={24} color="#1d9bf0" />
-      </TouchableOpacity>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/compose' as any)}>
+          <ImageIcon size={24} color="#1d9bf0" />
+        </TouchableOpacity>
+      </View>
       {renderStories()}
     </View>
   );
@@ -75,74 +100,169 @@ export default function HomeScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   };
 
-  const renderTweet = ({ item }: { item: any }) => (
-    <View style={styles.tweetContainer}>
-      {/* Header with User Info */}
-      <View style={styles.tweetHeader}>
-        <View style={styles.userInfo}>
-          <View style={styles.avatarPlaceholder}>
-             {item.authorAvatar ? (
-               <Image source={{ uri: item.authorAvatar }} style={styles.avatar} />
-             ) : (
-               <User size={24} color="#71767b" />
-             )}
+  const TweetItem = ({ item }: { item: any }) => {
+    const [canReply, setCanReply] = useState(true);
+    const [canSee, setCanSee] = useState(true);
+    const [isChecking, setIsChecking] = useState(false);
+    const [replyError, setReplyError] = useState<string | null>(null);
+    const currentUserId = auth.currentUser?.uid;
+
+    useEffect(() => {
+      const checkPermissions = async () => {
+        if (!item.replySetting || item.replySetting === 'everyone') {
+          setCanReply(true);
+          setCanSee(true);
+          return;
+        }
+
+        if (item.userId === currentUserId) {
+          setCanReply(true);
+          setCanSee(true);
+          return;
+        }
+        
+        setIsChecking(true);
+        try {
+          if (item.replySetting === 'following') {
+            // Check 1: Author follows Me
+            const q1 = query(
+              collection(db, "follows"), 
+              where("followerId", "==", item.userId),
+              where("followingId", "==", currentUserId || "")
+            );
+            
+            // Check 2: I follow Author (Follow Back)
+            const q2 = query(
+              collection(db, "follows"),
+              where("followerId", "==", currentUserId || ""),
+              where("followingId", "==", item.userId)
+            );
+
+            const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+            const authorFollowsMe = !snap1.empty;
+            const iFollowAuthor = !snap2.empty;
+            
+            setCanSee(authorFollowsMe || iFollowAuthor);
+            setCanReply(authorFollowsMe);
+            if (!authorFollowsMe) {
+              setReplyError("You can't reply to this post. The author only allows people they follow to reply.");
+            }
+          } else if (item.replySetting === 'mentions') {
+            if (userData?.username) {
+              const username = userData.username.toLowerCase();
+              const content = item.content.toLowerCase();
+              const mentionRegex = new RegExp(`@${username}\\b`);
+              const isMentioned = mentionRegex.test(content);
+              setCanReply(isMentioned);
+              setCanSee(isMentioned);
+              if (!isMentioned) {
+                setReplyError("You can't reply to this post. Only people mentioned by the author can reply.");
+              }
+            } else {
+              setCanReply(false);
+              setCanSee(false);
+            }
+          }
+        } catch (e) {
+          console.error("Error checking permissions:", e);
+          setCanSee(false);
+        } finally {
+          setIsChecking(false);
+        }
+      };
+      
+      checkPermissions();
+    }, [item.id, item.replySetting, item.userId, currentUserId, userData?.username]);
+
+    const isRestrictive = item.replySetting && item.replySetting !== 'everyone';
+    if (item.userId !== currentUserId && isRestrictive && isChecking) {
+      return null;
+    }
+
+    if (!canSee) return null;
+
+    return (
+      <View style={styles.tweetContainer}>
+        {/* Header with User Info */}
+        <View style={styles.tweetHeader}>
+          <TouchableOpacity 
+            style={styles.userInfo}
+            onPress={() => router.push({ pathname: '/profile', params: { id: item.userId } } as any)}
+          >
+            <View style={styles.avatarPlaceholder}>
+               {item.authorAvatar ? (
+                 <Image source={{ uri: item.authorAvatar }} style={styles.avatar} />
+               ) : (
+                 <User size={24} color="#71767b" />
+               )}
+            </View>
+            <View style={styles.nameContainer}>
+              <Text style={styles.displayName}>{item.authorName || "User"}</Text>
+              <Text style={styles.username}>@{item.authorUsername || "username"}</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Text style={styles.dot}>···</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Content Text */}
+        <View style={styles.contentPadding}>
+          <Text style={styles.tweetText}>{item.content}</Text>
+        </View>
+
+        {/* Media Content (Instagram Style) */}
+        {(item.imageUrl || item.image) && (
+          <View style={styles.mediaContainer}>
+            <Image 
+              source={{ uri: item.imageUrl || item.image }} 
+              style={styles.mainMedia} 
+              resizeMode="cover"
+            />
           </View>
-          <View style={styles.nameContainer}>
-            <Text style={styles.displayName}>{item.authorName || "User"}</Text>
-            <Text style={styles.username}>@{item.authorUsername || "username"}</Text>
+        )}
+
+        {/* Footer Actions */}
+        <View style={styles.footer}>
+          <View style={styles.leftActions}>
+            <TouchableOpacity style={styles.actionButton}>
+              <Heart size={22} color={item.isLiked ? "#f91880" : "#fff"} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, !canReply && { opacity: 0.3 }]}
+              onPress={() => {
+                if (canReply) {
+                  // Navigate to comments or open modal
+                  alert("Opening replies...");
+                } else {
+                  alert(replyError || "You cannot reply to this post.");
+                }
+              }}
+            >
+              <MessageCircle size={22} color={canReply ? "#fff" : "#444"} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton}>
+              <Repeat2 size={22} color="#fff" />
+            </TouchableOpacity>
           </View>
-        </View>
-        <TouchableOpacity>
-          <Text style={styles.dot}>···</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Content Text */}
-      <View style={styles.contentPadding}>
-        <Text style={styles.tweetText}>{item.content}</Text>
-      </View>
-
-      {/* Media Content (Instagram Style) */}
-      {(item.imageUrl || item.image) && (
-        <View style={styles.mediaContainer}>
-          <Image 
-            source={{ uri: item.imageUrl || item.image }} 
-            style={styles.mainMedia} 
-            resizeMode="cover"
-          />
-        </View>
-      )}
-
-      {/* Footer Actions */}
-      <View style={styles.footer}>
-        <View style={styles.leftActions}>
           <TouchableOpacity style={styles.actionButton}>
-            <Heart size={22} color={item.isLiked ? "#f91880" : "#fff"} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <MessageCircle size={22} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Repeat2 size={22} color="#fff" />
+            <Share size={22} color="#fff" />
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.actionButton}>
-          <Share size={22} color="#fff" />
-        </TouchableOpacity>
-      </View>
 
-      {/* Likes Count */}
-      <View style={styles.likesPadding}>
-        <Text style={styles.likesCountText}>{item.likesCount || 0} likes</Text>
+        {/* Likes Count */}
+        <View style={styles.likesPadding}>
+          <Text style={styles.likesCountText}>{item.likesCount || 0} likes</Text>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
         data={tweets}
-        renderItem={renderTweet}
+        renderItem={({ item }) => <TweetItem item={item} />}
         keyExtractor={item => item.id}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={renderHeader}
