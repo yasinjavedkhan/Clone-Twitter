@@ -9,7 +9,7 @@ export default function CallScreen() {
     const { id, type, room } = useLocalSearchParams();
     const user = auth.currentUser;
     const router = useRouter();
-    const roomName = room || `v1_TwitterClone_${id}`;
+    const roomName = room || `Call_${id}_${Date.now()}`;
     
     // Construct Jitsi URL with advanced config overrides for a truly direct experience
     const displayName = user?.displayName || user?.email?.split('@')[0] || "User";
