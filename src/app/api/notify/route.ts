@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
 
         const messaging = getMessaging(adminApp);
 
-        await messaging.send({
+        const response = await messaging.send({
             token: fcmToken,
             notification: { title, body },
             data: data || {},
@@ -77,7 +77,6 @@ export async function POST(req: NextRequest) {
                 priority: "high",
                 notification: {
                     sound: "default",
-                    clickAction: "FLUTTER_NOTIFICATION_CLICK",
                 },
             },
             webpush: {
@@ -85,20 +84,20 @@ export async function POST(req: NextRequest) {
                 notification: {
                     title,
                     body,
-                    icon: "/icon-192.png",
-                    badge: "/icon-192.png",
                     requireInteraction: true,
                     vibrate: [200, 100, 200],
-                },
-                fcmOptions: {
-                    link: data?.url || "/",
                 },
             },
         });
 
-        return NextResponse.json({ success: true });
+        console.log("Push notification sent successfully:", response);
+        return NextResponse.json({ success: true, messageId: response });
     } catch (error: any) {
-        console.error("Push notification error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error("CRITICAL: Push notification error:", error);
+        return NextResponse.json({ 
+            error: error.message,
+            code: error.code,
+            details: error.stack
+        }, { status: 500 });
     }
 }
