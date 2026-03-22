@@ -43,7 +43,7 @@ export async function requestNotificationPermission(userId: string): Promise<str
         const vapidKeyArray = VAPID_KEY ? urlBase64ToUint8Array(VAPID_KEY) : undefined;
 
         const token = await getToken(messaging, {
-            vapidKey: VAPID_KEY, // Firebase JS SDK usually takes the string, but we'll try standard string first with v22 label
+            vapidKey: vapidKeyArray as any, // Using the binary array for maximum compatibility
             serviceWorkerRegistration: registration,
         });
 
