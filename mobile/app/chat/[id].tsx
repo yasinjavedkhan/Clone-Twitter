@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../../src/lib/firebase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Send, ChevronLeft } from 'lucide-react-native';
@@ -24,10 +24,22 @@ export default function ChatDetailScreen() {
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const msgs = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
+            const msgs = snapshot.docs.map(document => ({
+                id: document.id,
+                ...document.data()
             }));
+
+            // Mark unread messages as read
+            if (user?.uid) {
+                msgs.forEach((msg: any) => {
+                    if (msg.senderId !== user.uid && !msg.read) {
+                        updateDoc(doc(db, `conversations/${id}/messages/${msg.id}`), {
+                            read: true
+                        }).catch(console.error);
+                    }
+                });
+            }
+
             setMessages(msgs);
         });
 
@@ -40,6 +52,7 @@ export default function ChatDetailScreen() {
         const msg = {
             text: newMessage,
             senderId: user.uid,
+            read: false,
             createdAt: serverTimestamp(),
         };
 
@@ -50,10 +63,17 @@ export default function ChatDetailScreen() {
     const renderMessage = ({ item }: { item: any }) => {
         const isMine = item.senderId === user?.uid;
         return (
-            <View style={[styles.messageBubble, isMine ? styles.myMessage : styles.theirMessage]}>
-                <Text style={[styles.messageText, isMine ? styles.myMessageText : styles.theirMessageText]}>
-                    {item.text}
-                </Text>
+            <View style={[{ alignItems: isMine ? 'flex-end' : 'flex-start', alignSelf: 'stretch', marginBottom: 10 }]}>
+                <View style={[styles.messageBubble, isMine ? styles.myMessage : styles.theirMessage, { marginBottom: 2 }]}>
+                    <Text style={[styles.messageText, isMine ? styles.myMessageText : styles.theirMessageText]}>
+                        {item.text}
+                    </Text>
+                </View>
+                {isMine && (
+                    <Text style={{ fontSize: 10, color: item.read ? '#1d9bf0' : '#71767b', marginRight: 5, fontWeight: 'bold' }}>
+                        {item.read ? '• Seen' : '• Sent'}
+                    </Text>
+                )}
             </View>
         );
     };
@@ -128,7 +148,6 @@ const styles = StyleSheet.create({
         maxWidth: '80%',
         padding: 12,
         borderRadius: 20,
-        marginBottom: 10,
     },
     myMessage: {
         alignSelf: 'flex-end',
