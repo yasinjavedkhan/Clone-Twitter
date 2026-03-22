@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Sidebar from "@/components/layout/Sidebar";
@@ -7,7 +7,7 @@ import RightSidebar from "@/components/layout/RightSidebar";
 import MobileNav from "@/components/layout/MobileNav";
 import MainLayout from "@/components/layout/MainLayout";
 
-const inter = Inter({ subsets: ["latin"] });
+const outfit = Outfit({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Twitter Clone",
@@ -27,7 +27,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className={`${inter.className} bg-black text-white min-h-screen pb-14 sm:pb-0`}>
+      <body className={`${outfit.className} bg-black text-white min-h-screen pb-14 sm:pb-0`}>
         <AuthProvider>
           <MainLayout>
             {children}

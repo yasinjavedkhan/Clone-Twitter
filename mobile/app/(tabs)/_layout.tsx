@@ -50,22 +50,23 @@ export default function TabLayout() {
 
   return (
     <Tabs screenOptions={{
-      tabBarActiveTintColor: '#ffffff',
-      tabBarInactiveTintColor: '#71767b',
+      tabBarActiveTintColor: '#06b6d4',
+      tabBarInactiveTintColor: '#94a3b8',
       tabBarStyle: {
-        backgroundColor: '#000000',
-        borderTopWidth: 0.5,
-        borderTopColor: '#2f3336',
+        backgroundColor: '#020617',
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255, 255, 255, 0.05)',
         height: 60,
         paddingBottom: 10,
         paddingTop: 5,
       },
       headerStyle: {
-        backgroundColor: '#000000',
+        backgroundColor: '#020617',
       },
       headerTitleStyle: {
-        color: '#ffffff',
+        color: '#f8fafc',
         fontWeight: 'bold',
+        fontSize: 18,
       },
       headerShadowVisible: false,
     }}>

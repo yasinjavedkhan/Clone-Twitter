@@ -298,11 +298,13 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#020617',
   },
   tweetContainer: {
-    marginBottom: 20,
-    backgroundColor: '#000',
+    marginBottom: 8,
+    backgroundColor: '#020617',
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   tweetHeader: {
     flexDirection: 'row',
@@ -318,7 +320,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   displayName: {
-    color: '#fff',
+    color: '#f8fafc',
     fontWeight: 'bold',
     fontSize: 15,
   },
@@ -375,7 +377,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   likesCountText: {
-    color: '#fff',
+    color: '#f8fafc',
     fontWeight: 'bold',
     fontSize: 14,
   },
@@ -385,7 +387,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   headerWrapper: {
-    backgroundColor: '#000',
+    backgroundColor: '#020617',
   },
   quickInputContainer: {
     flexDirection: 'row',
@@ -405,7 +407,8 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
@@ -416,8 +419,8 @@ const styles = StyleSheet.create({
   storiesContainer: {
     paddingVertical: 12,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#2f3336',
-    backgroundColor: '#000',
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#020617',
   },
   storyItem: {
     alignItems: 'center',
@@ -430,7 +433,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     padding: 2,
     borderWidth: 2,
-    borderColor: '#e91e63', // Instagram-like pink/orange ring
+    borderColor: '#06b6d4', // Cyan ring
     marginBottom: 6,
     position: 'relative',
   },
@@ -456,12 +459,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#1d9bf0',
+    backgroundColor: '#06b6d4',
     width: 18,
     height: 18,
     borderRadius: 9,
     borderWidth: 2,
-    borderColor: '#000',
+    borderColor: '#020617',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -472,13 +475,13 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#1d9bf0',
+    backgroundColor: '#06b6d4',
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 8,
-    shadowColor: '#1d9bf0',
+    shadowColor: '#06b6d4',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
   },
 });
