@@ -33,7 +33,7 @@ export default function IncomingCallOverlay() {
     const handleAccept = (callData = incomingCall) => {
         setIncomingCall(null);
         // Using string template for the path as it's more reliable in some expo-router versions
-        router.push(`/call/${callData.conversationId}?type=${callData.callType}` as any);
+        router.push(`/call/${callData.conversationId}?type=${callData.callType}&room=${callData.roomName}` as any);
     };
 
     const handleDecline = () => {

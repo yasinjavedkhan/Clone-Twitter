@@ -16,13 +16,16 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const scrollRef = useRef<HTMLDivElement>(null);
     const [callType, setCallType] = useState<'voice' | 'video'>('voice');
     const [isCalling, setIsCalling] = useState(false);
+    const [roomName, setRoomName] = useState("");
 
     useEffect(() => {
         // Check for call in query params
         const params = new URLSearchParams(window.location.search);
         if (params.get('call') === 'true') {
             const type = params.get('type') as any;
+            const rName = params.get('room');
             if (type) setCallType(type);
+            if (rName) setRoomName(rName);
             setIsCalling(true);
         }
     }, [conversationId]);
@@ -172,7 +175,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                     <button 
                         onClick={async () => { 
+                            const generatedRoom = `TwitterClone_${Math.random().toString(36).substring(2, 15)}_${Math.random().toString(36).substring(2, 15)}`;
                             setCallType('voice'); 
+                            setRoomName(generatedRoom);
                             setIsCalling(true);
                             // Signal
                             if (otherUser?.userId) {
@@ -184,7 +189,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                         type: 'call',
                                         callType: 'voice',
                                         conversationId,
-                                        roomName: `v1_TwitterClone_${conversationId}`,
+                                        roomName: generatedRoom,
                                         fromUserName: user?.displayName || user?.email?.split('@')[0] || 'Someone',
                                         fromUserAvatar: (user as any)?.profileImage || ''
                                     }
@@ -198,7 +203,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     </button>
                     <button 
                         onClick={async () => { 
+                            const generatedRoom = `TwitterClone_${Math.random().toString(36).substring(2, 15)}_${Math.random().toString(36).substring(2, 15)}`;
                             setCallType('video'); 
+                            setRoomName(generatedRoom);
                             setIsCalling(true);
                             // Signal
                             if (otherUser?.userId) {
@@ -210,7 +217,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                         type: 'call',
                                         callType: 'video',
                                         conversationId,
-                                        roomName: `v1_TwitterClone_${conversationId}`,
+                                        roomName: generatedRoom,
                                         fromUserName: user?.displayName || user?.email?.split('@')[0] || 'Someone',
                                         fromUserAvatar: (user as any)?.profileImage || ''
                                     }
@@ -238,7 +245,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         </button>
                     </div>
                     <iframe 
-                        src={`https://meet.jit.si/v1_TwitterClone_${conversationId}#config.prejoinPageEnabled=false&config.prejoinConfig.enabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=${callType === 'voice' ? 'true' : 'false'}&userInfo.displayName="${encodeURIComponent(user?.displayName || "User")}"&config.disableDeepLinking=true&config.disableInviteFunctions=true&config.enableInsecureRoomNameWarning=false&config.enableWelcomePage=false&interfaceConfig.SHOW_JITSI_WATERMARK=false&interfaceConfig.SHOW_WATERMARK_FOR_GUESTS=false`}
+                        src={`https://meet.jit.si/${roomName}#config.prejoinPageEnabled=false&config.prejoinConfig.enabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=${callType === 'voice' ? 'true' : 'false'}&userInfo.displayName="${encodeURIComponent(user?.displayName || "User")}"&config.disableDeepLinking=true&config.disableInviteFunctions=true&config.enableInsecureRoomNameWarning=false&config.enableWelcomePage=false&interfaceConfig.SHOW_JITSI_WATERMARK=false&interfaceConfig.SHOW_WATERMARK_FOR_GUESTS=false`}
                         allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
                         className="flex-grow w-full h-full border-none"
                     />

@@ -28,12 +28,12 @@ export default function IncomingCallOverlay() {
 
     if (!incomingCall) return null;
 
-    const { callType, conversationId, fromUserName, fromUserAvatar } = incomingCall;
+    const { callType, conversationId, fromUserName, fromUserAvatar, roomName } = incomingCall;
 
     const handleAccept = () => {
         setIncomingCall(null);
         // Navigate to the chat where the call will be active
-        router.push(`/messages/${conversationId}?call=true&type=${callType}`);
+        router.push(`/messages/${conversationId}?call=true&type=${callType}&room=${roomName}`);
     };
 
     const handleDecline = () => {
