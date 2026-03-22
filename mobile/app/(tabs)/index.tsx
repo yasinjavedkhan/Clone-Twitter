@@ -83,6 +83,8 @@ export default function HomeScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   };
 
+  const [touchStartX, setTouchStartX] = useState(0);
+
   const handleTabPress = (tab: 'foryou' | 'following') => {
     setActiveTab(tab);
   };
@@ -309,7 +311,16 @@ export default function HomeScreen() {
       </View>
 
       {/* Swipeable Feed Area */}
-      <View style={styles.horizontalPager} {...panResponder.panHandlers}>
+      <View 
+        style={styles.horizontalPager} 
+        {...panResponder.panHandlers}
+        onTouchStart={(e) => setTouchStartX(e.nativeEvent.pageX)}
+        onTouchEnd={(e) => {
+          const dx = e.nativeEvent.pageX - touchStartX;
+          if (dx > 50) setActiveTab('following');
+          else if (dx < -50) setActiveTab('foryou');
+        }}
+      >
         {activeTab === 'foryou' ? (
           <FlatList
             data={allTweets}
