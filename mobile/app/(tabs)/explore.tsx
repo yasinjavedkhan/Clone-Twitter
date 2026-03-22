@@ -74,7 +74,7 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f071a',
+    backgroundColor: '#020617',
   },
   header: {
     padding: 12,
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#ffffff',
+    borderBottomColor: '#06b6d4',
   },
   tabText: {
     color: '#94a3b8',

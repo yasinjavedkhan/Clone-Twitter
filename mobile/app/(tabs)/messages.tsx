@@ -77,7 +77,7 @@ export default function MessagesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f071a',
+    backgroundColor: '#020617',
   },
   searchContainer: {
     padding: 15,

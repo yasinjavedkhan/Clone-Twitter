@@ -134,7 +134,7 @@ export default function ComposeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f071a',
+    backgroundColor: '#020617',
   },
   header: {
     flexDirection: 'row',
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   postButton: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#06b6d4',
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   postButtonText: {
-    color: '#0f071a',
+    color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
   },

@@ -289,7 +289,7 @@ export default function HomeScreen() {
         activeOpacity={0.8}
         onPress={() => router.push('/compose' as any)}
       >
-        <Plus size={30} color="#0f071a" strokeWidth={3} />
+        <Plus size={30} color="#fff" strokeWidth={3} />
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -298,11 +298,11 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f071a',
+    backgroundColor: '#020617',
   },
   tweetContainer: {
     marginBottom: 8,
-    backgroundColor: '#0f071a',
+    backgroundColor: '#020617',
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   headerWrapper: {
-    backgroundColor: '#0f071a',
+    backgroundColor: '#020617',
   },
   quickInputContainer: {
     flexDirection: 'row',
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(255, 255, 255, 0.05)',
-    backgroundColor: '#0f071a',
+    backgroundColor: '#020617',
   },
   storyItem: {
     alignItems: 'center',
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     padding: 2,
     borderWidth: 2,
-    borderColor: '#ffffff', // White ring
+    borderColor: '#06b6d4', // Cyan ring
     marginBottom: 6,
     position: 'relative',
   },
@@ -459,12 +459,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#06b6d4',
     width: 18,
     height: 18,
     borderRadius: 9,
     borderWidth: 2,
-    borderColor: '#0f071a',
+    borderColor: '#020617',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -475,11 +475,11 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#06b6d4',
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 8,
-    shadowColor: '#ffffff',
+    shadowColor: '#06b6d4',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 10,

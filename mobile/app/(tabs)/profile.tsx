@@ -105,7 +105,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f071a',
+    backgroundColor: '#020617',
   },
   header: {
     padding: 16,
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   linkText: {
-    color: '#ffffff',
+    color: '#06b6d4',
     fontSize: 14,
     marginLeft: 4,
   },
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   },
   activeTabBorder: {
     borderBottomWidth: 2,
-    borderBottomColor: '#ffffff',
+    borderBottomColor: '#06b6d4',
   },
   gridContainer: {
     paddingTop: 2,
