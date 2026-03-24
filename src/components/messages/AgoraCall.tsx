@@ -5,7 +5,7 @@ import AgoraRTC, { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack } f
 import { Mic, MicOff, Video, VideoOff, PhoneOff } from "lucide-react";
 
 export default function AgoraCall({ roomName, callType, onEndCall }: { roomName: string, callType: 'voice' | 'video', onEndCall: () => void }) {
-    const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID || "YOUR_AGORA_APP_ID"; // Replace with user's App ID
+    const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID || "56b46b437307402bb2a172013bab91d2";
     const [client, setClient] = useState<IAgoraRTCClient | null>(null);
     const [localTracks, setLocalTracks] = useState<(ICameraVideoTrack | IMicrophoneAudioTrack)[]>([]);
     const [remoteUsers, setRemoteUsers] = useState<any[]>([]);
