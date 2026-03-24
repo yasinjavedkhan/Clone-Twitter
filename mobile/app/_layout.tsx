@@ -33,8 +33,11 @@ export default function RootLayout() {
         finalStatus = status;
       }
       if (finalStatus !== 'granted') return;
-
-      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      
+      // Use getDevicePushTokenAsync to get the native FCM token for Firebase Admin/Messaging
+      const token = (await Notifications.getDevicePushTokenAsync()).data;
+      console.log("Mobile FCM Token acquired:", token.substring(0, 10) + "...");
+      
       if (auth.currentUser) {
         await updateDoc(doc(db, "users", auth.currentUser.uid), {
           fcmToken: token,
