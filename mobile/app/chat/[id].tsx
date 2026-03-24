@@ -9,8 +9,8 @@ import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 
 // Configuration for API requests
-const IS_PROD = false; // Set to false for local testing
-const BASE_URL = IS_PROD ? "https://clone-twitter-fmya.vercel.app" : "http://192.168.1.109:3000";
+const IS_PROD = true; // Set to false for local testing
+const BASE_URL = IS_PROD ? "https://clone-twitter-fmya.vercel.app" : "http://10.0.2.2:3000";
 
 export default function ChatDetailScreen() {
     const { id } = useLocalSearchParams();

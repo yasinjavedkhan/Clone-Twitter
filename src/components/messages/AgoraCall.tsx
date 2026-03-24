@@ -93,11 +93,11 @@ export default function AgoraCall({ roomName, callType, onEndCall }: { roomName:
         <div className="flex-grow flex flex-col bg-gray-950 relative overflow-hidden">
             {/* Remote Video (Full Screen) */}
             <div className="absolute inset-0 bg-black">
-                {(!APP_ID || APP_ID.length < 10) ? (
+                {(!APP_ID || APP_ID === "YOUR_AGORA_APP_ID") ? (
                     <div className="w-full h-full flex items-center justify-center text-red-500 p-6 text-center">
                         <div>
-                            <p className="text-xl font-bold mb-2">Agora ID Error</p>
-                            <p className="text-sm text-gray-400">The Agora ID seems to be missing or invalid ({APP_ID.substring(0, 5)}...)</p>
+                            <p className="text-xl font-bold mb-2">Agora App ID Missing</p>
+                            <p className="text-sm text-gray-400"> Please add NEXT_PUBLIC_AGORA_APP_ID to your Vercel environment variables.</p>
                         </div>
                     </div>
                 ) : remoteUsers.length > 0 ? (
