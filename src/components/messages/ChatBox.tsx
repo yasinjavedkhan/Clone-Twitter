@@ -21,13 +21,15 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
     useEffect(() => {
         // Check for call in query params
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('call') === 'true') {
-            const type = params.get('type') as any;
-            const rName = params.get('room');
-            if (type) setCallType(type);
-            if (rName) setRoomName(rName);
-            setIsCalling(true);
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('call') === 'true') {
+                const type = params.get('type') as any;
+                const rName = params.get('room');
+                if (type) setCallType(type);
+                if (rName) setRoomName(rName);
+                setIsCalling(true);
+            }
         }
     }, [conversationId]);
 

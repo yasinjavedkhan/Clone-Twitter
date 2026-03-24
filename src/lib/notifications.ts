@@ -7,13 +7,21 @@ import { db } from "@/lib/firebase";
 const VAPID_KEY = (process.env.NEXT_PUBLIC_FCM_VAPID_KEY || "BJ-iGROgllfJWNW-T5chkp1hGw3rhHMAyehMQ5Yb6qFCbbfIgRvrlvR3jdE3zyG4tNNQMXczzY1i3I4ZqyhVrrJQ").replace(/['"]/g, '').trim();
 
 function urlBase64ToUint8Array(base64String: string) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-        .replace(/\-/g, '+')
-        .replace(/_/g, '/');
+    if (!base64String) throw new Error("Base64 string is empty");
+    
+    // Clean the string: remove whitespace, quotes, and handle URL-safe characters
+    let cleanedString = base64String.replace(/\s/g, '').replace(/['"]/g, '');
+    cleanedString = cleanedString.replace(/-/g, '+').replace(/_/g, '/');
+    
+    // Handle padding
+    const pad = cleanedString.length % 4;
+    if (pad > 0) {
+        cleanedString += '='.repeat(4 - pad);
+    }
 
     try {
-        const rawData = window.atob(base64);
+        console.log("FCM Debug: Decoding Base64 (Length: " + cleanedString.length + ")");
+        const rawData = window.atob(cleanedString);
         const outputArray = new Uint8Array(rawData.length);
 
         for (let i = 0; i < rawData.length; ++i) {
@@ -22,7 +30,7 @@ function urlBase64ToUint8Array(base64String: string) {
         return outputArray;
     } catch (e) {
         console.error("VAPID Key Decoding Error:", e);
-        console.error("Malformed Base64 string:", base64);
+        console.error("String attempted to decode:", cleanedString);
         throw e;
     }
 }

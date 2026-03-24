@@ -11,6 +11,7 @@ export default function AgoraCall({ roomName, callType, onEndCall }: { roomName:
     const [remoteUsers, setRemoteUsers] = useState<any[]>([]);
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(callType === 'voice');
+    const [initError, setInitError] = useState<string | null>(null);
     const localVideoRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -57,8 +58,13 @@ export default function AgoraCall({ roomName, callType, onEndCall }: { roomName:
                     setLocalTracks([audio]);
                     await agoraClient.publish([audio]);
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Agora init error:", error);
+                if (error.name === 'NotAllowedError' || error.message?.includes('PERMISSION_DENIED')) {
+                    setInitError("Camera/Microphone access was denied. Please check your browser permissions.");
+                } else {
+                    setInitError("Failed to initialize call: " + (error.message || "Unknown error"));
+                }
             }
         };
 
@@ -98,6 +104,19 @@ export default function AgoraCall({ roomName, callType, onEndCall }: { roomName:
                         <div>
                             <p className="text-xl font-bold mb-2">Agora App ID Missing</p>
                             <p className="text-sm text-gray-400"> Please add NEXT_PUBLIC_AGORA_APP_ID to your Vercel environment variables.</p>
+                        </div>
+                    </div>
+                ) : initError ? (
+                    <div className="w-full h-full flex items-center justify-center text-red-500 p-6 text-center">
+                        <div>
+                            <p className="text-xl font-bold mb-2">Access Denied</p>
+                            <p className="text-sm text-gray-400 mb-4">{initError}</p>
+                            <button 
+                                onClick={() => window.location.reload()}
+                                className="bg-twitter-blue text-white px-4 py-2 rounded-full font-bold text-xs"
+                            >
+                                Reload Page
+                            </button>
                         </div>
                     </div>
                 ) : remoteUsers.length > 0 ? (

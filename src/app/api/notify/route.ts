@@ -23,16 +23,22 @@ function getAdminApp() {
     console.log("Firebase Admin: Initializing for project", projectId);
     console.log("Firebase Admin: Client Email", clientEmail);
 
-    let formattedKey = privateKey;
+    let formattedKey = privateKey.trim();
+    
+    // Remove wrapping quotes if present
     if (formattedKey.startsWith('"') && formattedKey.endsWith('"')) {
         formattedKey = formattedKey.slice(1, -1);
+    } else if (formattedKey.startsWith("'") && formattedKey.endsWith("'")) {
+        formattedKey = formattedKey.slice(1, -1);
     }
-    // Handle both single and escaped backslashes for newlines
+    
+    // Aggressively handle literal \n and actual newlines
     formattedKey = formattedKey.replace(/\\n/g, '\n');
     
     // Ensure the key has proper BEGIN/END markers if they got stripped
     if (!formattedKey.includes("-----BEGIN PRIVATE KEY-----")) {
-        console.warn("Firebase Admin: Private key missing BEGIN marker, adding it.");
+        console.warn("Firebase Admin: Private key missing BEGIN marker, fixing format.");
+        // If it's just the raw base64, wrap it
         formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`;
     }
 
