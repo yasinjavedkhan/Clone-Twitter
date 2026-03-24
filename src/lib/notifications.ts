@@ -9,18 +9,23 @@ const VAPID_KEY = (process.env.NEXT_PUBLIC_FCM_VAPID_KEY || "BJ-iGROgllfJWNW-T5c
 function urlBase64ToUint8Array(base64String: string) {
     if (!base64String) throw new Error("Base64 string is empty");
     
-    // Clean the string: remove whitespace, quotes, and handle URL-safe characters
+    // 1. Surgical cleaning: replace URL-safe chars and REMOVE anything not in Base64 alphabet
     let cleanedString = base64String.replace(/\s/g, '').replace(/['"]/g, '');
     cleanedString = cleanedString.replace(/-/g, '+').replace(/_/g, '/');
     
-    // Handle padding
+    // Keep only valid Base64 characters: A-Z, a-z, 0-9, +, /, =
+    cleanedString = cleanedString.replace(/[^A-Za-z0-9\+\/=]/g, '');
+    
+    // 2. Handle padding correctly
+    // Remove existing padding first to re-calculate correctly
+    cleanedString = cleanedString.replace(/=/g, '');
     const pad = cleanedString.length % 4;
     if (pad > 0) {
         cleanedString += '='.repeat(4 - pad);
     }
 
     try {
-        console.log("FCM Debug: Decoding Base64 (Length: " + cleanedString.length + ")");
+        console.log("FCM Debug: Surgical Decoding (Length: " + cleanedString.length + ")");
         const rawData = window.atob(cleanedString);
         const outputArray = new Uint8Array(rawData.length);
 
@@ -30,7 +35,7 @@ function urlBase64ToUint8Array(base64String: string) {
         return outputArray;
     } catch (e) {
         console.error("VAPID Key Decoding Error:", e);
-        console.error("String attempted to decode:", cleanedString);
+        console.error("Cleaned string that failed:", cleanedString);
         throw e;
     }
 }
@@ -55,14 +60,20 @@ export async function requestNotificationPermission(userId: string): Promise<str
         }
 
         const messaging = getMessaging(app);
-
-        // Register service worker if not already handled
         const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
         
-        const vapidKeyArray = VAPID_KEY ? urlBase64ToUint8Array(VAPID_KEY) : undefined;
+        let vapidKeyArray: Uint8Array | undefined;
+        try {
+            vapidKeyArray = VAPID_KEY ? urlBase64ToUint8Array(VAPID_KEY) : undefined;
+        } catch (decodeError) {
+            console.warn("FCM Warning: Falling back to safe VAPID key due to decoding error.");
+            // Safe fallback key
+            const FALLBACK_VAPID = "BJ-iGROgllfJWNW-T5chkp1hGw3rhHMAyehMQ5Yb6qFCbbfIgRvrlvR3jdE3zyG4tNNQMXczzY1i3I4ZqyhVrrJQ";
+            vapidKeyArray = urlBase64ToUint8Array(FALLBACK_VAPID);
+        }
 
         const token = await getToken(messaging, {
-            vapidKey: vapidKeyArray as any, // Using the binary array for maximum compatibility
+            vapidKey: vapidKeyArray as any,
             serviceWorkerRegistration: registration,
         });
 

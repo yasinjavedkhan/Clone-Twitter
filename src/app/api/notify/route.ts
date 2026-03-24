@@ -111,9 +111,10 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("CRITICAL: Push notification error:", error);
         return NextResponse.json({ 
-            error: error.message,
-            code: error.code,
-            details: error.stack
+            error: error.message || "Unknown error",
+            code: error.code || "UNKNOWN",
+            details: error.stack || "No stack trace",
+            hint: "Check Firebase Admin environment variables in Vercel dashboard."
         }, { status: 500 });
     }
 }
