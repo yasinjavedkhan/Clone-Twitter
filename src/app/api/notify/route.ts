@@ -12,13 +12,16 @@ function getAdminApp() {
     const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
 
     if (!projectId || !clientEmail || !privateKey) {
-        console.error("Missing Firebase Admin environment variables:", { 
-            projectId: !!projectId, 
-            clientEmail: !!clientEmail, 
-            privateKey: !!privateKey 
-        });
-        throw new Error("Missing Firebase Admin credentials");
+        const missing = [];
+        if (!projectId) missing.push("PROJECT_ID");
+        if (!clientEmail) missing.push("CLIENT_EMAIL");
+        if (!privateKey) missing.push("PRIVATE_KEY");
+        console.error("Missing Firebase Admin environment variables:", missing.join(", "));
+        throw new Error(`Missing Firebase Admin credentials: ${missing.join(", ")}`);
     }
+
+    console.log("Firebase Admin: Initializing for project", projectId);
+    console.log("Firebase Admin: Client Email", clientEmail);
 
     let formattedKey = privateKey;
     if (formattedKey.startsWith('"') && formattedKey.endsWith('"')) {
@@ -29,18 +32,24 @@ function getAdminApp() {
     
     // Ensure the key has proper BEGIN/END markers if they got stripped
     if (!formattedKey.includes("-----BEGIN PRIVATE KEY-----")) {
+        console.warn("Firebase Admin: Private key missing BEGIN marker, adding it.");
         formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`;
     }
 
     // Use Application Default Credentials or service account
-    return initializeApp({
-        credential: cert({
+    try {
+        return initializeApp({
+            credential: cert({
+                projectId,
+                clientEmail,
+                privateKey: formattedKey,
+            }),
             projectId,
-            clientEmail,
-            privateKey: formattedKey,
-        }),
-        projectId,
-    });
+        });
+    } catch (e) {
+        console.error("Firebase Admin: Initialization Error", e);
+        throw e;
+    }
 }
 
 export async function POST(req: NextRequest) {

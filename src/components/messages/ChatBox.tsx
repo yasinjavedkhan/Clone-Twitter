@@ -105,6 +105,34 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         fetchOtherUser();
     }, [conversationId, user]);
 
+    const recordCallEvent = async (type: 'voice' | 'video') => {
+        if (!user || !conversationId) return;
+        const text = type === 'voice' ? "📞 Started a voice call" : "📹 Started a video call";
+        try {
+            await addDoc(collection(db, "conversations", conversationId, "messages"), {
+                senderId: user.uid,
+                text,
+                type: 'call',
+                read: false,
+                createdAt: serverTimestamp(),
+            });
+
+            const convDoc = await getDoc(doc(db, "conversations", conversationId));
+            const participants = convDoc.data()?.participants || [];
+            const otherId = participants.find((p: string) => p !== user.uid);
+
+            if (otherId) {
+                await updateDoc(doc(db, "conversations", conversationId), {
+                    lastMessage: text,
+                    lastTimestamp: serverTimestamp(),
+                    [`unreadCount.${otherId}`]: increment(1)
+                });
+            }
+        } catch (error) {
+            console.error("Error recording call event:", error);
+        }
+    };
+
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim() || !user) return;
@@ -180,7 +208,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             setCallType('voice'); 
                             setRoomName(generatedRoom);
                             setIsCalling(true);
-                            // Signal
+                            // 1. Record in chat history
+                            await recordCallEvent('voice');
+                            // 2. Signal
                             if (otherUser?.userId) {
                                 await sendPushNotification({
                                     toUserId: otherUser.userId,
@@ -208,7 +238,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             setCallType('video'); 
                             setRoomName(generatedRoom);
                             setIsCalling(true);
-                            // Signal
+                            // 1. Record in chat history
+                            await recordCallEvent('video');
+                            // 2. Signal
                             if (otherUser?.userId) {
                                 await sendPushNotification({
                                     toUserId: otherUser.userId,

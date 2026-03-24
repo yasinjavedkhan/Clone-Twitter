@@ -8,6 +8,10 @@ import { Send, ChevronLeft, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2 } 
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 
+// Configuration for API requests
+const IS_PROD = true; // Set to false for local testing
+const BASE_URL = IS_PROD ? "https://clone-twitter-fmya.vercel.app" : "http://10.0.2.2:3000";
+
 export default function ChatDetailScreen() {
     const { id } = useLocalSearchParams();
     const [messages, setMessages] = useState<any[]>([]);
@@ -70,6 +74,34 @@ export default function ChatDetailScreen() {
         return () => unsubscribe();
     }, [id]);
 
+    const recordCallEvent = async (type: 'voice' | 'video') => {
+        if (!user || !id) return;
+        const text = type === 'voice' ? "📞 Started a voice call" : "📹 Started a video call";
+        try {
+            await addDoc(collection(db, `conversations/${id}/messages`), {
+                senderId: user.uid,
+                text,
+                type: 'call',
+                read: false,
+                createdAt: serverTimestamp(),
+            });
+
+            // Update unread count for the other user
+            const convDoc = await getDoc(doc(db, "conversations", id as string));
+            const participants = convDoc.data()?.participants || [];
+            const otherId = participants.find((p: string) => p !== user.uid);
+            if (otherId) {
+                await updateDoc(doc(db, "conversations", id as string), {
+                    lastMessage: text,
+                    lastTimestamp: serverTimestamp(),
+                    [`unreadCount.${otherId}`]: increment(1)
+                });
+            }
+        } catch (error) {
+            console.error("Error recording call event:", error);
+        }
+    };
+
     const sendMessage = async () => {
         if (!newMessage.trim() || !user || !id) return;
 
@@ -131,8 +163,11 @@ export default function ChatDetailScreen() {
                         const otherId = otherUserData?.userId || otherUserData?.id;
                         if (!otherId) return alert("User data not loaded yet.");
                         
-                        // Signal via backend API
-                        fetch("http://10.0.2.2:3000/api/notify", { // Replace with production URL when deployed
+                        // 1. Record in chat history
+                        await recordCallEvent('voice');
+
+                        // 2. Signal via backend API
+                        fetch(`${BASE_URL}/api/notify`, { 
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -156,8 +191,11 @@ export default function ChatDetailScreen() {
                         const otherId = otherUserData?.userId || otherUserData?.id;
                         if (!otherId) return alert("User data not loaded yet.");
 
-                        // Signal via backend API
-                        fetch("http://10.0.2.2:3000/api/notify", { // Replace with production URL when deployed
+                        // 1. Record in chat history
+                        await recordCallEvent('video');
+
+                        // 2. Signal via backend API
+                        fetch(`${BASE_URL}/api/notify`, { 
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({

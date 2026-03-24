@@ -12,13 +12,19 @@ function urlBase64ToUint8Array(base64String: string) {
         .replace(/\-/g, '+')
         .replace(/_/g, '/');
 
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
+    try {
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
 
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    } catch (e) {
+        console.error("VAPID Key Decoding Error:", e);
+        console.error("Malformed Base64 string:", base64);
+        throw e;
     }
-    return outputArray;
 }
 
 export async function requestNotificationPermission(userId: string): Promise<string | null> {
@@ -28,6 +34,11 @@ export async function requestNotificationPermission(userId: string): Promise<str
         }
 
         console.log("Twitter Calling System - v22 (Initializing FCM)");
+        if (!VAPID_KEY) {
+            console.error("FCM Error: VAPID_KEY is missing or undefined in environment variables.");
+        } else {
+            console.log("FCM Info: VAPID_KEY detected (Length: " + VAPID_KEY.length + ")");
+        }
 
         const permission = await Notification.requestPermission();
         if (permission !== "granted") {
