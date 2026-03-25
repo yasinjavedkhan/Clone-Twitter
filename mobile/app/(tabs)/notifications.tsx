@@ -1,4 +1,6 @@
-import { Heart, User, Repeat2, MessageCircle, FileText, Info, Shield, CheckCircle2 } from 'lucide-react-native';
+import { StyleSheet, Text, View, FlatList, Image, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Heart, User, Repeat2, MessageCircle, FileText, Info, Shield, CheckCircle2, Bell } from 'lucide-react-native';
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { auth, db } from '../../src/lib/firebase';

@@ -45,7 +45,9 @@ self.addEventListener('notificationclick', function(event) {
   if (data?.type === 'message') {
     url = `/messages/${data.conversationId}`;
   } else if (data?.type === 'follow') {
-    url = `/profile/${data.fromUserId}`;
+    url = `/profile/${data.followerId || data.fromUserId}`;
+  } else if (data?.type === 'post') {
+    url = `/`; // Or a specific tweet page if available, e.g., `/tweet/${data.tweetId}`
   } else if (data?.type === 'like' || data?.type === 'retweet' || data?.type === 'comment') {
     url = `/`;
   }

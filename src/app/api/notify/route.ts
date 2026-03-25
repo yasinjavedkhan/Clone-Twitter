@@ -93,6 +93,7 @@ export async function POST(req: NextRequest) {
                 priority: "high",
                 notification: {
                     sound: "default",
+                    channelId: "default",
                 },
             },
             webpush: {

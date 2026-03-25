@@ -11,6 +11,16 @@ import * as SplashScreen from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync();
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -33,6 +43,15 @@ export default function RootLayout() {
         finalStatus = status;
       }
       if (finalStatus !== 'granted') return;
+      
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#06b6d4',
+        });
+      }
       
       // Use getDevicePushTokenAsync to get the native FCM token for Firebase Admin/Messaging
       const token = (await Notifications.getDevicePushTokenAsync()).data;
