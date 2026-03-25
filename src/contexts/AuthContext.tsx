@@ -139,7 +139,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(true);
         try {
             await firebaseSignOut(auth);
-            window.location.href = "/";
+            if (typeof window !== 'undefined') {
+                window.location.href = "/";
+            }
         } catch (error) {
             console.error("Error signing out:", error);
         } finally {

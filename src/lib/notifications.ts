@@ -26,7 +26,7 @@ function urlBase64ToUint8Array(base64String: string) {
 
     try {
         console.log("FCM Debug: Surgical Decoding (Length: " + cleanedString.length + ")");
-        const rawData = window.atob(cleanedString);
+        const rawData = typeof window !== 'undefined' ? window.atob(cleanedString) : Buffer.from(cleanedString, 'base64').toString('binary');
         const outputArray = new Uint8Array(rawData.length);
 
         for (let i = 0; i < rawData.length; ++i) {

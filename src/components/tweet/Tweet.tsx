@@ -273,7 +273,8 @@ export default function Tweet({ tweet }: TweetProps) {
     };
 
     const handleShare = async () => {
-        const shareUrl = `${window.location.origin}/profile/${tweet.userId}`; // Or a specific tweet page if available
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        const shareUrl = `${origin}/profile/${tweet.userId}`; // Or a specific tweet page if available
         if (navigator.share) {
             try {
                 await navigator.share({
