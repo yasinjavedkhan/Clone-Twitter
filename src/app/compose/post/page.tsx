@@ -27,7 +27,7 @@ export default function ComposePage() {
     const [pollOptions, setPollOptions] = useState(["", ""]);
     const [showSchedule, setShowSchedule] = useState(false);
     const [scheduledDate, setScheduledDate] = useState("");
-    const [location, setLocation] = useState<string | null>(null);
+    const [postLocation, setPostLocation] = useState<string | null>(null);
     const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -75,14 +75,17 @@ export default function ComposePage() {
     const removeMedia = (index: number) => setMediaFiles(prev => prev.filter((_, i) => i !== index));
 
     const handleLocation = () => {
-        if (location) { setLocation(null); return; }
+        if (postLocation) {
+            setPostLocation(null);
+            return;
+        }
         setIsFetchingLocation(true);
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
                 async (position) => {
                     try {
                         const { latitude, longitude } = position.coords;
-                        setLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+                        setPostLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
                     } finally {
                         setIsFetchingLocation(false);
                     }
@@ -132,7 +135,7 @@ export default function ComposePage() {
                 };
             }
             if (scheduledDate) tweetData.scheduledAt = new Date(scheduledDate);
-            if (location) tweetData.location = location;
+            if (postLocation) tweetData.location = postLocation;
 
             const tweetRef = await addDoc(collection(db, "tweets"), tweetData);
 
@@ -293,9 +296,9 @@ export default function ComposePage() {
                     )}
 
                     {/* Location */}
-                    {location && (
+                    {postLocation && (
                         <div className="mb-3 flex items-center gap-1.5 text-blue-500 text-xs font-medium bg-blue-500/10 w-fit px-3 py-1 rounded-full border border-blue-500/20">
-                            <MapPin className="w-3 h-3" /><span>{location}</span><button onClick={() => setLocation(null)} className="ml-1 hover:bg-blue-500/20 rounded-full"><X className="w-3 h-3" /></button>
+                            <MapPin className="w-3 h-3" /><span>{postLocation}</span><button onClick={() => setPostLocation(null)} className="ml-1 hover:bg-blue-500/20 rounded-full"><X className="w-3 h-3" /></button>
                         </div>
                     )}
 
@@ -310,7 +313,9 @@ export default function ComposePage() {
                             </div>
                             <button onClick={() => setShowPoll(!showPoll)} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition", showPoll && "bg-blue-500/10")}><List className="w-5 h-5" /></button>
                             <button onClick={() => setShowSchedule(!showSchedule)} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition", showSchedule && "bg-blue-500/10")}><Calendar className="w-5 h-5" /></button>
-                            <button onClick={handleLocation} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition", (location || isFetchingLocation) && "bg-blue-500/10")}><MapPin className={cn("w-5 h-5", isFetchingLocation && "animate-pulse")} /></button>
+                            <button onClick={handleLocation} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition", (postLocation || isFetchingLocation) && "bg-blue-500/10")} title="Location">
+                                <MapPin className={cn("w-5 h-5", isFetchingLocation && "animate-pulse")} />
+                            </button>
                         </div>
                         <Button
                             onClick={handleTweet}

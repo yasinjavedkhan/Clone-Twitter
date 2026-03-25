@@ -10,18 +10,17 @@ export default function DeactivateAccount() {
     const { user, userData, signOut } = useAuth();
 
     const handleDeactivate = async () => {
-        if (!userData || !user) return;
+        if (!userData || !user || typeof window === 'undefined') return;
 
         const confirmResult = window.confirm("Are you absolutely sure you want to deactivate? This will delete your profile data.");
         if (confirmResult) {
             try {
-                // In a real app we'd also delete tweets etc, but for now we delete user doc
                 await deleteDoc(doc(db, "users", user.uid));
                 await signOut();
                 window.location.href = "/";
             } catch (error) {
                 console.error("Error deactivating:", error);
-                alert("Failed to deactivate. Please try again.");
+                window.alert("Failed to deactivate. Please try again.");
             }
         }
     };

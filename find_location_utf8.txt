@@ -1,0 +1,100 @@
+﻿src\app\compose\post\page.tsx:30:    const [postLocation, setPostLocation] = useState<string | null>(null);
+src\app\compose\post\page.tsx:31:    const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+src\app\compose\post\page.tsx:77:    const handleLocation = () => {
+src\app\compose\post\page.tsx:78:        if (postLocation) {
+src\app\compose\post\page.tsx:79:            setPostLocation(null);
+src\app\compose\post\page.tsx:82:        setIsFetchingLocation(true);
+src\app\compose\post\page.tsx:83:        if ("geolocation" in navigator) {
+src\app\compose\post\page.tsx:84:            navigator.geolocation.getCurrentPosition(
+src\app\compose\post\page.tsx:88:                        setPostLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+src\app\compose\post\page.tsx:90:                        setIsFetchingLocation(false);
+src\app\compose\post\page.tsx:93:                () => { alert("Location access denied."); setIsFetchingLocation(false); }
+src\app\compose\post\page.tsx:96:            alert("Geolocation not supported.");
+src\app\compose\post\page.tsx:97:            setIsFetchingLocation(false);
+src\app\compose\post\page.tsx:138:            if (postLocation) tweetData.location = postLocation;
+src\app\compose\post\page.tsx:298:                    {/* Location */}
+src\app\compose\post\page.tsx:299:                    {postLocation && (
+src\app\compose\post\page.tsx:301:                            <MapPin className="w-3 h-3" /><span>{postLocation}</span><button onClick={() => setPostLocation(null)} className="ml-1 hover:bg-blue-500/20 rounded-full"><X className="w-3 h-3" /></button>
+src\app\compose\post\page.tsx:316:                            <button onClick={handleLocation} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition", (postLocation || isFetchingLocation) && "bg-blue-500/10")} title="Location">
+src\app\compose\post\page.tsx:317:                                <MapPin className={cn("w-5 h-5", isFetchingLocation && "animate-pulse")} />
+src\app\page.tsx:32:  const [tweetLocation, setTweetLocation] = useState<string | null>(null);
+src\app\page.tsx:33:  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+src\app\page.tsx:128:  const handleLocation = () => {
+src\app\page.tsx:129:    if (tweetLocation) {
+src\app\page.tsx:130:        setTweetLocation(null);
+src\app\page.tsx:133:    setIsFetchingLocation(true);
+src\app\page.tsx:134:    if ("geolocation" in navigator) {
+src\app\page.tsx:135:        navigator.geolocation.getCurrentPosition(
+src\app\page.tsx:139:                    setTweetLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+src\app\page.tsx:141:                    console.error("Error getting location:", error);
+src\app\page.tsx:142:                    alert("Could not fetch location.");
+src\app\page.tsx:144:                    setIsFetchingLocation(false);
+src\app\page.tsx:148:                console.error("Geolocation error:", error);
+src\app\page.tsx:149:                alert("Location access denied.");
+src\app\page.tsx:150:                setIsFetchingLocation(false);
+src\app\page.tsx:154:        alert("Geolocation not supported.");
+src\app\page.tsx:155:        setIsFetchingLocation(false);
+src\app\page.tsx:210:      if (tweetLocation) {
+src\app\page.tsx:211:          tweetData.location = tweetLocation;
+src\app\page.tsx:222:      setTweetLocation(null);
+src\app\page.tsx:468:              {tweetLocation && (
+src\app\page.tsx:471:                      <span>{tweetLocation}</span>
+src\app\page.tsx:472:                      <button onClick={() => setTweetLocation(null)} className="ml-1 hover:bg-blue-500/20 rounded-full">
+src\app\page.tsx:529:                    onClick={handleLocation}
+src\app\page.tsx:530:                    className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition hidden sm:block", (tweetLocation || isFetchingLocation) && "bg-blue-500/10")}
+src\app\page.tsx:531:                    title="Location"
+src\app\page.tsx:533:                    <MapPin className={cn("w-5 h-5", isFetchingLocation && "animate-pulse")} />
+src\app\settings\account\deactivate\page.tsx:21:                window.location.href = "/";
+src\components\messages\AgoraCall.tsx:115:                                onClick={() => window.location.reload()}
+src\components\messages\ChatBox.tsx:25:            const params = new URLSearchParams(window.location.search);
+src\components\tweet\CommentModal.tsx:35:    const [commentLocation, setCommentLocation] = useState<string | null>(null);
+src\components\tweet\CommentModal.tsx:36:    const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+src\components\tweet\CommentModal.tsx:129:    const handleLocation = () => {
+src\components\tweet\CommentModal.tsx:130:        if (commentLocation) {
+src\components\tweet\CommentModal.tsx:131:            setCommentLocation(null);
+src\components\tweet\CommentModal.tsx:134:        setIsFetchingLocation(true);
+src\components\tweet\CommentModal.tsx:135:        if ("geolocation" in navigator) {
+src\components\tweet\CommentModal.tsx:136:            navigator.geolocation.getCurrentPosition(
+src\components\tweet\CommentModal.tsx:140:                        setCommentLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+src\components\tweet\CommentModal.tsx:142:                        console.error("Error getting location:", error);
+src\components\tweet\CommentModal.tsx:143:                        alert("Could not fetch location.");
+src\components\tweet\CommentModal.tsx:145:                        setIsFetchingLocation(false);
+src\components\tweet\CommentModal.tsx:149:                    console.error("Geolocation error:", error);
+src\components\tweet\CommentModal.tsx:150:                    alert("Location access denied.");
+src\components\tweet\CommentModal.tsx:151:                    setIsFetchingLocation(false);
+src\components\tweet\CommentModal.tsx:155:            alert("Geolocation not supported.");
+src\components\tweet\CommentModal.tsx:156:            setIsFetchingLocation(false);
+src\components\tweet\CommentModal.tsx:209:            if (commentLocation) {
+src\components\tweet\CommentModal.tsx:210:                commentData.location = commentLocation;
+src\components\tweet\CommentModal.tsx:228:            setCommentLocation(null);
+src\components\tweet\CommentModal.tsx:443:                            {commentLocation && (
+src\components\tweet\CommentModal.tsx:446:                                    <span>{commentLocation}</span>
+src\components\tweet\CommentModal.tsx:447:                                    <button onClick={() => setCommentLocation(null)} className="ml-1 hover:bg-blue-500/20 rounded-full">
+src\components\tweet\CommentModal.tsx:508:                                onClick={handleLocation}
+src\components\tweet\CommentModal.tsx:509:                                className={cn("p-2 hover:bg-blue-500/10 rounded-full cursor-pointer transition", (commentLocation || isFetchingLocation) && "bg-blue-500/10")}
+src\components\tweet\CommentModal.tsx:510:                                title="Location"
+src\components\tweet\CommentModal.tsx:512:                                <MapPin className={cn("w-5 h-5", isFetchingLocation && "animate-pulse")} />
+src\components\tweet\ComposeModal.tsx:31:    const [composeLocation, setComposeLocation] = useState<string | null>(null);
+src\components\tweet\ComposeModal.tsx:32:    const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+src\components\tweet\ComposeModal.tsx:75:    const handleLocation = () => {
+src\components\tweet\ComposeModal.tsx:76:        if (composeLocation) {
+src\components\tweet\ComposeModal.tsx:77:            setComposeLocation(null);
+src\components\tweet\ComposeModal.tsx:80:        setIsFetchingLocation(true);
+src\components\tweet\ComposeModal.tsx:81:        if ("geolocation" in navigator) {
+src\components\tweet\ComposeModal.tsx:82:            navigator.geolocation.getCurrentPosition(
+src\components\tweet\ComposeModal.tsx:86:                        setComposeLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+src\components\tweet\ComposeModal.tsx:88:                        console.error("Error getting location:", error);
+src\components\tweet\ComposeModal.tsx:89:                        alert("Could not fetch location.");
+src\components\tweet\ComposeModal.tsx:91:                        setIsFetchingLocation(false);
+src\components\tweet\ComposeModal.tsx:95:                    console.error("Geolocation error:", error);
+src\components\tweet\ComposeModal.tsx:96:                    alert("Location access denied.");
+src\components\tweet\ComposeModal.tsx:97:                    setIsFetchingLocation(false);
+src\components\tweet\ComposeModal.tsx:101:            alert("Geolocation not supported.");
+src\components\tweet\ComposeModal.tsx:102:            setIsFetchingLocation(false);
+src\components\tweet\ComposeModal.tsx:149:            if (composeLocation) tweetData.location = composeLocation;
+src\components\tweet\ComposeModal.tsx:159:            setComposeLocation(null);
+src\components\tweet\ComposeModal.tsx:278:                            {composeLocation && (
+src\components\tweet\ComposeModal.tsx:280:                                    <MapPin className="w-3 h-3" /><span>{composeLocation}</span><button onClick={() => setComposeLocation(null)} className="ml-1 hover:bg-blue-500/20 rounded-full"><X className="w-3 h-3" /></button>
+src\components\tweet\ComposeModal.tsx:294:                                    <button onClick={handleLocation} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition hidden sm:block", (composeLocation || isFetchingLocation) && "bg-blue-500/10")}><MapPin className={cn("w-5 h-5", isFetchingLocation && "animate-pulse")} /></button>
+src\components\tweet\Tweet.tsx:276:        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+src\contexts\AuthContext.tsx:143:                window.location.href = "/";

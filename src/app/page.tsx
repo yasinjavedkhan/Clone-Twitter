@@ -29,7 +29,7 @@ export default function Home() {
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduledDate, setScheduledDate] = useState("");
-  const [location, setLocation] = useState<string | null>(null);
+  const [tweetLocation, setTweetLocation] = useState<string | null>(null);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [activeTab, setActiveTab] = useState<'foryou' | 'following'>('foryou');
   const [followingIds, setFollowingIds] = useState<string[]>([]);
@@ -126,8 +126,8 @@ export default function Home() {
   };
 
   const handleLocation = () => {
-    if (location) {
-        setLocation(null);
+    if (tweetLocation) {
+        setTweetLocation(null);
         return;
     }
     setIsFetchingLocation(true);
@@ -136,7 +136,7 @@ export default function Home() {
             async (position) => {
                 try {
                     const { latitude, longitude } = position.coords;
-                    setLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+                    setTweetLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
                 } catch (error) {
                     console.error("Error getting location:", error);
                     alert("Could not fetch location.");
@@ -207,8 +207,8 @@ export default function Home() {
           tweetData.scheduledAt = new Date(scheduledDate);
       }
 
-      if (location) {
-          tweetData.location = location;
+      if (tweetLocation) {
+          tweetData.location = tweetLocation;
       }
 
       await addDoc(collection(db, "tweets"), tweetData);
@@ -219,7 +219,7 @@ export default function Home() {
       setPollOptions(["", ""]);
       setShowSchedule(false);
       setScheduledDate("");
-      setLocation(null);
+      setTweetLocation(null);
     } catch (error: any) {
       console.error("Error creating tweet:", error);
       if (error.code?.includes('storage/')) {
@@ -465,11 +465,11 @@ export default function Home() {
                   </div>
               )}
 
-              {location && (
+              {tweetLocation && (
                   <div className="mt-3 mb-3 ml-1 flex items-center gap-1.5 text-blue-500 text-xs font-medium bg-blue-500/10 w-fit px-3 py-1 rounded-full border border-blue-500/20">
                       <MapPin className="w-3 h-3" />
-                      <span>{location}</span>
-                      <button onClick={() => setLocation(null)} className="ml-1 hover:bg-blue-500/20 rounded-full">
+                      <span>{tweetLocation}</span>
+                      <button onClick={() => setTweetLocation(null)} className="ml-1 hover:bg-blue-500/20 rounded-full">
                           <X className="w-3 h-3" />
                       </button>
                   </div>
@@ -527,7 +527,7 @@ export default function Home() {
                   </button>
                   <button
                     onClick={handleLocation}
-                    className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition hidden sm:block", (location || isFetchingLocation) && "bg-blue-500/10")}
+                    className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition hidden sm:block", (tweetLocation || isFetchingLocation) && "bg-blue-500/10")}
                     title="Location"
                   >
                     <MapPin className={cn("w-5 h-5", isFetchingLocation && "animate-pulse")} />

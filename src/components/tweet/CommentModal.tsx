@@ -32,7 +32,7 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
     const [pollOptions, setPollOptions] = useState(["", ""]);
     const [showSchedule, setShowSchedule] = useState(false);
     const [scheduledDate, setScheduledDate] = useState("");
-    const [location, setLocation] = useState<string | null>(null);
+    const [commentLocation, setCommentLocation] = useState<string | null>(null);
     const [isFetchingLocation, setIsFetchingLocation] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -127,8 +127,8 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
     };
 
     const handleLocation = () => {
-        if (location) {
-            setLocation(null);
+        if (commentLocation) {
+            setCommentLocation(null);
             return;
         }
         setIsFetchingLocation(true);
@@ -137,7 +137,7 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                 async (position) => {
                     try {
                         const { latitude, longitude } = position.coords;
-                        setLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+                        setCommentLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
                     } catch (error) {
                         console.error("Error getting location:", error);
                         alert("Could not fetch location.");
@@ -206,8 +206,8 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                 commentData.scheduledAt = new Date(scheduledDate);
             }
 
-            if (location) {
-                commentData.location = location;
+            if (commentLocation) {
+                commentData.location = commentLocation;
             }
 
             // 1. Add comment to 'comments' collection
@@ -225,7 +225,7 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
             setPollOptions(["", ""]);
             setShowSchedule(false);
             setScheduledDate("");
-            setLocation(null);
+            setCommentLocation(null);
             onClose();
         } catch (error: any) {
             console.error("Error posting comment:", error);
@@ -440,11 +440,11 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                                 </div>
                             )}
 
-                            {location && (
+                            {commentLocation && (
                                 <div className="mt-3 flex items-center gap-1.5 text-blue-500 text-xs font-medium bg-blue-500/10 w-fit px-3 py-1 rounded-full border border-blue-500/20">
                                     <MapPin className="w-3 h-3" />
-                                    <span>{location}</span>
-                                    <button onClick={() => setLocation(null)} className="ml-1 hover:bg-blue-500/20 rounded-full">
+                                    <span>{commentLocation}</span>
+                                    <button onClick={() => setCommentLocation(null)} className="ml-1 hover:bg-blue-500/20 rounded-full">
                                         <X className="w-3 h-3" />
                                     </button>
                                 </div>
@@ -506,7 +506,7 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                             </div>
                             <div
                                 onClick={handleLocation}
-                                className={cn("p-2 hover:bg-blue-500/10 rounded-full cursor-pointer transition", (location || isFetchingLocation) && "bg-blue-500/10")}
+                                className={cn("p-2 hover:bg-blue-500/10 rounded-full cursor-pointer transition", (commentLocation || isFetchingLocation) && "bg-blue-500/10")}
                                 title="Location"
                             >
                                 <MapPin className={cn("w-5 h-5", isFetchingLocation && "animate-pulse")} />

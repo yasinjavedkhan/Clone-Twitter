@@ -28,7 +28,7 @@ export default function ComposeModal({ isOpen, onClose }: ComposeModalProps) {
     const [pollOptions, setPollOptions] = useState(["", ""]);
     const [showSchedule, setShowSchedule] = useState(false);
     const [scheduledDate, setScheduledDate] = useState("");
-    const [location, setLocation] = useState<string | null>(null);
+    const [composeLocation, setComposeLocation] = useState<string | null>(null);
     const [isFetchingLocation, setIsFetchingLocation] = useState(false);
     
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,8 +73,8 @@ export default function ComposeModal({ isOpen, onClose }: ComposeModalProps) {
     };
 
     const handleLocation = () => {
-        if (location) {
-            setLocation(null);
+        if (composeLocation) {
+            setComposeLocation(null);
             return;
         }
         setIsFetchingLocation(true);
@@ -83,7 +83,7 @@ export default function ComposeModal({ isOpen, onClose }: ComposeModalProps) {
                 async (position) => {
                     try {
                         const { latitude, longitude } = position.coords;
-                        setLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+                        setComposeLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
                     } catch (error) {
                         console.error("Error getting location:", error);
                         alert("Could not fetch location.");
@@ -146,7 +146,7 @@ export default function ComposeModal({ isOpen, onClose }: ComposeModalProps) {
             }
 
             if (scheduledDate) tweetData.scheduledAt = new Date(scheduledDate);
-            if (location) tweetData.location = location;
+            if (composeLocation) tweetData.location = composeLocation;
 
             await addDoc(collection(db, "tweets"), tweetData);
             
@@ -156,7 +156,7 @@ export default function ComposeModal({ isOpen, onClose }: ComposeModalProps) {
             setPollOptions(["", ""]);
             setShowSchedule(false);
             setScheduledDate("");
-            setLocation(null);
+            setComposeLocation(null);
             onClose();
         } catch (error: any) {
             console.error("Error creating tweet:", error);
@@ -275,9 +275,9 @@ export default function ComposeModal({ isOpen, onClose }: ComposeModalProps) {
                                 </div>
                             )}
 
-                            {location && (
+                            {composeLocation && (
                                 <div className="mt-3 mb-3 flex items-center gap-1.5 text-blue-500 text-xs font-medium bg-blue-500/10 w-fit px-3 py-1 rounded-full border border-blue-500/20">
-                                    <MapPin className="w-3 h-3" /><span>{location}</span><button onClick={() => setLocation(null)} className="ml-1 hover:bg-blue-500/20 rounded-full"><X className="w-3 h-3" /></button>
+                                    <MapPin className="w-3 h-3" /><span>{composeLocation}</span><button onClick={() => setComposeLocation(null)} className="ml-1 hover:bg-blue-500/20 rounded-full"><X className="w-3 h-3" /></button>
                                 </div>
                             )}
 
@@ -291,7 +291,7 @@ export default function ComposeModal({ isOpen, onClose }: ComposeModalProps) {
                                     </div>
                                     <button onClick={() => setShowPoll(!showPoll)} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition", showPoll && "bg-blue-500/10")}><List className="w-5 h-5" /></button>
                                     <button onClick={() => setShowSchedule(!showSchedule)} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition hidden sm:block", showSchedule && "bg-blue-500/10")}><Calendar className="w-5 h-5" /></button>
-                                    <button onClick={handleLocation} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition hidden sm:block", (location || isFetchingLocation) && "bg-blue-500/10")}><MapPin className={cn("w-5 h-5", isFetchingLocation && "animate-pulse")} /></button>
+                                    <button onClick={handleLocation} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition hidden sm:block", (composeLocation || isFetchingLocation) && "bg-blue-500/10")}><MapPin className={cn("w-5 h-5", isFetchingLocation && "animate-pulse")} /></button>
                                 </div>
                                 <Button onClick={handleTweet} disabled={(!content.trim() && mediaFiles.length === 0) || isTweeting} className="px-5 py-1.5 twitter-button-primary hidden sm:block">{isTweeting ? "Posting..." : "Post"}</Button>
                             </div>

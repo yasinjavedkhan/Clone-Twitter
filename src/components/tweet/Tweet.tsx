@@ -273,11 +273,13 @@ export default function Tweet({ tweet }: TweetProps) {
     };
 
     const handleShare = async () => {
-        const origin = typeof window !== 'undefined' ? window.location.origin : '';
-        const shareUrl = `${origin}/profile/${tweet.userId}`; // Or a specific tweet page if available
-        if (navigator.share) {
+        if (typeof window === 'undefined') return;
+        const origin = window.location.origin;
+        const shareUrl = `${origin}/profile/${tweet.userId}`; 
+        
+        if (window.navigator.share) {
             try {
-                await navigator.share({
+                await window.navigator.share({
                     title: 'Check out this post!',
                     text: tweet.content,
                     url: shareUrl,
@@ -286,17 +288,16 @@ export default function Tweet({ tweet }: TweetProps) {
                 if (error.name !== 'AbortError') {
                     console.error("Error sharing:", error);
                 }
-                // AbortError means user cancelled sharing, so we do nothing
             }
         } else {
             // Fallback: Copy to clipboard
-            navigator.clipboard.writeText(shareUrl);
+            window.navigator.clipboard.writeText(shareUrl);
             alert("Link copied to clipboard!");
         }
     };
 
     const handleDelete = async () => {
-        if (confirm("Are you sure you want to delete this tweet?")) {
+        if (typeof window !== 'undefined' && window.confirm("Are you sure you want to delete this tweet?")) {
             await deleteDoc(doc(db, "tweets", tweet.id));
         }
     };

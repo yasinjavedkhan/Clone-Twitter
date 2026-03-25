@@ -53,14 +53,16 @@ export async function requestNotificationPermission(userId: string): Promise<str
             console.log("FCM Info: VAPID_KEY detected (Length: " + VAPID_KEY.length + ")");
         }
 
-        const permission = await Notification.requestPermission();
+        const permission = await (typeof window !== "undefined" ? window.Notification.requestPermission() : Promise.resolve("default"));
         if (permission !== "granted") {
             console.log("Notification permission denied");
             return null;
         }
 
         const messaging = getMessaging(app);
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        const registration = await (typeof window !== "undefined" ? window.navigator.serviceWorker.register('/firebase-messaging-sw.js') : Promise.resolve(null));
+        
+        if (!registration) return null;
         
         let vapidKeyArray: Uint8Array | undefined;
         try {
