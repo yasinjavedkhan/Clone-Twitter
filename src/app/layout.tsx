@@ -7,6 +7,9 @@ import RightSidebar from "@/components/layout/RightSidebar";
 import MobileNav from "@/components/layout/MobileNav";
 import MainLayout from "@/components/layout/MainLayout";
 
+// Force dynamic rendering for all pages - prevents SSR errors with browser globals
+export const dynamic = 'force-dynamic';
+
 const outfit = Outfit({ subsets: ["latin"] });
 
 import IncomingCallOverlay from "@/components/messages/IncomingCallOverlay";
