@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        const fcmToken = userDoc.data()?.fcmToken;
+        const fcmToken = (userDoc.data() as { fcmToken?: string } | undefined)?.fcmToken;
 
         if (!fcmToken) {
             // User hasn't enabled notifications yet
