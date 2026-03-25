@@ -3,7 +3,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useRef, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { Button } from "@/components/ui/Button";
 import { Image, List, Smile, Calendar, MapPin, Globe, X, User } from "lucide-react";
@@ -11,6 +11,7 @@ import EmojiPicker, { Theme } from "emoji-picker-react";
 import Avatar from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { sendPushNotification } from "@/lib/notifications";
 
 export default function ComposePage() {
     const { user, userData } = useAuth();
@@ -133,7 +134,48 @@ export default function ComposePage() {
             if (scheduledDate) tweetData.scheduledAt = new Date(scheduledDate);
             if (location) tweetData.location = location;
 
-            await addDoc(collection(db, "tweets"), tweetData);
+            const tweetRef = await addDoc(collection(db, "tweets"), tweetData);
+
+            // Notify followers
+            try {
+                const followersQuery = query(
+                    collection(db, "follows"),
+                    where("followingId", "==", user.uid)
+                );
+                const followersSnap = await getDocs(followersQuery);
+                const followerIds = followersSnap.docs.map(doc => doc.data().followerId);
+
+                if (followerIds.length > 0) {
+                    await Promise.all(followerIds.map(async (followerId) => {
+                        // Create in-app notification
+                        await addDoc(collection(db, "notifications"), {
+                            userId: followerId,
+                            type: "post",
+                            title: `New Post from ${userData?.displayName || userData?.username || 'someone you follow'}`,
+                            message: content.trim().substring(0, 100) + (content.length > 100 ? "..." : ""),
+                            tweetId: tweetRef.id,
+                            authorId: user.uid,
+                            read: false,
+                            createdAt: serverTimestamp(),
+                        });
+
+                        // Send push notification
+                        await sendPushNotification({
+                            toUserId: followerId,
+                            title: `New Post from ${userData?.displayName || userData?.username}`,
+                            body: content.trim().substring(0, 150),
+                            data: {
+                                type: "post",
+                                tweetId: tweetRef.id,
+                            }
+                        });
+                    }));
+                }
+            } catch (notifyError) {
+                console.error("Error sending notifications to followers:", notifyError);
+                // Don't fail the whole tweet process if notifications fail
+            }
+
             router.push("/");
         } catch (error: any) {
             console.error("Error creating tweet:", error);

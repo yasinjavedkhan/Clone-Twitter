@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, addDoc } from "firebase/firestore";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, User as UserIcon, Mail, Camera, X } from "lucide-react";
 import { format } from "date-fns";
@@ -12,6 +12,7 @@ import EditProfileModal from "@/components/profile/EditProfileModal";
 import { useRouter } from "next/navigation";
 import { userCache } from "@/lib/cache";
 import Avatar from "@/components/ui/Avatar";
+import { sendPushNotification } from "@/lib/notifications";
 
 export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
     const { id: profileId } = use(params);
@@ -132,6 +133,33 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 await updateDoc(targetRef, { followersCount: increment(1) });
                 setIsFollowing(true);
                 setFollowCounts(prev => ({ ...prev, followers: prev.followers + 1 }));
+
+                // Notify target user
+                try {
+                    // Create in-app notification
+                    await addDoc(collection(db, "notifications"), {
+                        userId: profileId,
+                        type: "follow",
+                        title: "New Follower",
+                        message: `${currentUser?.displayName || currentUser?.email || 'Someone'} started following you`,
+                        followerId: currentUser.uid,
+                        read: false,
+                        createdAt: serverTimestamp(),
+                    });
+
+                    // Send push notification
+                    await sendPushNotification({
+                        toUserId: profileId,
+                        title: "New Follower",
+                        body: `${currentUser?.displayName || currentUser?.email || 'Someone'} started following you`,
+                        data: {
+                            type: "follow",
+                            followerId: currentUser.uid,
+                        }
+                    });
+                } catch (notifyError) {
+                    console.error("Error sending follow notification:", notifyError);
+                }
             }
         } catch (error) {
             console.error("Error toggling follow:", error);

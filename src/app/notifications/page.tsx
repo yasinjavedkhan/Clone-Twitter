@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, query, where, orderBy, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Bell, Info, Shield, CheckCircle2, MoreHorizontal } from "lucide-react";
+import { Bell, Info, Shield, CheckCircle2, MoreHorizontal, User, FileText } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface Notification {
@@ -92,6 +92,8 @@ export default function Notifications() {
                                 {notif.type === 'system' && <Info className="w-5 h-5 text-twitter-blue" />}
                                 {notif.type === 'security' && <Shield className="w-5 h-5 text-yellow-500" />}
                                 {notif.type === 'success' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+                                {notif.type === 'follow' && <User className="w-5 h-5 text-twitter-blue" />}
+                                {notif.type === 'post' && <FileText className="w-5 h-5 text-twitter-blue" />}
                             </div>
                             <div className="flex flex-col flex-1 gap-1">
                                 <div className="flex justify-between items-start">
