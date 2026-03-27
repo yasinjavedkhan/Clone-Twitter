@@ -18,22 +18,27 @@ interface AuthContextType {
     user: User | null;
     userData: any | null; // Detailed Firestore user data
     loading: boolean;
+    error: string | null;
     signInWithGoogle: () => Promise<void>;
     signOut: () => Promise<void>;
+    clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
     user: null,
     userData: null,
     loading: true,
+    error: null,
     signInWithGoogle: async () => { },
     signOut: async () => { },
+    clearError: () => { },
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [userData, setUserData] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         let unsubscribeUser: (() => void) | null = null;
@@ -88,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     }
                 }, (error) => {
                     console.error("User snapshot error:", error);
+                    setError("Database error: Could not fetch profile.");
                     setLoading(false);
                 });
             } else {
@@ -108,9 +114,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (result?.user) {
                 // redirect sign-in succeeded, auth state will update via onAuthStateChanged
             }
-        }).catch((error) => {
+        }).catch((error: any) => {
             if (error.code !== 'auth/no-current-user') {
                 console.error("Redirect result error:", error);
+                setError(`Authentication error: ${error.message}`);
             }
         });
     }, []);
@@ -119,18 +126,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const signInWithGoogle = async () => {
         setLoading(true);
+        setError(null);
         const provider = new GoogleAuthProvider();
+        
+        // Detect mobile browser
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            try {
+                await signInWithRedirect(auth, provider);
+                // Redirecting...
+                return;
+            } catch (err: any) {
+                console.error("Redirect start error:", err);
+                setError(`Redirect failed: ${err.message}`);
+                setLoading(false);
+            }
+            return;
+        }
+
         try {
             await signInWithPopup(auth, provider);
-            // IF successful, DO NOT set loading to false here.
-            // The onAuthStateChanged listener will fetch Firestore data and then set loading to false.
             return;
-        } catch (error: any) {
-            if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
+        } catch (err: any) {
+            if (err.code === 'auth/cancelled-popup-request' || err.code === 'auth/popup-closed-by-user') {
                 setLoading(false);
                 return;
             }
-            console.error("Error signing in with Google:", error);
+            
+            if (err.code === 'auth/popup-blocked') {
+                setError("Popup blocked by browser. Trying redirect login...");
+                try {
+                    await signInWithRedirect(auth, provider);
+                } catch (redirErr: any) {
+                    setError(`Sign-in failed: ${redirErr.message}`);
+                    setLoading(false);
+                }
+                return;
+            }
+
+            console.error("Error signing in with Google:", err);
+            setError(`Login failed: ${err.message}`);
             setLoading(false);
         }
     };
@@ -142,15 +178,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (typeof window !== 'undefined') {
                 window.location.href = "/";
             }
-        } catch (error) {
-            console.error("Error signing out:", error);
+        } catch (err) {
+            console.error("Error signing out:", err);
         } finally {
             setLoading(false);
         }
     };
 
+    const clearError = () => setError(null);
+
     return (
-        <AuthContext.Provider value={{ user, userData, loading, signInWithGoogle, signOut }}>
+        <AuthContext.Provider value={{ user, userData, loading, error, signInWithGoogle, signOut, clearError }}>
             {children}
         </AuthContext.Provider>
     );

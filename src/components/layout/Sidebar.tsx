@@ -11,7 +11,8 @@ import {
     User,
     Settings,
     LogOut,
-    Hash
+    Hash,
+    X
 } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,7 +37,7 @@ interface SidebarProps {
 export default function Sidebar({ onOpenCompose }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
-    const { user, userData, loading, signInWithGoogle, signOut } = useAuth();
+    const { user, userData, loading, error, signInWithGoogle, signOut, clearError } = useAuth();
     const [unreadCount, setUnreadCount] = useState(0);
     const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
 
@@ -148,21 +149,36 @@ export default function Sidebar({ onOpenCompose }: SidebarProps) {
                     </button>
                 </div>
             ) : (
-                <div 
-                    onClick={signInWithGoogle} 
-                    className="mt-auto flex items-center justify-between w-full hover:bg-white/10 p-3 rounded-full cursor-pointer transition group border border-transparent hover:border-gray-800"
-                    title="Sign in with Google"
-                >
-                    <div className="flex items-center gap-3 overflow-hidden flex-grow min-w-0">
-                        <Avatar
-                            src=""
-                            fallbackText="Guest"
-                        />
-                        <div className="hidden xl:flex flex-col truncate">
-                            <span className="font-bold text-[15px] truncate text-white">Guest User</span>
-                            <span className="text-gray-500 text-[13px] truncate">Sign in to post</span>
+                <div className="mt-auto w-full group">
+                    <div 
+                        onClick={signInWithGoogle} 
+                        className="flex items-center justify-between w-full hover:bg-white/10 p-3 rounded-full cursor-pointer transition border border-transparent hover:border-gray-800"
+                        title="Sign in with Google"
+                    >
+                        <div className="flex items-center gap-3 overflow-hidden flex-grow min-w-0">
+                            <Avatar
+                                src=""
+                                fallbackText="Guest"
+                            />
+                            <div className="hidden xl:flex flex-col truncate">
+                                <span className="font-bold text-[15px] truncate text-white">Guest User</span>
+                                <span className="text-gray-500 text-[13px] truncate">Sign in to post</span>
+                            </div>
                         </div>
                     </div>
+                    {error && (
+                        <div className="mt-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl flex flex-col gap-1.5 animate-in fade-in duration-300">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[11px] font-bold text-red-500 uppercase tracking-wider">Auth Error</span>
+                                <button onClick={clearError} className="text-gray-500 hover:text-white transition">
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                            <p className="text-[12px] text-gray-300 leading-tight pr-2">
+                                {error}
+                            </p>
+                        </div>
+                    )}
                 </div>
             )}
         </aside>
