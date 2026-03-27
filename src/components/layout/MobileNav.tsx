@@ -77,6 +77,7 @@ export default function MobileNav() {
         { icon: Bookmark, href: "/bookmarks", label: "Bookmarks" },
     ];
 
+    if (pathname?.startsWith("/videos")) return null;
 
     return (
         <nav 

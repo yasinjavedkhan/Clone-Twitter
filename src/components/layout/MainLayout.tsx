@@ -29,7 +29,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   const isHomePage = pathname === "/";
   const isMessagePage = pathname?.startsWith("/messages");
-  const isVideosPage = pathname === "/videos";
+  const isVideosPage = pathname?.startsWith("/videos");
 
   return (
     <div className="max-w-[1300px] mx-auto flex w-full justify-center sm:justify-start overflow-x-hidden">
