@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, deleteDoc, setDoc, updateDoc, increment, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
 import { cn } from "@/lib/utils";
+import { sendPushNotification } from "@/lib/notifications";
 import CommentModal from "./CommentModal";
 import { userCache } from "@/lib/cache";
 import Avatar from "@/components/ui/Avatar";
@@ -286,6 +287,21 @@ export default function Tweet({ tweet }: TweetProps) {
                 });
                 await updateDoc(tweetRef, { likesCount: increment(1) });
                 setHasLiked(true);
+
+                // Send push notification to tweet author
+                if (tweet.userId !== user.uid) {
+                    const senderName = userData?.displayName || user.displayName || user.email?.split('@')[0] || 'Someone';
+                    sendPushNotification({
+                        toUserId: tweet.userId,
+                        title: "❤️ New Like",
+                        body: `${senderName} liked your post: "${tweet.content.substring(0, 50)}${tweet.content.length > 50 ? '...' : ''}"`,
+                        data: {
+                            type: 'like',
+                            tweetId: tweet.id,
+                            url: `/` // ideally link to specific tweet
+                        }
+                    }).catch(console.error);
+                }
             }
         } catch (error) {
             console.error("Error toggling like:", error);
@@ -314,6 +330,21 @@ export default function Tweet({ tweet }: TweetProps) {
                 });
                 await updateDoc(tweetRef, { retweetsCount: increment(1) });
                 setHasRetweeted(true);
+
+                // Send push notification to tweet author
+                if (tweet.userId !== user.uid) {
+                    const senderName = userData?.displayName || user.displayName || user.email?.split('@')[0] || 'Someone';
+                    sendPushNotification({
+                        toUserId: tweet.userId,
+                        title: "🔁 New Retweet",
+                        body: `${senderName} retweeted your post!`,
+                        data: {
+                            type: 'retweet',
+                            tweetId: tweet.id,
+                            url: `/`
+                        }
+                    }).catch(console.error);
+                }
             }
         } catch (error) {
             console.error("Error toggling retweet:", error);
