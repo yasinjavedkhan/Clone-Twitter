@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, query, orderBy, getDocs, limit, where } from "firebase/firestore";
-import Tweet from "@/components/tweet/Tweet";
 import { Search } from "lucide-react";
 import Link from "next/link";
 
@@ -18,7 +17,6 @@ interface UserData {
 
 export default function Explore() {
     const { user } = useAuth();
-    const [tweets, setTweets] = useState<any[]>([]);
     const [users, setUsers] = useState<UserData[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -26,48 +24,21 @@ export default function Explore() {
     useEffect(() => {
         const fetchGlobalData = async () => {
             try {
-                // 1. Fetch Tweets (More than before)
-                const tweetsQuery = query(
-                    collection(db, "tweets"),
-                    orderBy("createdAt", "desc"),
-                    limit(100)
-                );
-                
-                // 2. Fetch Users (Top users for local search)
+                // Fetch Users only (Top 500 for fast local filtering)
                 const usersQuery = query(
                     collection(db, "users"),
-                    limit(50)
+                    limit(500)
                 );
 
-                const [tweetsSnap, usersSnap] = await Promise.all([
-                    getDocs(tweetsQuery),
-                    getDocs(usersQuery)
-                ]);
-
+                const usersSnap = await getDocs(usersQuery);
                 const usersData = usersSnap.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 })) as UserData[];
 
-                const tweetsData = tweetsSnap.docs.map(doc => {
-                    const data = doc.data();
-                    // Attach author info from users list if possible
-                    const authorInfo = usersData.find(u => u.userId === data.userId);
-                    return {
-                        id: doc.id,
-                        ...data,
-                        author: authorInfo ? {
-                            displayName: authorInfo.displayName,
-                            username: authorInfo.username,
-                            profileImage: authorInfo.profileImage
-                        } : undefined
-                    };
-                });
-
-                setTweets(tweetsData);
                 setUsers(usersData);
             } catch (error) {
-                console.error("Error fetching explore data:", error);
+                console.error("Error fetching explore users:", error);
             } finally {
                 setLoading(false);
             }
@@ -83,15 +54,6 @@ export default function Explore() {
         u.username?.toLowerCase().includes(queryStr)
     );
 
-    // Filter Tweets
-    const filteredTweets = !queryStr ? [] : tweets.filter(tweet => {
-        return (
-            tweet.content?.toLowerCase().includes(queryStr) ||
-            tweet.author?.displayName?.toLowerCase().includes(queryStr) ||
-            tweet.author?.username?.toLowerCase().includes(queryStr)
-        );
-    });
-
     return (
         <div className="flex flex-col min-h-screen border-r border-gray-800 text-white">
             <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-gray-800 p-4">
@@ -99,7 +61,7 @@ export default function Explore() {
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-4.5 h-4.5" />
                     <input
                         type="text"
-                        placeholder="Search Explore (Tweets and Users)"
+                        placeholder="Search People (v3)"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="bg-[#202327] text-white rounded-full py-2.5 pl-12 pr-4 w-full focus:bg-black focus:border-twitter-blue border border-transparent outline-none transition text-[15px] placeholder:text-gray-500"
