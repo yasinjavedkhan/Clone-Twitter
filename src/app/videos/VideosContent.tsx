@@ -28,6 +28,7 @@ export default function VideosContent() {
     const searchParams = useSearchParams();
     const startUrl = searchParams.get("url");
     const { user } = useAuth();
+    const isImmersive = !!startUrl;
 
     const [videos, setVideos] = useState<VideoItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -278,20 +279,23 @@ export default function VideosContent() {
     };
 
     if (loading) return (
-        <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className={cn("bg-black flex items-center justify-center", isImmersive ? "fixed inset-0 z-[200]" : "h-screen")}>
             <div className="w-10 h-10 rounded-full border-2 border-white border-t-transparent animate-spin" />
         </div>
     );
 
     if (videos.length === 0) return (
-        <div className="fixed inset-0 bg-black flex flex-col items-center justify-center text-white gap-4">
+        <div className={cn("bg-black flex flex-col items-center justify-center text-white gap-4", isImmersive ? "fixed inset-0 z-[200]" : "h-screen")}>
             <p className="text-xl font-bold">No videos found</p>
-            <button onClick={() => router.back()} className="text-gray-400 hover:text-white transition underline">Return</button>
+            <button onClick={() => router.push('/')} className="text-gray-400 hover:text-white transition underline">Return Home</button>
         </div>
     );
 
     return (
-        <div className="fixed inset-0 bg-black overflow-hidden select-none">
+        <div className={cn(
+            "bg-black overflow-hidden select-none",
+            isImmersive ? "fixed inset-0 z-[150]" : "relative w-full h-[100dvh]"
+        )}>
             
             {/* ── SNAP SCROLL FEED ── */}
             <div 
@@ -343,12 +347,14 @@ export default function VideosContent() {
                                 >
                                     {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                                 </button>
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); router.push('/'); }}
-                                    className="p-2.5 bg-black/40 hover:bg-black/60 rounded-full text-white transition backdrop-blur-md cursor-pointer"
-                                >
-                                    <X className="w-6 h-6" />
-                                </button>
+                                {isImmersive && (
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); router.push('/'); }}
+                                        className="p-2.5 bg-black/40 hover:bg-black/60 rounded-full text-white transition backdrop-blur-md cursor-pointer"
+                                    >
+                                        <X className="w-6 h-6" />
+                                    </button>
+                                )}
                             </div>
                         </div>
 

@@ -1,21 +1,22 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import RightSidebar from "@/components/layout/RightSidebar";
 import MobileNav from "@/components/layout/MobileNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus, BellOff, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { cn } from "@/lib/utils";
 
 interface MainLayoutProps {
   children: React.ReactNode;
 }
 
-export default function MainLayout({ children }: MainLayoutProps) {
+function MainLayoutContent({ children }: MainLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const [showNotificationNotice, setShowNotificationNotice] = useState(false);
 
@@ -29,22 +30,24 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   const isHomePage = pathname === "/";
   const isMessagePage = pathname?.startsWith("/messages");
+  // Immersive mode is only when we are on /videos AND have a specific 'url' parameter
+  const isImmersiveVideo = pathname?.includes("/videos") && searchParams?.get('url');
   const isVideosPage = pathname?.includes("/videos");
 
   return (
     <div className="max-w-[1300px] mx-auto flex w-full justify-center sm:justify-start overflow-x-hidden">
-      {!isVideosPage && <Sidebar />}
+      {!isImmersiveVideo && <Sidebar />}
       <main 
         className={cn(
           "flex-grow border-r border-gray-800 min-h-screen w-full transition-all duration-300",
-          !isVideosPage && "ml-0 sm:ml-20 xl:ml-64",
-          isVideosPage ? "max-w-none border-none" : isMessagePage ? "max-w-none" : isHomePage ? "max-w-4xl" : "max-w-2xl"
+          !isImmersiveVideo && "ml-0 sm:ml-20 xl:ml-64",
+          isImmersiveVideo ? "max-w-none border-none" : isMessagePage ? "max-w-none" : isHomePage ? "max-w-4xl" : "max-w-2xl"
         )}
       >
         {children}
       </main>
-      {!isMessagePage && !isHomePage && !isVideosPage && <RightSidebar />}
-      {!isVideosPage && <MobileNav />}
+      {!isMessagePage && !isHomePage && !isImmersiveVideo && <RightSidebar />}
+      {!isImmersiveVideo && <MobileNav />}
       
       {/* Notification Banner for Mobile */}
       {showNotificationNotice && user && (
@@ -66,7 +69,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         </div>
       )}
 
-      {user && !isMessagePage && !isVideosPage && (
+      {user && !isMessagePage && !isImmersiveVideo && (
           <button 
               onClick={() => router.push('/compose/post')}
               className="sm:hidden fixed bottom-20 right-4 w-14 h-14 bg-white text-black rounded-full flex items-center justify-center shadow-lg z-40 transition hover:bg-gray-200"
@@ -75,5 +78,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </button>
       )}
     </div>
+  );
+}
+
+export default function MainLayout(props: MainLayoutProps) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black" />}>
+      <MainLayoutContent {...props} />
+    </Suspense>
   );
 }
