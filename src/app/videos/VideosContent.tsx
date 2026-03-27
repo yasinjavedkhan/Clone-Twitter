@@ -303,7 +303,7 @@ export default function VideosContent() {
                     <div key={`${video.tweetId}-${idx}`} className="relative h-full w-full snap-start flex items-center justify-center bg-black overflow-hidden">
                         
                         {/* ── TOP BAR ( Profile + Follow + X ) ── */}
-                        <div className="absolute top-0 left-0 right-0 z-[80] flex items-center justify-between px-4 py-4 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+                        <div className="absolute top-0 left-0 right-0 z-[100] flex items-center justify-between px-4 py-4 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
                             <div className="flex items-center gap-3 pointer-events-auto">
                                 <Link href={`/profile/${video.userId}`} className="flex items-center gap-3 group">
                                     <Avatar 
@@ -322,7 +322,7 @@ export default function VideosContent() {
 
                                 {user && user.uid !== video.userId && (
                                     <button
-                                        onClick={() => handleFollow(video.userId)}
+                                        onClick={(e) => { e.stopPropagation(); handleFollow(video.userId); }}
                                         disabled={isFollowLoading[video.userId]}
                                         className={cn(
                                             "ml-2 text-[13px] font-bold px-4 py-1.5 rounded-full transition-all duration-200 border-2 active:scale-95",
@@ -338,14 +338,14 @@ export default function VideosContent() {
 
                             <div className="flex items-center gap-4 pointer-events-auto">
                                 <button
-                                    onClick={() => setMuted(!muted)}
+                                    onClick={(e) => { e.stopPropagation(); setMuted(!muted); }}
                                     className="p-2.5 bg-black/40 hover:bg-black/60 rounded-full text-white transition backdrop-blur-md"
                                 >
                                     {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                                 </button>
                                 <button 
-                                    onClick={() => router.back()}
-                                    className="p-2.5 bg-black/40 hover:bg-black/60 rounded-full text-white transition backdrop-blur-md"
+                                    onClick={(e) => { e.stopPropagation(); router.push('/'); }}
+                                    className="p-2.5 bg-black/40 hover:bg-black/60 rounded-full text-white transition backdrop-blur-md cursor-pointer"
                                 >
                                     <X className="w-6 h-6" />
                                 </button>
