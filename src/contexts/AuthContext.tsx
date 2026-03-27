@@ -110,14 +110,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Handle redirect result (for mobile sign-in)
     useEffect(() => {
+        // Diagnostic: Check if current domain is authorized
+        if (typeof window !== 'undefined') {
+            const currentDomain = window.location.hostname;
+            const authDomain = auth.config.authDomain;
+            if (authDomain && !authDomain.includes(currentDomain) && currentDomain !== 'localhost' && !currentDomain.endsWith('.firebaseapp.com')) {
+                console.warn(`⚠️ Domain Mismatch: Current domain (${currentDomain}) might not be authorized in Firebase Console. Please add it to "Authorized Domains" in Authentication settings.`);
+            }
+        }
+
         getRedirectResult(auth).then((result) => {
             if (result?.user) {
-                // redirect sign-in succeeded, auth state will update via onAuthStateChanged
+                // redirect sign-in succeeded
             }
-        }).catch((error: any) => {
-            if (error.code !== 'auth/no-current-user') {
-                console.error("Redirect result error:", error);
-                setError(`Authentication error: ${error.message}`);
+        }).catch((err: any) => {
+            if (err.code !== 'auth/no-current-user') {
+                console.error("Redirect result error:", err);
+                const msg = `Login failed: ${err.message} (Code: ${err.code})`;
+                setError(msg);
+                if (typeof window !== 'undefined') window.alert(msg);
             }
         });
     }, []);
@@ -129,17 +140,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setError(null);
         const provider = new GoogleAuthProvider();
         
-        // Detect mobile browser
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        // Detect mobile or semi-mobile environments
+        const isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
         if (isMobile) {
             try {
                 await signInWithRedirect(auth, provider);
-                // Redirecting...
                 return;
             } catch (err: any) {
                 console.error("Redirect start error:", err);
                 setError(`Redirect failed: ${err.message}`);
+                window.alert(`Sign-in Error: ${err.message}`);
                 setLoading(false);
             }
             return;
@@ -155,18 +166,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
             
             if (err.code === 'auth/popup-blocked') {
-                setError("Popup blocked by browser. Trying redirect login...");
+                console.warn("Popup blocked, falling back to redirect...");
                 try {
                     await signInWithRedirect(auth, provider);
                 } catch (redirErr: any) {
                     setError(`Sign-in failed: ${redirErr.message}`);
+                    window.alert(`Sign-in Error: ${redirErr.message}`);
                     setLoading(false);
                 }
                 return;
             }
 
             console.error("Error signing in with Google:", err);
-            setError(`Login failed: ${err.message}`);
+            const msg = `Login failed: ${err.message} (Code: ${err.code})`;
+            setError(msg);
+            if (typeof window !== 'undefined') window.alert(msg);
             setLoading(false);
         }
     };
