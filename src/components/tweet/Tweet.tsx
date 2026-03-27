@@ -475,10 +475,6 @@ export default function Tweet({ tweet }: TweetProps) {
                                         <video
                                             src={url}
                                             className="w-full h-full object-cover"
-                                            autoPlay
-                                            muted
-                                            loop
-                                            playsInline
                                         />
                                     ) : (
                                         <img
@@ -487,6 +483,20 @@ export default function Tweet({ tweet }: TweetProps) {
                                             className="w-full h-full object-cover group-hover:opacity-90 transition duration-200"
                                         />
                                     )}
+                                    {/* Expand/play hint on hover */}
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-200 pointer-events-none">
+                                        <div className="bg-black/50 rounded-full p-3">
+                                            {isVideo ? (
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white fill-white" viewBox="0 0 24 24">
+                                                    <path d="M8 5v14l11-7z"/>
+                                                </svg>
+                                            ) : (
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             );
                         })}
