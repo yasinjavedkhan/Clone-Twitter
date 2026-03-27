@@ -306,8 +306,8 @@ export default function VideosContent() {
             {/* ── SNAP SCROLL FEED ── */}
             <div 
                 ref={containerRef}
-                className="h-full overflow-y-scroll snap-y snap-mandatory scroll-smooth" 
-                style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
+                className="h-full overflow-y-scroll snap-y snap-mandatory" 
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none", overscrollBehaviorY: "contain" } as React.CSSProperties}
             >
                 {videos.map((video, idx) => (
                     <div key={`${video.tweetId}-${idx}`} className="relative h-full w-full snap-start flex items-center justify-center bg-black overflow-hidden">

@@ -13,7 +13,9 @@ const firebaseConfig = {
   appId: "1:249903575848:web:9d1f7443118293a6cf161d"
 };
 
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 
 const messaging = firebase.messaging();
 

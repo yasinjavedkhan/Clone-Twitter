@@ -6,91 +6,85 @@ import { db } from "@/lib/firebase";
 // Your VAPID key from Firebase Console → Project Settings → Cloud Messaging
 const VAPID_KEY = (process.env.NEXT_PUBLIC_FCM_VAPID_KEY || "BJ-iGROgllfJWNW-T5chkp1hGw3rhHMAyehMQ5Yb6qFCbbfIgRvrlvR3jdE3zyG4tNNQMXczzY1i3I4ZqyhVrrJQ").replace(/['"]/g, '').trim();
 
-function urlBase64ToUint8Array(base64String: string) {
-    // 1. Ultimate cleaning
-    const cleaned = base64String.replace(/\s/g, '').replace(/['"]/g, '').replace(/-/g, '+').replace(/_/g, '/').replace(/[^A-Za-z0-9\+\/]/g, '');
-    
-    // 2. Manual Base64 Decoding (Bypassing atob for robustness)
-    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    const lookup = new Uint8Array(256);
-    for (let i = 0; i < alphabet.length; i++) lookup[alphabet.charCodeAt(i)] = i;
-
-    // Pad to multiple of 4 for the loop
-    const padded = cleaned + "A".repeat((4 - (cleaned.length % 4)) % 4);
-    const len = padded.length;
-    let bufferLength = cleaned.length * 0.75;
-    const outputArray = new Uint8Array(bufferLength | 0);
-
-    let p = 0;
-    for (let i = 0; i < len; i += 4) {
-        const encoded1 = lookup[padded.charCodeAt(i)];
-        const encoded2 = lookup[padded.charCodeAt(i + 1)];
-        const encoded3 = lookup[padded.charCodeAt(i + 2)];
-        const encoded4 = lookup[padded.charCodeAt(i + 3)];
-
-        outputArray[p++] = (encoded1 << 2) | (encoded2 >> 4);
-        if (p < outputArray.length) outputArray[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
-        if (p < outputArray.length) outputArray[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
-    }
-
-    return outputArray;
-}
-
 export async function requestNotificationPermission(userId: string): Promise<string | null> {
     try {
         if (typeof window === "undefined" || !("Notification" in window)) {
+            console.warn("FCM: Notifications not supported in this browser.");
             return null;
         }
 
-        console.log("FCM: Initializing v28 (Military Grade Decoder - No atob)");
+        console.log("FCM: Initializing v29 (Stable Mode)");
         if (!VAPID_KEY) {
-            console.error("FCM Error: VAPID_KEY is missing.");
+            console.error("FCM Error: NEXT_PUBLIC_FCM_VAPID_KEY is missing from environment variables.");
             return null;
         }
 
-        console.log(`FCM Debug: VAPID Start: ${VAPID_KEY.substring(0, 5)}... End: ${VAPID_KEY.substring(VAPID_KEY.length - 5)} (Total: ${VAPID_KEY.length})`);
+        console.log(`FCM Debug: Using VAPID: ${VAPID_KEY.substring(0, 5)}...${VAPID_KEY.substring(VAPID_KEY.length - 5)} (Length: ${VAPID_KEY.length})`);
 
         const permission = await window.Notification.requestPermission();
         if (permission !== "granted") {
-            console.log("Notification permission denied");
+            console.log("FCM: Notification permission denied by user.");
             return null;
         }
 
-        const messaging = getMessaging(app);
-        const registration = await window.navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        // 1. Ensure Service Worker is registered AND active
+        let registration = await window.navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
         
-        if (!registration) return null;
-        
-        // Firebase SDK internally calls atob on this string. 
-        // If it's not a multiple of 4, it crashes on some browsers.
-        const normalized = VAPID_KEY.trim()
-            .replace(/-/g, '+')
-            .replace(/_/g, '/');
-        
-        const paddedVapidString = normalized.length % 4 === 0 
-            ? normalized 
-            : normalized.padEnd(normalized.length + (4 - (normalized.length % 4)), '=');
+        if (!registration) {
+            console.log("FCM: Registering new service worker...");
+            registration = await window.navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        }
 
-        console.log(`FCM: Calling getToken with padded string (Length: ${paddedVapidString.length})`);
+        // Wait for SW to be active if it's currently installing or waiting
+        if (registration.installing) {
+          console.log("FCM: Waiting for service worker to finish installing...");
+          await new Promise<void>((resolve) => {
+            registration!.installing!.addEventListener('statechange', (e: any) => {
+              if (e.target.state === 'activated') resolve();
+            });
+          });
+        }
+
+        const messaging = getMessaging(app);
+        
+        // Normalize VAPID key for Firebase SDK expectations
+        // The SDK is very sensitive to the Base64 encoding style (URL-safe vs standard)
+        const normalizedVapid = VAPID_KEY
+            .replace(/-/g, '+')
+            .replace(/_/g, '/')
+            .trim();
+        
+        // Ensure padding is a multiple of 4
+        const finalVapid = normalizedVapid.length % 4 === 0 
+            ? normalizedVapid 
+            : normalizedVapid.padEnd(normalizedVapid.length + (4 - (normalizedVapid.length % 4)), '=');
+
+        console.log("FCM: Requesting token with normalized VAPID...");
 
         const token = await getToken(messaging, {
-            vapidKey: paddedVapidString,
+            vapidKey: finalVapid,
             serviceWorkerRegistration: registration,
         });
 
         if (token) {
-            // Save token to Firestore under user's document
+            // Save token to Firestore
             await updateDoc(doc(db, "users", userId), {
                 fcmToken: token,
                 fcmTokenUpdated: new Date(),
             });
-            console.log("FCM Token saved:", token.substring(0, 20) + "...");
+            console.log("FCM: Token generated and saved successfully.");
             return token;
         }
 
+        console.warn("FCM: getToken returned empty.");
         return null;
-    } catch (error) {
-        console.error("Error getting FCM token:", error);
+    } catch (error: any) {
+        console.error("CRITICAL FCM Error:", error);
+        
+        if (error.code === 'messaging/token-subscribe-failed') {
+          console.error("HINT: This usually means the Domain is not authorized in Firebase Console OR the VAPID key is invalid for this project.");
+        }
+        
         return null;
     }
 }
