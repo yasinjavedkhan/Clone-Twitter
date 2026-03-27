@@ -5,15 +5,18 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, getDocs, where } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, getDocs, where, limit, startAfter } from "firebase/firestore";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { Button } from "@/components/ui/Button";
 import Tweet from "@/components/tweet/Tweet";
 import { Image, List, Smile, Calendar, MapPin, Globe, X, User, Users } from "lucide-react";
 import { useRef } from "react";
-import EmojiPicker, { Theme } from "emoji-picker-react";
 import Avatar from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+// Lazy-load the heavy emoji picker
+const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
 export default function Home() {
   const router = useRouter();
@@ -39,18 +42,55 @@ export default function Home() {
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number>(0);
 
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [lastDoc, setLastDoc] = useState<any>(null);
+
   useEffect(() => {
-    const q = query(collection(db, "tweets"), orderBy("createdAt", "desc"));
+    // Initial fetch of 15 tweets
+    const q = query(collection(db, "tweets"), orderBy("createdAt", "desc"), limit(15));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const tweetsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
       setTweets(tweetsData);
+      setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+      setHasMore(snapshot.docs.length === 15);
     });
 
     return () => unsubscribe();
   }, []);
+
+  const loadMoreTweets = async () => {
+    if (!lastDoc || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const q = query(
+        collection(db, "tweets"), 
+        orderBy("createdAt", "desc"), 
+        startAfter(lastDoc), 
+        limit(15)
+      );
+      const snapshot = await getDocs(q);
+      const moreTweets = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      if (moreTweets.length > 0) {
+        setTweets(prev => [...prev, ...moreTweets]);
+        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+        setHasMore(snapshot.docs.length === 15);
+      } else {
+        setHasMore(false);
+      }
+    } catch (err) {
+      console.error("Error loading more tweets:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     const fetchFollowing = async () => {
@@ -529,7 +569,7 @@ export default function Home() {
                       <div className="absolute bottom-12 left-0 z-50">
                         <EmojiPicker
                           onEmojiClick={onEmojiClick}
-                          theme={Theme.DARK}
+                          theme={"dark" as any}
                           autoFocusSearch={false}
                           width={300}
                           height={400}
@@ -602,9 +642,31 @@ export default function Home() {
             );
           }
 
-          return displayTweets.map((tweet) => (
-            <Tweet key={tweet.id} tweet={tweet} />
-          ));
+          return (
+            <>
+              {displayTweets.map((tweet) => (
+                <Tweet key={tweet.id} tweet={tweet} />
+              ))}
+              
+              {hasMore && activeTab === 'foryou' && (
+                <div className="p-8 flex justify-center border-b border-gray-800">
+                  <button 
+                    onClick={loadMoreTweets}
+                    disabled={loadingMore}
+                    className="text-[var(--color-twitter-blue)] font-bold hover:bg-blue-500/10 px-6 py-2 rounded-full transition disabled:opacity-50"
+                  >
+                    {loadingMore ? "Loading more..." : "Show more posts"}
+                  </button>
+                </div>
+              )}
+              
+              {!hasMore && displayTweets.length > 0 && (
+                <div className="p-12 text-center text-gray-500 border-b border-gray-800">
+                  <p className="text-[15px]">You've reached the end of the timeline.</p>
+                </div>
+              )}
+            </>
+          );
         })()}
       </div>
     </div>

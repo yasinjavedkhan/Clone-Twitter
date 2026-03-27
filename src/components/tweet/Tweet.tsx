@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import ReactDOM from "react-dom";
 import { formatDistanceToNow } from "date-fns";
 import { Heart, MessageCircle, Repeat2, Share, Trash2, User, Image, List, Smile, Calendar, MapPin, Globe, X, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
@@ -35,7 +35,7 @@ interface TweetProps {
     };
 }
 
-export default function Tweet({ tweet }: TweetProps) {
+const Tweet = memo(({ tweet }: TweetProps) => {
     const { user, userData } = useAuth();
     const router = useRouter();
     const [author, setAuthor] = useState<any>(null);
@@ -811,4 +811,6 @@ export default function Tweet({ tweet }: TweetProps) {
             )}
         </article>
     );
-}
+});
+
+export default Tweet;
