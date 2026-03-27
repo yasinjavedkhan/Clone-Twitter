@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { requestNotificationPermission, sendPushNotification } from "@/lib/notifications";
-import { Bell, CheckCircle, AlertTriangle, Shield, Send, RefreshCw } from "lucide-react";
+import { Bell, CheckCircle2, AlertCircle, Shield, Send, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function NotificationDiagnostic() {
@@ -14,8 +14,8 @@ export default function NotificationDiagnostic() {
     const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
     useEffect(() => {
-        if (typeof window !== "undefined") {
-            setPermission(Notification.permission);
+        if (typeof window !== "undefined" && "Notification" in window) {
+            setPermission(window.Notification.permission);
         }
     }, []);
 
@@ -40,7 +40,9 @@ export default function NotificationDiagnostic() {
                 setPermission("granted");
             } else {
                 setTokenStatus("missing");
-                setPermission(Notification.permission);
+                if (typeof window !== "undefined" && "Notification" in window) {
+                    setPermission(window.Notification.permission);
+                }
                 setError("Failed to generate token. Check browser console for errors.");
             }
         } catch (err: any) {
@@ -81,9 +83,9 @@ export default function NotificationDiagnostic() {
                     <p className="text-gray-400 text-sm mb-1 uppercase tracking-wider font-semibold">Browser Permission</p>
                     <div className="flex items-center gap-2">
                         {permission === "granted" ? (
-                            <CheckCircle className="w-5 h-5 text-green-500" />
+                            <CheckCircle2 className="w-5 h-5 text-green-500" />
                         ) : permission === "denied" ? (
-                            <AlertTriangle className="w-5 h-5 text-red-500" />
+                            <AlertCircle className="w-5 h-5 text-red-500" />
                         ) : (
                             <Shield className="w-5 h-5 text-yellow-500" />
                         )}
@@ -102,11 +104,11 @@ export default function NotificationDiagnostic() {
                     <p className="text-gray-400 text-sm mb-1 uppercase tracking-wider font-semibold">Cloud Token Status</p>
                     <div className="flex items-center gap-2">
                         {tokenStatus === "exists" ? (
-                            <CheckCircle className="w-5 h-5 text-green-500" />
+                            <CheckCircle2 className="w-5 h-5 text-green-500" />
                         ) : tokenStatus === "loading" ? (
                             <RefreshCw className="w-5 h-5 text-twitter-blue animate-spin" />
                         ) : (
-                            <AlertTriangle className="w-5 h-5 text-red-500" />
+                            <AlertCircle className="w-5 h-5 text-red-500" />
                         )}
                         <span className={cn(
                             "text-lg font-medium",
@@ -122,7 +124,7 @@ export default function NotificationDiagnostic() {
             <div className="flex flex-col gap-3">
                 {error && (
                     <div className="bg-red-500/10 text-red-500 border border-red-500/20 p-3 rounded-xl flex items-center gap-2 mb-1">
-                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        <AlertCircle className="w-4 h-4 shrink-0" />
                         <p className="text-xs font-medium">{error}</p>
                     </div>
                 )}
@@ -154,7 +156,7 @@ export default function NotificationDiagnostic() {
                     "p-4 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-300",
                     testResult.success ? "bg-green-500/10 text-green-500 border border-green-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"
                 )}>
-                    {testResult.success ? <CheckCircle className="w-5 h-5 shrink-0" /> : <AlertTriangle className="w-5 h-5 shrink-0" />}
+                    {testResult.success ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
                     <p className="text-sm font-medium">{testResult.message}</p>
                 </div>
             )}

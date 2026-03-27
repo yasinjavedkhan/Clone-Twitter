@@ -16,13 +16,18 @@ function urlBase64ToUint8Array(base64String: string) {
         .replace(/\-/g, "+")
         .replace(/_/g, "/");
 
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
+    try {
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
 
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    } catch (err) {
+        console.error("VAPID atob error:", err);
+        throw new Error("Invalid VAPID key encoding");
     }
-    return outputArray;
 }
 
 export async function requestNotificationPermission(userId: string): Promise<string | null> {
