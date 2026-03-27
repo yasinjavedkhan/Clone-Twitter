@@ -10,7 +10,7 @@ import { sendPushNotification } from "@/lib/notifications";
 import AgoraCall from "./AgoraCall";
 
 export default function ChatBox({ conversationId }: { conversationId: string }) {
-    const { user } = useAuth();
+    const { user, userData } = useAuth();
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [otherUser, setOtherUser] = useState<any>(null);
@@ -166,7 +166,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
             // 3. Send push notification to the other user
             if (otherUser?.userId) {
-                const senderName = (user as any).displayName || user.email?.split('@')[0] || 'Someone';
+                const senderName = userData?.displayName || userData?.username || 'Someone';
                 await sendPushNotification({
                     toUserId: otherUser.userId,
                     title: `💬 ${senderName}`,

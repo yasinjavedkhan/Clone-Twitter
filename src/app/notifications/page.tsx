@@ -6,6 +6,7 @@ import { collection, query, where, orderBy, onSnapshot, doc, updateDoc } from "f
 import { useEffect, useState } from "react";
 import { Bell, Info, Shield, CheckCircle2, MoreHorizontal, User, FileText } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import NotificationDiagnostic from "@/components/settings/NotificationDiagnostic";
 
 interface Notification {
     id: string;
@@ -72,6 +73,10 @@ export default function Notifications() {
         <div className="flex flex-col min-h-screen border-r border-gray-800 text-white">
             <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-gray-800 p-4">
                 <h1 className="text-xl font-bold">Notifications</h1>
+            </div>
+
+            <div className="p-4 border-b border-gray-800">
+                <NotificationDiagnostic />
             </div>
 
             {loading ? (

@@ -73,42 +73,54 @@ export async function POST(req: NextRequest) {
         const userDoc = await adminDb.collection("users").doc(toUserId).get();
         
         if (!userDoc.exists) {
+            console.error(`FCM Error: User ${toUserId} not found in Firestore.`);
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        const fcmToken = (userDoc.data() as { fcmToken?: string } | undefined)?.fcmToken;
+        const userData = userDoc.data();
+        const fcmToken = userData?.fcmToken;
 
         if (!fcmToken) {
-            // User hasn't enabled notifications yet
+            console.warn(`FCM Warning: User ${toUserId} (${userData?.username || 'unknown'}) exists but has no fcmToken. They may need to Allow notifications in their browser.`);
             return NextResponse.json({ message: "User has no FCM token" }, { status: 200 });
         }
 
+        console.log(`FCM Info: Found token for user ${toUserId}. Attempting to send...`);
+
         const messaging = getMessaging(adminApp);
 
-        const response = await messaging.send({
-            token: fcmToken,
-            notification: { title, body },
-            data: data || {},
-            android: {
-                priority: "high",
-                notification: {
-                    sound: "default",
-                    channelId: "default",
+        try {
+            const response = await messaging.send({
+                token: fcmToken,
+                notification: { title, body },
+                data: data || {},
+                android: {
+                    priority: "high",
+                    notification: {
+                        sound: "default",
+                        channelId: "default",
+                    },
                 },
-            },
-            webpush: {
-                headers: { Urgency: "high" },
-                notification: {
-                    title,
-                    body,
-                    requireInteraction: true,
-                    vibrate: [200, 100, 200],
+                webpush: {
+                    headers: { Urgency: "high" },
+                    notification: {
+                        title,
+                        body,
+                        requireInteraction: true,
+                        vibrate: [200, 100, 200],
+                    },
                 },
-            },
-        });
+            });
 
-        console.log("Push notification sent successfully:", response);
-        return NextResponse.json({ success: true, messageId: response });
+            console.log("FCM Success: Push notification sent successfully. MessageID:", response);
+            return NextResponse.json({ success: true, messageId: response });
+        } catch (sendError: any) {
+            console.error("FCM Send Error: Failed to send to Google services:", sendError.message);
+            if (sendError.code === 'messaging/registration-token-not-registered') {
+                console.warn("FCM Cleanup: Token is no longer valid. Recommendation: User should refresh their token.");
+            }
+            throw sendError;
+        }
     } catch (error: any) {
         console.error("CRITICAL: Push notification error:", error);
         return NextResponse.json({ 
