@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, doc, getDoc, updateDoc, setDoc, deleteDoc, increment, serverTimestamp, where } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, doc, getDoc, updateDoc, setDoc, deleteDoc, increment, serverTimestamp, where, limit } from "firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
 import { userCache } from "@/lib/cache";
 import { cn } from "@/lib/utils";
@@ -48,7 +48,8 @@ export default function VideosContent() {
         const fetchVideos = async () => {
             setLoading(true);
             try {
-                const snap = await getDocs(query(collection(db, "tweets"), orderBy("createdAt", "desc")));
+                // Limit scan to 50 latest tweets to find videos quickly
+                const snap = await getDocs(query(collection(db, "tweets"), orderBy("createdAt", "desc"), limit(50)));
                 const items: VideoItem[] = [];
 
                 for (const docSnap of snap.docs) {
