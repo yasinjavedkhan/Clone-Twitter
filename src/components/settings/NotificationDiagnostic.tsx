@@ -27,16 +27,25 @@ export default function NotificationDiagnostic() {
         }
     }, [userData]);
 
+    const [error, setError] = useState<string | null>(null);
+
     const handleRequest = async () => {
         if (!user) return;
         setTokenStatus("loading");
-        const token = await requestNotificationPermission(user.uid);
-        if (token) {
-            setTokenStatus("exists");
-            setPermission("granted");
-        } else {
+        setError(null);
+        try {
+            const token = await requestNotificationPermission(user.uid);
+            if (token) {
+                setTokenStatus("exists");
+                setPermission("granted");
+            } else {
+                setTokenStatus("missing");
+                setPermission(Notification.permission);
+                setError("Failed to generate token. Check browser console for errors.");
+            }
+        } catch (err: any) {
+            setError(err.message || "An unexpected error occurred");
             setTokenStatus("missing");
-            setPermission(Notification.permission);
         }
     };
 
@@ -111,6 +120,13 @@ export default function NotificationDiagnostic() {
             </div>
 
             <div className="flex flex-col gap-3">
+                {error && (
+                    <div className="bg-red-500/10 text-red-500 border border-red-500/20 p-3 rounded-xl flex items-center gap-2 mb-1">
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        <p className="text-xs font-medium">{error}</p>
+                    </div>
+                )}
+                
                 <button 
                     onClick={handleRequest}
                     className="flex items-center justify-center gap-2 bg-white text-black font-bold py-3 rounded-full hover:bg-gray-200 transition"
