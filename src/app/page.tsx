@@ -184,34 +184,60 @@ export default function Home() {
         mediaUrls = await Promise.all(uploadPromises);
       }
 
-      const tweetData: any = {
-        userId: user.uid,
-        content: content.trim(),
-        mediaUrls,
-        replySetting,
-        likesCount: 0,
-        commentsCount: 0,
-        retweetsCount: 0,
-        viewsCount: 0,
-        createdAt: serverTimestamp(),
-      };
+      if (mediaUrls.length > 0) {
+        // Create one post per media item
+        const tweetPromises = mediaUrls.map(url => {
+          const tweetData: any = {
+            userId: user.uid,
+            content: content.trim(),
+            mediaUrls: [url], // Each post gets exactly one media URL
+            replySetting,
+            likesCount: 0,
+            commentsCount: 0,
+            retweetsCount: 0,
+            viewsCount: 0,
+            createdAt: serverTimestamp(),
+          };
 
-      if (showPoll && pollOptions.some(opt => opt.trim())) {
-          tweetData.poll = {
+          // Group-level features only on the first post (optional decision, but for simplicity we'll keep them on all)
+          if (showPoll && pollOptions.some(opt => opt.trim())) {
+            tweetData.poll = {
               options: pollOptions.filter(opt => opt.trim()).map(opt => ({ text: opt, votes: 0 })),
               createdAt: serverTimestamp()
+            };
+          }
+          if (scheduledDate) tweetData.scheduledAt = new Date(scheduledDate);
+          if (tweetLocation) tweetData.location = tweetLocation;
+
+          return addDoc(collection(db, "tweets"), tweetData);
+        });
+
+        await Promise.all(tweetPromises);
+      } else {
+        // Text-only post
+        const tweetData: any = {
+          userId: user.uid,
+          content: content.trim(),
+          mediaUrls: [],
+          replySetting,
+          likesCount: 0,
+          commentsCount: 0,
+          retweetsCount: 0,
+          viewsCount: 0,
+          createdAt: serverTimestamp(),
+        };
+
+        if (showPoll && pollOptions.some(opt => opt.trim())) {
+          tweetData.poll = {
+            options: pollOptions.filter(opt => opt.trim()).map(opt => ({ text: opt, votes: 0 })),
+            createdAt: serverTimestamp()
           };
-      }
+        }
+        if (scheduledDate) tweetData.scheduledAt = new Date(scheduledDate);
+        if (tweetLocation) tweetData.location = tweetLocation;
 
-      if (scheduledDate) {
-          tweetData.scheduledAt = new Date(scheduledDate);
+        await addDoc(collection(db, "tweets"), tweetData);
       }
-
-      if (tweetLocation) {
-          tweetData.location = tweetLocation;
-      }
-
-      await addDoc(collection(db, "tweets"), tweetData);
       
       setContent("");
       setMediaFiles([]);
