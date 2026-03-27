@@ -120,49 +120,34 @@ export default function Explore() {
                             Search for people, topics, or keywords to find what you're looking for.
                         </p>
                     </div>
-                ) : filteredUsers.length === 0 && filteredTweets.length === 0 ? (
+                ) : filteredUsers.length === 0 ? (
                     <div className="p-12 text-center text-gray-500 italic">
-                        No results found for "{searchQuery}"
+                        No users found for "{searchQuery}"
                     </div>
                 ) : (
                     <div className="flex flex-col divide-y divide-gray-800">
                         {/* User Results */}
-                        {filteredUsers.length > 0 && (
-                            <div className="flex flex-col">
-                                <div className="p-4 text-sm font-bold text-gray-500 uppercase tracking-wider">Users</div>
-                                {filteredUsers.map(u => (
-                                    <Link 
-                                        key={u.id} 
-                                        href={`/profile/${u.userId}`}
-                                        className="p-4 hover:bg-white/5 transition flex items-center gap-3"
-                                    >
-                                        <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-800">
-                                            {u.profileImage ? (
-                                                <img src={u.profileImage} alt={u.displayName} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-gray-500">
-                                                    <Search className="w-6 h-6" />
-                                                </div>
-                                            )}
+                        {filteredUsers.map(u => (
+                            <Link 
+                                key={u.id} 
+                                href={`/profile/${u.userId}`}
+                                className="p-4 hover:bg-white/5 transition flex items-center gap-3"
+                            >
+                                <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-800 shrink-0">
+                                    {u.profileImage ? (
+                                        <img src={u.profileImage} alt={u.displayName} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-700">
+                                            <Search className="w-5 h-5 opacity-30" />
                                         </div>
-                                        <div className="flex flex-col">
-                                            <span className="font-bold hover:underline">{u.displayName}</span>
-                                            <span className="text-gray-500 text-sm">@{u.username}</span>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Tweet Results */}
-                        {filteredTweets.length > 0 && (
-                            <div className="flex flex-col">
-                                <div className="p-4 text-sm font-bold text-gray-500 uppercase tracking-wider">Posts</div>
-                                {filteredTweets.map((tweet) => (
-                                    <Tweet key={tweet.id} tweet={tweet} />
-                                ))}
-                            </div>
-                        )}
+                                    )}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-white hover:underline">{u.displayName}</span>
+                                    <span className="text-gray-500 text-sm">@{u.username}</span>
+                                </div>
+                            </Link>
+                        ))}
                     </div>
                 )}
             </div>
