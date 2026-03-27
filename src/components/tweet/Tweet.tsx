@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import ReactDOM from "react-dom";
 import { formatDistanceToNow } from "date-fns";
-import { Heart, MessageCircle, Repeat2, Share, Trash2, User, Image, List, Smile, Calendar, MapPin, Globe, X, Bookmark } from "lucide-react";
+import { Heart, MessageCircle, Repeat2, Share, Trash2, User, Image, List, Smile, Calendar, MapPin, Globe, X, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, deleteDoc, setDoc, updateDoc, increment, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
@@ -34,12 +36,18 @@ interface TweetProps {
 
 export default function Tweet({ tweet }: TweetProps) {
     const { user, userData } = useAuth();
+    const router = useRouter();
     const [author, setAuthor] = useState<any>(null);
     const [hasLiked, setHasLiked] = useState(false);
     const [hasRetweeted, setHasRetweeted] = useState(false);
     const [isLiking, setIsLiking] = useState(false);
     const [isRetweeting, setIsRetweeting] = useState(false);
     const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => { setMounted(true); }, []);
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [isFollowingTweet, setIsFollowingTweet] = useState(false);
     const [hasBookmarked, setHasBookmarked] = useState(false);
     const [isBookmarking, setIsBookmarking] = useState(false);
     const [showBookmarkToast, setShowBookmarkToast] = useState(false);
@@ -61,6 +69,76 @@ export default function Tweet({ tweet }: TweetProps) {
             tapCount.current = 0;
         }, 400);
     };
+
+    const openLightbox = useCallback((e: React.MouseEvent, index: number) => {
+        e.stopPropagation();
+        setLightboxIndex(index);
+    }, []);
+
+    const closeLightbox = useCallback(() => setLightboxIndex(null), []);
+
+    const lightboxPrev = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        setLightboxIndex(prev => (prev !== null && prev > 0 ? prev - 1 : prev));
+    }, []);
+
+    const lightboxNext = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        setLightboxIndex(prev => (
+            prev !== null && tweet.mediaUrls && prev < tweet.mediaUrls.length - 1 ? prev + 1 : prev
+        ));
+    }, [tweet.mediaUrls]);
+
+    // Check follow status when lightbox opens
+    useEffect(() => {
+        if (lightboxIndex === null || !user || user.uid === tweet.userId) return;
+        const checkFollow = async () => {
+            const fDoc = await getDoc(doc(db, "follows", `${user.uid}_${tweet.userId}`));
+            setIsFollowing(fDoc.exists());
+        };
+        checkFollow();
+    }, [lightboxIndex, user, tweet.userId]);
+
+    const handleLightboxFollow = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!user || isFollowingTweet) return;
+        setIsFollowingTweet(true);
+        const followId = `${user.uid}_${tweet.userId}`;
+        const followRef = doc(db, "follows", followId);
+        try {
+            if (isFollowing) {
+                await deleteDoc(followRef);
+                await updateDoc(doc(db, "users", user.uid), { followingCount: increment(-1) });
+                await updateDoc(doc(db, "users", tweet.userId), { followersCount: increment(-1) });
+                setIsFollowing(false);
+            } else {
+                await setDoc(followRef, {
+                    followerId: user.uid,
+                    followingId: tweet.userId,
+                    createdAt: new Date().toISOString()
+                });
+                await updateDoc(doc(db, "users", user.uid), { followingCount: increment(1) });
+                await updateDoc(doc(db, "users", tweet.userId), { followersCount: increment(1) });
+                setIsFollowing(true);
+            }
+        } catch (err) {
+            console.error("Follow error:", err);
+        } finally {
+            setIsFollowingTweet(false);
+        }
+    };
+
+    useEffect(() => {
+        if (lightboxIndex === null) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft' && lightboxIndex > 0) setLightboxIndex(i => (i !== null ? i - 1 : i));
+            if (e.key === 'ArrowRight' && tweet.mediaUrls && lightboxIndex < tweet.mediaUrls.length - 1)
+                setLightboxIndex(i => (i !== null ? i + 1 : i));
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [lightboxIndex, closeLightbox, tweet.mediaUrls]);
 
 
     useEffect(() => {
@@ -381,23 +459,44 @@ export default function Tweet({ tweet }: TweetProps) {
                                 <div 
                                     key={index} 
                                     className={cn(
-                                        "relative overflow-hidden bg-gray-900",
+                                        "relative overflow-hidden bg-gray-900 cursor-pointer group",
                                         tweet.mediaUrls!.length === 3 && index === 0 ? "row-span-2" : "aspect-video"
                                     )}
+                                    onClick={(e) => {
+                                        if (isVideo) {
+                                            e.stopPropagation();
+                                            router.push(`/videos?url=${encodeURIComponent(url)}`);
+                                        } else {
+                                            openLightbox(e, index);
+                                        }
+                                    }}
                                 >
                                     {isVideo ? (
                                         <video
                                             src={url}
-                                            controls
                                             className="w-full h-full object-cover"
                                         />
                                     ) : (
                                         <img
                                             src={url}
                                             alt="Tweet media"
-                                            className="w-full h-full object-cover hover:opacity-95 transition"
+                                            className="w-full h-full object-cover group-hover:opacity-90 transition duration-200"
                                         />
                                     )}
+                                    {/* Expand/play hint on hover */}
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-200 pointer-events-none">
+                                        <div className="bg-black/50 rounded-full p-3">
+                                            {isVideo ? (
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white fill-white" viewBox="0 0 24 24">
+                                                    <path d="M8 5v14l11-7z"/>
+                                                </svg>
+                                            ) : (
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             );
                         })}
@@ -473,6 +572,205 @@ export default function Tweet({ tweet }: TweetProps) {
                 isOpen={isCommentModalOpen}
                 onClose={() => setIsCommentModalOpen(false)}
             />
+
+            {/* Fullscreen Media Lightbox — rendered via portal to avoid bubbling into article */}
+            {mounted && lightboxIndex !== null && tweet.mediaUrls && ReactDOM.createPortal(
+                <div
+                    className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-sm"
+                    onClick={closeLightbox}
+                >
+                    {/* Top bar: author info + close */}
+                    <div
+                        className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Author info */}
+                        <Link
+                            href={`/profile/${tweet.userId}`}
+                            className="flex items-center gap-3 min-w-0"
+                            onClick={(e) => { e.stopPropagation(); closeLightbox(); }}
+                        >
+                            <Avatar
+                                src={author?.profileImage}
+                                fallbackText={author?.displayName || author?.username}
+                                size="md"
+                            />
+                            <div className="min-w-0">
+                                <p className="text-white font-bold text-[15px] leading-tight truncate">{author?.displayName || author?.username || 'Loading...'}</p>
+                                <p className="text-gray-400 text-[13px] leading-tight truncate">@{author?.username}</p>
+                            </div>
+                        </Link>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                            {/* Follow button — only show if not own post */}
+                            {user && user.uid !== tweet.userId && (
+                                <button
+                                    onClick={handleLightboxFollow}
+                                    disabled={isFollowingTweet}
+                                    className={cn(
+                                        "text-[14px] font-bold px-4 py-1 rounded-full transition",
+                                        isFollowing
+                                            ? "border border-gray-500 text-white hover:border-red-500 hover:text-red-500"
+                                            : "bg-white text-black hover:bg-gray-200"
+                                    )}
+                                >
+                                    {isFollowing ? "Following" : "Follow"}
+                                </button>
+                            )}
+
+                            {/* Close */}
+                            <button
+                                className="bg-black/60 hover:bg-black/80 text-white rounded-full p-2 transition"
+                                onClick={(e) => { e.stopPropagation(); closeLightbox(); }}
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Counter */}
+                    {tweet.mediaUrls.length > 1 && (
+                        <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-black/60 text-white text-sm px-3 py-1 rounded-full">
+                            {lightboxIndex + 1} / {tweet.mediaUrls.length}
+                        </div>
+                    )}
+
+                    {/* Prev Button */}
+                    {lightboxIndex > 0 && (
+                        <button
+                            className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-2 transition"
+                            onClick={lightboxPrev}
+                        >
+                            <ChevronLeft className="w-7 h-7" />
+                        </button>
+                    )}
+
+                    {/* Next Button */}
+                    {lightboxIndex < tweet.mediaUrls.length - 1 && (
+                        <button
+                            className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-2 transition"
+                            onClick={lightboxNext}
+                        >
+                            <ChevronRight className="w-7 h-7" />
+                        </button>
+                    )}
+
+                    {/* Media */}
+                    <div
+                        className="max-w-[95vw] max-h-[80vh] flex items-center justify-center"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {(() => {
+                            const url = tweet.mediaUrls![lightboxIndex];
+                            const isVideo = url.toLowerCase().includes('.mp4') ||
+                                url.toLowerCase().includes('.mov') ||
+                                url.toLowerCase().includes('.webm') ||
+                                url.includes('video');
+                            return isVideo ? (
+                                <video
+                                    key={url}
+                                    src={url}
+                                    controls
+                                    autoPlay
+                                    className="max-w-[95vw] max-h-[80vh] rounded-xl object-contain"
+                                />
+                            ) : (
+                                <img
+                                    key={url}
+                                    src={url}
+                                    alt="Media"
+                                    className="max-w-[95vw] max-h-[80vh] rounded-xl object-contain select-none"
+                                />
+                            );
+                        })()}
+                    </div>
+
+                    {/* Bottom bar: actions + dot indicators */}
+                    <div
+                        className="absolute bottom-5 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-1 bg-black/70 backdrop-blur-md rounded-full px-4 py-2 text-gray-300 border border-white/10 shadow-xl">
+                            {/* Comment */}
+                            <button
+                                className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full transition hover:text-blue-400 hover:bg-blue-500/10", !canReply && "opacity-40 cursor-not-allowed")}
+                                onClick={(e) => { e.stopPropagation(); if (canReply) setIsCommentModalOpen(true); }}
+                                title="Reply"
+                            >
+                                <MessageCircle className="w-5 h-5" />
+                                <span className="text-sm">{tweet.commentsCount || 0}</span>
+                            </button>
+
+                            <div className="w-px h-5 bg-white/10" />
+
+                            {/* Retweet */}
+                            <button
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition hover:text-green-400 hover:bg-green-500/10"
+                                onClick={(e) => { e.stopPropagation(); handleRetweet(); }}
+                                disabled={isRetweeting}
+                                title="Retweet"
+                            >
+                                <Repeat2 className={cn("w-5 h-5", hasRetweeted && "text-green-400")} />
+                                <span className={cn("text-sm", hasRetweeted && "text-green-400")}>{tweet.retweetsCount || 0}</span>
+                            </button>
+
+                            <div className="w-px h-5 bg-white/10" />
+
+                            {/* Like */}
+                            <button
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition hover:text-pink-400 hover:bg-pink-500/10"
+                                onClick={(e) => { e.stopPropagation(); handleLike(); }}
+                                disabled={isLiking}
+                                title="Like"
+                            >
+                                <Heart className={cn("w-5 h-5", hasLiked && "fill-pink-500 text-pink-500")} />
+                                <span className={cn("text-sm", hasLiked && "text-pink-500")}>{tweet.likesCount || 0}</span>
+                            </button>
+
+                            <div className="w-px h-5 bg-white/10" />
+
+                            {/* Bookmark */}
+                            <button
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition hover:text-blue-400 hover:bg-blue-500/10"
+                                onClick={(e) => { e.stopPropagation(); handleBookmark(); }}
+                                disabled={isBookmarking}
+                                title="Bookmark"
+                            >
+                                <Bookmark className={cn("w-5 h-5", hasBookmarked && "fill-blue-500 text-blue-500")} />
+                            </button>
+
+                            <div className="w-px h-5 bg-white/10" />
+
+                            {/* Share */}
+                            <button
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition hover:text-blue-400 hover:bg-blue-500/10"
+                                onClick={(e) => { e.stopPropagation(); handleShare(); }}
+                                title="Share"
+                            >
+                                <Share className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Dot indicators for multi-media */}
+                        {tweet.mediaUrls.length > 1 && (
+                            <div className="flex gap-2">
+                                {tweet.mediaUrls.map((_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={(e) => { e.stopPropagation(); setLightboxIndex(i); }}
+                                        className={cn(
+                                            "w-2 h-2 rounded-full transition",
+                                            i === lightboxIndex ? "bg-white" : "bg-white/40"
+                                        )}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>,
+                document.body
+            )}
 
             {showBookmarkToast && (
                 <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-[var(--color-twitter-blue)] text-white px-5 py-2.5 rounded-full shadow-lg z-[100] text-[15px] font-bold flex items-center gap-3">

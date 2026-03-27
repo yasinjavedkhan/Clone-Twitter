@@ -28,6 +28,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   const isHomePage = pathname === "/";
   const isMessagePage = pathname?.startsWith("/messages");
+  const isVideosPage = pathname === "/videos";
 
   return (
     <div className="max-w-[1300px] mx-auto flex w-full justify-center sm:justify-start">
@@ -62,7 +63,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         </div>
       )}
 
-      {user && !isMessagePage && (
+      {user && !isMessagePage && !isVideosPage && (
           <button 
               onClick={() => router.push('/compose/post')}
               className="sm:hidden fixed bottom-20 right-4 w-14 h-14 bg-white text-black rounded-full flex items-center justify-center shadow-lg z-40 transition hover:bg-gray-200"
