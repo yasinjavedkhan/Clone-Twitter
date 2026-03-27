@@ -42,7 +42,7 @@ export async function requestNotificationPermission(userId: string): Promise<str
             return null;
         }
 
-        console.log("FCM: Initializing v25 (Diagnostic VAPID)");
+        console.log("FCM: Initializing v28 (Military Grade Decoder - No atob)");
         if (!VAPID_KEY) {
             console.error("FCM Error: VAPID_KEY is missing.");
             return null;
