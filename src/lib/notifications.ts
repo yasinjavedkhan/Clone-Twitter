@@ -7,33 +7,33 @@ import { db } from "@/lib/firebase";
 const VAPID_KEY = (process.env.NEXT_PUBLIC_FCM_VAPID_KEY || "BJ-iGROgllfJWNW-T5chkp1hGw3rhHMAyehMQ5Yb6qFCbbfIgRvrlvR3jdE3zyG4tNNQMXczzY1i3I4ZqyhVrrJQ").replace(/['"]/g, '').trim();
 
 function urlBase64ToUint8Array(base64String: string) {
-    // 1. Ultimate cleaning: remove all whitespace, quotes, and hidden chars
-    let base64 = base64String.replace(/\s/g, '').replace(/['"]/g, '');
+    // 1. Ultimate cleaning
+    const cleaned = base64String.replace(/\s/g, '').replace(/['"]/g, '').replace(/-/g, '+').replace(/_/g, '/').replace(/[^A-Za-z0-9\+\/]/g, '');
     
-    // 2. Convert URL-safe to standard Base64
-    base64 = base64.replace(/-/g, '+').replace(/_/g, '/');
-    
-    // 3. Remove any remaining characters that are NOT part of the Base64 alphabet
-    // This handles any invisible markers or corruption
-    base64 = base64.replace(/[^A-Za-z0-9\+\/]/g, '');
+    // 2. Manual Base64 Decoding (Bypassing atob for robustness)
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const lookup = new Uint8Array(256);
+    for (let i = 0; i < alphabet.length; i++) lookup[alphabet.charCodeAt(i)] = i;
 
-    // 4. Re-calculate padding correctly
-    const padding = "=".repeat((4 - (base64.length % 4)) % 4);
-    const finalBase64 = base64 + padding;
+    // Pad to multiple of 4 for the loop
+    const padded = cleaned + "A".repeat((4 - (cleaned.length % 4)) % 4);
+    const len = padded.length;
+    let bufferLength = cleaned.length * 0.75;
+    const outputArray = new Uint8Array(bufferLength | 0);
 
-    try {
-        console.log("FCM Decoder: Final string length:", finalBase64.length);
-        const rawData = window.atob(finalBase64);
-        const outputArray = new Uint8Array(rawData.length);
+    let p = 0;
+    for (let i = 0; i < len; i += 4) {
+        const encoded1 = lookup[padded.charCodeAt(i)];
+        const encoded2 = lookup[padded.charCodeAt(i + 1)];
+        const encoded3 = lookup[padded.charCodeAt(i + 2)];
+        const encoded4 = lookup[padded.charCodeAt(i + 3)];
 
-        for (let i = 0; i < rawData.length; ++i) {
-            outputArray[i] = rawData.charCodeAt(i);
-        }
-        return outputArray;
-    } catch (err) {
-        console.error("VAPID atob error:", err);
-        throw new Error("Invalid VAPID key encoding");
+        outputArray[p++] = (encoded1 << 2) | (encoded2 >> 4);
+        if (p < outputArray.length) outputArray[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
+        if (p < outputArray.length) outputArray[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
     }
+
+    return outputArray;
 }
 
 export async function requestNotificationPermission(userId: string): Promise<string | null> {
