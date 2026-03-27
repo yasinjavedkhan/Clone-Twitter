@@ -12,6 +12,7 @@ import { useRef, useEffect } from "react";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import { formatDistanceToNow } from "date-fns";
 import Avatar from "@/components/ui/Avatar";
+import { sendPushNotification } from "@/lib/notifications";
 
 interface CommentModalProps {
     tweet: any;
@@ -218,6 +219,21 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
             await updateDoc(tweetRef, {
                 commentsCount: increment(1)
             });
+
+            // 3. Send push notification to tweet author
+            if (tweet.userId !== user.uid) {
+                const senderName = userData?.displayName || user.displayName || user.email?.split('@')[0] || 'Someone';
+                sendPushNotification({
+                    toUserId: tweet.userId,
+                    title: `💬 New Reply`,
+                    body: `${senderName}: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`,
+                    data: {
+                        type: 'comment',
+                        tweetId: tweet.id,
+                        url: `/`
+                    }
+                }).catch(console.error);
+            }
 
             setContent("");
             setMediaFiles([]);
