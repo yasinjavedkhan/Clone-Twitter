@@ -9,7 +9,7 @@ import { userCache } from "@/lib/cache";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Avatar from "@/components/ui/Avatar";
-import { Heart, MessageCircle, Repeat2, Bookmark, Share, Volume2, VolumeX, X, Download } from "lucide-react";
+import { ArrowLeft, Heart, MessageCircle, Repeat2, Bookmark, Share, Volume2, VolumeX, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface VideoItem {
     tweetId: string;
@@ -39,16 +39,9 @@ export default function VideosContent() {
     const [isFollowLoading, setIsFollowLoading] = useState<Record<string, boolean>>({});
     const [counts, setCounts] = useState<Record<string, { likes: number; retweets: number; comments: number }>>({});
 
-    // Animation states
-    const [showHeart, setShowHeart] = useState<{ id: string; x: number; y: number } | null>(null);
-
     const containerRef = useRef<HTMLDivElement>(null);
     const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
     const observerRef = useRef<IntersectionObserver | null>(null);
-    
-    // Multi-click detection
-    const clickCountRef = useRef(0);
-    const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Fetch all videos from tweets
     useEffect(() => {
@@ -112,7 +105,7 @@ export default function VideosContent() {
         fetchVideos();
     }, [startUrl]);
 
-    // Check interaction states
+    // Check interaction states (Like, Bookmark, Retweet, Follow)
     useEffect(() => {
         if (!user || videos.length === 0) return;
         const checkInteractions = async () => {
@@ -189,7 +182,7 @@ export default function VideosContent() {
                 await deleteDoc(likeRef);
                 await updateDoc(tweetRef, { likesCount: increment(-1) });
                 setLikes(p => ({ ...p, [tweetId]: false }));
-                setCounts(p => ({ ...p, [tweetId]: { ...p[tweetId], likes: Math.max(0, (p[tweetId]?.likes || 1) - 1) } }));
+                setCounts(p => ({ ...p, [tweetId]: { ...p[tweetId], likes: (p[tweetId]?.likes || 1) - 1 } }));
             } else {
                 await setDoc(likeRef, { userId: user.uid, tweetId, createdAt: serverTimestamp() });
                 await updateDoc(tweetRef, { likesCount: increment(1) });
@@ -208,7 +201,7 @@ export default function VideosContent() {
                 await deleteDoc(ref);
                 await updateDoc(tweetRef, { retweetsCount: increment(-1) });
                 setRetweets(p => ({ ...p, [tweetId]: false }));
-                setCounts(p => ({ ...p, [tweetId]: { ...p[tweetId], retweets: Math.max(0, (p[tweetId]?.retweets || 1) - 1) } }));
+                setCounts(p => ({ ...p, [tweetId]: { ...p[tweetId], retweets: (p[tweetId]?.retweets || 1) - 1 } }));
             } else {
                 await setDoc(ref, { userId: user.uid, tweetId, createdAt: serverTimestamp() });
                 await updateDoc(tweetRef, { retweetsCount: increment(1) });
@@ -267,56 +260,6 @@ export default function VideosContent() {
             window.navigator.clipboard.writeText(shareUrl);
             alert("Link copied to clipboard!");
         }
-    };
-
-    const handleDownload = async (url: string, filename: string) => {
-        try {
-            const response = await fetch(url);
-            const blob = await response.blob();
-            const blobUrl = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = filename || "video.mp4";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(blobUrl);
-        } catch (error) {
-            console.error("Download failed:", error);
-            window.open(url, '_blank');
-        }
-    };
-
-    const handleComment = (tweetId: string) => {
-        // Feature placeholder
-        alert("Comments coming soon! For now, you can use the reply icon on the home feed.");
-    };
-
-    // ── GESTURE HANDLER (Double Click to Like, Triple Click to Comment) ──
-    const handleVideoClick = (e: React.MouseEvent, video: VideoItem, idx: number) => {
-        const { clientX, clientY } = e;
-        clickCountRef.current += 1;
-
-        if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
-
-        clickTimerRef.current = setTimeout(() => {
-            if (clickCountRef.current === 1) {
-                // ✅ Single Click: Play/Pause
-                const v = videoRefs.current[idx];
-                if (v) v.paused ? v.play() : v.pause();
-            } else if (clickCountRef.current === 2) {
-                // ✅ Double Click: Like + Animation
-                if (!likes[video.tweetId]) {
-                    handleLike(video.tweetId);
-                }
-                setShowHeart({ id: `${Date.now()}`, x: clientX, y: clientY });
-                setTimeout(() => setShowHeart(null), 1000);
-            } else if (clickCountRef.current === 3) {
-                // ✅ Triple Click: Comment
-                handleComment(video.tweetId);
-            }
-            clickCountRef.current = 0;
-        }, 300); // Window for multi-click
     };
 
     if (loading) return (
@@ -394,105 +337,83 @@ export default function VideosContent() {
                             </div>
                         </div>
 
+
                         {/* THE VIDEO */}
                         <video
                             ref={el => { videoRefs.current[idx] = el; }}
                             src={video.videoUrl}
-                            className="h-full w-full object-contain cursor-pointer"
+                            className="h-full w-full object-contain"
                             loop playsInline muted={muted}
-                            onClick={(e) => handleVideoClick(e, video, idx)}
+                            onClick={() => {
+                                const v = videoRefs.current[idx];
+                                if (v) v.paused ? v.play() : v.pause();
+                            }}
                         />
 
-                        {/* ── HEART POP ANIMATION OVERLAY ── */}
-                        {showHeart && (
-                            <div 
-                                className="absolute pointer-events-none z-[100] animate-heart-pop"
-                                style={{ left: showHeart.x, top: showHeart.y, transform: 'translate(-50%, -50%)' }}
-                            >
-                                <Heart className="w-24 h-24 text-pink-500 fill-pink-500 drop-shadow-[0_0_15px_rgba(236,72,153,1)]" />
-                            </div>
-                        )}
-
-                        {/* ── BOTTOM CAPTION ── */}
+                        {/* ── BOTTOM CAPTION (Hidden if no content) ── */}
                         {video.content && (
-                            <div className="absolute bottom-[80px] left-0 right-0 px-6 py-4 z-[70] bg-gradient-to-t from-black/40 to-transparent pointer-events-none text-center">
-                                <p className="text-white text-[15px] leading-relaxed drop-shadow mx-auto max-w-[85vw] line-clamp-2 italic">
+                            <div className="absolute bottom-24 left-0 right-0 px-6 py-4 z-[70] bg-gradient-to-t from-black/60 to-transparent pointer-events-none text-center">
+                                <p className="text-white text-[15px] leading-relaxed drop-shadow mx-auto max-w-[85vw] line-clamp-2">
                                     {video.content}
                                 </p>
                             </div>
                         )}
 
-                        {/* ── FULL-WIDTH BOTTOM ACTION BAR ── */}
-                        <div className="absolute bottom-0 left-0 right-0 z-[90] flex items-center justify-around bg-black/60 backdrop-blur-xl py-4 pb-8 text-gray-300 border-t border-white/5 pointer-events-auto shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+                        {/* ── BOTTOM ACTION PILL ── */}
+                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[90] flex items-center gap-1 bg-black/70 backdrop-blur-xl rounded-full px-5 py-2.5 text-gray-300 border border-white/10 shadow-2xl pointer-events-auto">
                             
                             {/* Comment */}
-                            <button 
-                                onClick={() => handleComment(video.tweetId)}
-                                className="flex flex-col items-center gap-1 transition hover:text-blue-400"
-                            >
-                                <MessageCircle className="w-6 h-6" />
-                                <span className="text-[11px] font-bold">{counts[video.tweetId]?.comments || 0}</span>
+                            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition hover:text-blue-400 hover:bg-blue-500/10">
+                                <MessageCircle className="w-5 h-5" />
+                                <span className="text-sm font-bold">{counts[video.tweetId]?.comments || 0}</span>
                             </button>
+
+                            <div className="w-px h-5 bg-white/10" />
 
                             {/* Retweet */}
                             <button 
                                 onClick={() => handleRetweet(video.tweetId)}
-                                className={cn("flex flex-col items-center gap-1 transition hover:text-green-400", retweets[video.tweetId] && "text-green-400")}
+                                className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full transition hover:text-green-400 hover:bg-green-500/10", retweets[video.tweetId] && "text-green-400")}
                             >
-                                <Repeat2 className="w-6 h-6" />
-                                <span className="text-[11px] font-bold">{counts[video.tweetId]?.retweets || 0}</span>
+                                <Repeat2 className="w-5 h-5" />
+                                <span className="text-sm font-bold">{counts[video.tweetId]?.retweets || 0}</span>
                             </button>
+
+                            <div className="w-px h-5 bg-white/10" />
 
                             {/* Like */}
                             <button 
                                 onClick={() => handleLike(video.tweetId)}
-                                className={cn("flex flex-col items-center gap-1 transition hover:text-pink-400", likes[video.tweetId] && "text-pink-400")}
+                                className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full transition hover:text-pink-400 hover:bg-pink-500/10", likes[video.tweetId] && "text-pink-400")}
                             >
-                                <Heart className={cn("w-6 h-6", likes[video.tweetId] && "fill-pink-500")} />
-                                <span className="text-[11px] font-bold">{counts[video.tweetId]?.likes || 0}</span>
+                                <Heart className={cn("w-5 h-5", likes[video.tweetId] && "fill-pink-500")} />
+                                <span className="text-sm font-bold">{counts[video.tweetId]?.likes || 0}</span>
                             </button>
+
+                            <div className="w-px h-5 bg-white/10" />
 
                             {/* Bookmark */}
                             <button 
                                 onClick={() => handleBookmark(video.tweetId)}
-                                className={cn("flex items-center justify-center transition hover:text-blue-400", bookmarks[video.tweetId] && "text-blue-400")}
+                                className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full transition hover:text-blue-400 hover:bg-blue-500/10", bookmarks[video.tweetId] && "text-blue-400")}
                             >
-                                <Bookmark className={cn("w-6 h-6", bookmarks[video.tweetId] && "fill-blue-500")} />
+                                <Bookmark className={cn("w-5 h-5", bookmarks[video.tweetId] && "fill-blue-500")} />
                             </button>
 
-                            {/* Download */}
-                            <button 
-                                onClick={() => handleDownload(video.videoUrl, `video-${video.tweetId}.mp4`)}
-                                className="flex items-center justify-center transition hover:text-white"
-                            >
-                                <Download className="w-6 h-6" />
-                            </button>
+                            <div className="w-px h-5 bg-white/10" />
 
                             {/* Share */}
                             <button 
                                 onClick={() => handleShare(video)}
-                                className="flex items-center justify-center transition hover:text-blue-400"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition hover:text-blue-400 hover:bg-blue-500/10"
                             >
-                                <Share className="w-6 h-6" />
+                                <Share className="w-5 h-5" />
                             </button>
                         </div>
 
                     </div>
                 ))}
             </div>
-
-            <style jsx global>{`
-                @keyframes heart-pop {
-                    0% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
-                    15% { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
-                    30% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-                    45% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
-                    100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
-                }
-                .animate-heart-pop {
-                    animation: heart-pop 1s ease-out forwards;
-                }
-            `}</style>
         </div>
     );
 }
