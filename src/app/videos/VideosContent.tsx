@@ -47,6 +47,12 @@ export default function VideosContent() {
 
     // Fetch all videos from tweets
     useEffect(() => {
+        if (!startUrl && !loading) {
+            router.push('/');
+        }
+    }, [startUrl, loading, router]);
+
+    useEffect(() => {
         const fetchVideos = async () => {
             setLoading(true);
             try {
