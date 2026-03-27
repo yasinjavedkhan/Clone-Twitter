@@ -7,6 +7,7 @@ import { collection, getDocs, query, orderBy, doc, getDoc, updateDoc, setDoc, de
 import { useAuth } from "@/contexts/AuthContext";
 import { userCache } from "@/lib/cache";
 import { cn } from "@/lib/utils";
+import { sendPushNotification } from "@/lib/notifications";
 import Link from "next/link";
 import Avatar from "@/components/ui/Avatar";
 import { ArrowLeft, Heart, MessageCircle, Repeat2, Bookmark, Share, Volume2, VolumeX, X, ChevronLeft, ChevronRight } from "lucide-react";
@@ -242,6 +243,19 @@ export default function VideosContent() {
                 await updateDoc(doc(db, "users", user.uid), { followingCount: increment(1) });
                 await updateDoc(doc(db, "users", authorId), { followersCount: increment(1) });
                 setIsFollowing(p => ({ ...p, [authorId]: true }));
+                
+                // Send push notification
+                const senderName = user.displayName || user.email?.split('@')[0] || 'Someone';
+                sendPushNotification({
+                    toUserId: authorId,
+                    title: "👋 New Follower",
+                    body: `${senderName} started following you from the video feed!`,
+                    data: {
+                        type: 'follow',
+                        followerId: user.uid,
+                        url: `/profile/${user.uid}`
+                    }
+                }).catch(console.error);
             }
         } catch (err) {
             console.error("Follow error:", err);

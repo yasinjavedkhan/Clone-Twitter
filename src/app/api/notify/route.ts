@@ -32,14 +32,14 @@ function getAdminApp() {
         formattedKey = formattedKey.slice(1, -1);
     }
     
-    // Aggressively handle literal \n and actual newlines
+    // Replace all literal \n or double-escaped \n with actual newlines
     formattedKey = formattedKey.replace(/\\n/g, '\n');
     
     // Ensure the key has proper BEGIN/END markers if they got stripped
     if (!formattedKey.includes("-----BEGIN PRIVATE KEY-----")) {
         console.warn("Firebase Admin: Private key missing BEGIN marker, fixing format.");
         // If it's just the raw base64, wrap it
-        formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`;
+        formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey.replace(/\s/g, '\n')}\n-----END PRIVATE KEY-----`;
     }
 
     // Use Application Default Credentials or service account
