@@ -545,9 +545,9 @@ export default function Home() {
                 <div className="flex items-center">
                   <input
                     type="file"
-                    accept="image/*,video/*"
+                    accept="image/*,video/*,.jpg,.jpeg,.png,.gif,.mp4,.mov,.webm"
                     multiple
-                    hidden
+                    className="hidden"
                     ref={fileInputRef}
                     onChange={handleMediaSelect}
                   />

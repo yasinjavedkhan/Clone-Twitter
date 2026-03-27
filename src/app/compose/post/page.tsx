@@ -7,9 +7,11 @@ import { collection, addDoc, serverTimestamp, query, where, getDocs } from "fire
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { Button } from "@/components/ui/Button";
 import { Image, List, Smile, Calendar, MapPin, Globe, X, User } from "lucide-react";
-import EmojiPicker, { Theme } from "emoji-picker-react";
 import Avatar from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 import { useRouter } from "next/navigation";
 import { sendPushNotification } from "@/lib/notifications";
 
@@ -305,11 +307,11 @@ export default function ComposePage() {
                     {/* Actions + Post Button */}
                     <div className="flex justify-between items-center mt-auto pt-4 sticky bottom-0 bg-black border-t border-gray-800 -mx-4 px-4 pb-4">
                         <div className="flex items-center -ml-2">
-                            <input type="file" accept="image/*,video/*" multiple hidden ref={fileInputRef} onChange={handleMediaSelect} />
+                            <input type="file" accept="image/*,video/*" multiple className="hidden" ref={fileInputRef} onChange={handleMediaSelect} />
                             <button onClick={() => fileInputRef.current?.click()} disabled={mediaFiles.length >= 4} className="p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] disabled:opacity-50 transition"><Image className="w-5 h-5" /></button>
                             <div className="relative" ref={emojiPickerRef}>
                                 <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition"><Smile className="w-5 h-5" /></button>
-                                {showEmojiPicker && <div className="absolute bottom-12 left-0 z-50"><EmojiPicker onEmojiClick={onEmojiClick} theme={Theme.DARK} autoFocusSearch={false} width={300} height={400} /></div>}
+                                {showEmojiPicker && <div className="absolute bottom-12 left-0 z-50"><EmojiPicker onEmojiClick={onEmojiClick} theme={"dark" as any} autoFocusSearch={false} width={300} height={400} /></div>}
                             </div>
                             <button onClick={() => setShowPoll(!showPoll)} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition", showPoll && "bg-blue-500/10")}><List className="w-5 h-5" /></button>
                             <button onClick={() => setShowSchedule(!showSchedule)} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition", showSchedule && "bg-blue-500/10")}><Calendar className="w-5 h-5" /></button>
