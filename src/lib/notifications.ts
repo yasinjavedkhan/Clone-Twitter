@@ -61,16 +61,20 @@ export async function requestNotificationPermission(userId: string): Promise<str
         
         if (!registration) return null;
         
-        let vapidKeyArray: any;
-        try {
-            vapidKeyArray = urlBase64ToUint8Array(VAPID_KEY);
-        } catch (err: any) {
-            console.error("FCM Critical: VAPID Decoding Failure:", err.message);
-            return null;
-        }
+        // Firebase SDK internally calls atob on this string. 
+        // If it's not a multiple of 4, it crashes on some browsers.
+        const normalized = VAPID_KEY.trim()
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
+        
+        const paddedVapidString = normalized.length % 4 === 0 
+            ? normalized 
+            : normalized.padEnd(normalized.length + (4 - (normalized.length % 4)), '=');
+
+        console.log(`FCM: Calling getToken with padded string (Length: ${paddedVapidString.length})`);
 
         const token = await getToken(messaging, {
-            vapidKey: vapidKeyArray,
+            vapidKey: paddedVapidString,
             serviceWorkerRegistration: registration,
         });
 
