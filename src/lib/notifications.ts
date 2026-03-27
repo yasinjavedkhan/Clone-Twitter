@@ -7,17 +7,23 @@ import { db } from "@/lib/firebase";
 const VAPID_KEY = (process.env.NEXT_PUBLIC_FCM_VAPID_KEY || "BJ-iGROgllfJWNW-T5chkp1hGw3rhHMAyehMQ5Yb6qFCbbfIgRvrlvR3jdE3zyG4tNNQMXczzY1i3I4ZqyhVrrJQ").replace(/['"]/g, '').trim();
 
 function urlBase64ToUint8Array(base64String: string) {
-    // 1. Strict cleaning: remove quotes, spaces, and hidden chars
-    const cleaned = base64String.replace(/['"]/g, '').trim();
+    // 1. Ultimate cleaning: remove all whitespace, quotes, and hidden chars
+    let base64 = base64String.replace(/\s/g, '').replace(/['"]/g, '');
     
-    // 2. Standard base64 conversion
-    const padding = "=".repeat((4 - (cleaned.length % 4)) % 4);
-    const base64 = (cleaned + padding)
-        .replace(/\-/g, "+")
-        .replace(/_/g, "/");
+    // 2. Convert URL-safe to standard Base64
+    base64 = base64.replace(/-/g, '+').replace(/_/g, '/');
+    
+    // 3. Remove any remaining characters that are NOT part of the Base64 alphabet
+    // This handles any invisible markers or corruption
+    base64 = base64.replace(/[^A-Za-z0-9\+\/]/g, '');
+
+    // 4. Re-calculate padding correctly
+    const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+    const finalBase64 = base64 + padding;
 
     try {
-        const rawData = window.atob(base64);
+        console.log("FCM Decoder: Final string length:", finalBase64.length);
+        const rawData = window.atob(finalBase64);
         const outputArray = new Uint8Array(rawData.length);
 
         for (let i = 0; i < rawData.length; ++i) {
