@@ -310,7 +310,7 @@ export default function VideosContent() {
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none", overscrollBehaviorY: "contain" } as React.CSSProperties}
             >
                 {videos.map((video, idx) => (
-                    <div key={`${video.tweetId}-${idx}`} className="relative h-full w-full snap-start flex items-center justify-center bg-black overflow-hidden">
+                    <div key={`${video.tweetId}-${idx}`} className="relative h-full w-full snap-start snap-always flex items-center justify-center bg-black overflow-hidden">
                         
                         {/* ── TOP BAR ( Profile + Follow + X ) ── */}
                         <div className="absolute top-0 left-0 right-0 z-[100] flex items-center justify-between px-4 py-4 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
