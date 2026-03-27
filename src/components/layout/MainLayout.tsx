@@ -7,6 +7,7 @@ import MobileNav from "@/components/layout/MobileNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus, BellOff, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -31,17 +32,19 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const isVideosPage = pathname === "/videos";
 
   return (
-    <div className="max-w-[1300px] mx-auto flex w-full justify-center sm:justify-start">
-      <Sidebar />
+    <div className="max-w-[1300px] mx-auto flex w-full justify-center sm:justify-start overflow-x-hidden">
+      {!isVideosPage && <Sidebar />}
       <main 
-        className={`flex-grow border-r border-gray-800 ml-0 sm:ml-20 xl:ml-64 min-h-screen w-full ${
-          isMessagePage ? "max-w-none" : isHomePage ? "max-w-4xl" : "max-w-2xl"
-        }`}
+        className={cn(
+          "flex-grow border-r border-gray-800 min-h-screen w-full transition-all duration-300",
+          !isVideosPage && "ml-0 sm:ml-20 xl:ml-64",
+          isVideosPage ? "max-w-none border-none" : isMessagePage ? "max-w-none" : isHomePage ? "max-w-4xl" : "max-w-2xl"
+        )}
       >
         {children}
       </main>
-      {!isMessagePage && !isHomePage && <RightSidebar />}
-      <MobileNav />
+      {!isMessagePage && !isHomePage && !isVideosPage && <RightSidebar />}
+      {!isVideosPage && <MobileNav />}
       
       {/* Notification Banner for Mobile */}
       {showNotificationNotice && user && (
