@@ -39,9 +39,16 @@ export default function VideosContent() {
     const [isFollowLoading, setIsFollowLoading] = useState<Record<string, boolean>>({});
     const [counts, setCounts] = useState<Record<string, { likes: number; retweets: number; comments: number }>>({});
 
+    // Animation states
+    const [showHeart, setShowHeart] = useState<{ id: string; x: number; y: number } | null>(null);
+
     const containerRef = useRef<HTMLDivElement>(null);
     const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
     const observerRef = useRef<IntersectionObserver | null>(null);
+    
+    // Multi-click detection
+    const clickCountRef = useRef(0);
+    const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Fetch all videos from tweets
     useEffect(() => {
@@ -105,7 +112,7 @@ export default function VideosContent() {
         fetchVideos();
     }, [startUrl]);
 
-    // Check interaction states (Like, Bookmark, Retweet, Follow)
+    // Check interaction states
     useEffect(() => {
         if (!user || videos.length === 0) return;
         const checkInteractions = async () => {
@@ -182,7 +189,7 @@ export default function VideosContent() {
                 await deleteDoc(likeRef);
                 await updateDoc(tweetRef, { likesCount: increment(-1) });
                 setLikes(p => ({ ...p, [tweetId]: false }));
-                setCounts(p => ({ ...p, [tweetId]: { ...p[tweetId], likes: (p[tweetId]?.likes || 1) - 1 } }));
+                setCounts(p => ({ ...p, [tweetId]: { ...p[tweetId], likes: Math.max(0, (p[tweetId]?.likes || 1) - 1) } }));
             } else {
                 await setDoc(likeRef, { userId: user.uid, tweetId, createdAt: serverTimestamp() });
                 await updateDoc(tweetRef, { likesCount: increment(1) });
@@ -201,7 +208,7 @@ export default function VideosContent() {
                 await deleteDoc(ref);
                 await updateDoc(tweetRef, { retweetsCount: increment(-1) });
                 setRetweets(p => ({ ...p, [tweetId]: false }));
-                setCounts(p => ({ ...p, [tweetId]: { ...p[tweetId], retweets: (p[tweetId]?.retweets || 1) - 1 } }));
+                setCounts(p => ({ ...p, [tweetId]: { ...p[tweetId], retweets: Math.max(0, (p[tweetId]?.retweets || 1) - 1) } }));
             } else {
                 await setDoc(ref, { userId: user.uid, tweetId, createdAt: serverTimestamp() });
                 await updateDoc(tweetRef, { retweetsCount: increment(1) });
@@ -276,9 +283,40 @@ export default function VideosContent() {
             window.URL.revokeObjectURL(blobUrl);
         } catch (error) {
             console.error("Download failed:", error);
-            // Fallback for cross-origin if fetch fails (opens in new tab)
             window.open(url, '_blank');
         }
+    };
+
+    const handleComment = (tweetId: string) => {
+        // Feature placeholder
+        alert("Comments coming soon! For now, you can use the reply icon on the home feed.");
+    };
+
+    // ── GESTURE HANDLER (Double Click to Like, Triple Click to Comment) ──
+    const handleVideoClick = (e: React.MouseEvent, video: VideoItem, idx: number) => {
+        const { clientX, clientY } = e;
+        clickCountRef.current += 1;
+
+        if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
+
+        clickTimerRef.current = setTimeout(() => {
+            if (clickCountRef.current === 1) {
+                // ✅ Single Click: Play/Pause
+                const v = videoRefs.current[idx];
+                if (v) v.paused ? v.play() : v.pause();
+            } else if (clickCountRef.current === 2) {
+                // ✅ Double Click: Like + Animation
+                if (!likes[video.tweetId]) {
+                    handleLike(video.tweetId);
+                }
+                setShowHeart({ id: `${Date.now()}`, x: clientX, y: clientY });
+                setTimeout(() => setShowHeart(null), 1000);
+            } else if (clickCountRef.current === 3) {
+                // ✅ Triple Click: Comment
+                handleComment(video.tweetId);
+            }
+            clickCountRef.current = 0;
+        }, 300); // Window for multi-click
     };
 
     if (loading) return (
@@ -360,15 +398,22 @@ export default function VideosContent() {
                         <video
                             ref={el => { videoRefs.current[idx] = el; }}
                             src={video.videoUrl}
-                            className="h-full w-full object-contain"
+                            className="h-full w-full object-contain cursor-pointer"
                             loop playsInline muted={muted}
-                            onClick={() => {
-                                const v = videoRefs.current[idx];
-                                if (v) v.paused ? v.play() : v.pause();
-                            }}
+                            onClick={(e) => handleVideoClick(e, video, idx)}
                         />
 
-                        {/* ── BOTTOM CAPTION (Higher up to avoid overlap) ── */}
+                        {/* ── HEART POP ANIMATION OVERLAY ── */}
+                        {showHeart && (
+                            <div 
+                                className="absolute pointer-events-none z-[100] animate-heart-pop"
+                                style={{ left: showHeart.x, top: showHeart.y, transform: 'translate(-50%, -50%)' }}
+                            >
+                                <Heart className="w-24 h-24 text-pink-500 fill-pink-500 drop-shadow-[0_0_15px_rgba(236,72,153,1)]" />
+                            </div>
+                        )}
+
+                        {/* ── BOTTOM CAPTION ── */}
                         {video.content && (
                             <div className="absolute bottom-[80px] left-0 right-0 px-6 py-4 z-[70] bg-gradient-to-t from-black/40 to-transparent pointer-events-none text-center">
                                 <p className="text-white text-[15px] leading-relaxed drop-shadow mx-auto max-w-[85vw] line-clamp-2 italic">
@@ -381,7 +426,10 @@ export default function VideosContent() {
                         <div className="absolute bottom-0 left-0 right-0 z-[90] flex items-center justify-around bg-black/60 backdrop-blur-xl py-4 pb-8 text-gray-300 border-t border-white/5 pointer-events-auto shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
                             
                             {/* Comment */}
-                            <button className="flex flex-col items-center gap-1 transition hover:text-blue-400">
+                            <button 
+                                onClick={() => handleComment(video.tweetId)}
+                                className="flex flex-col items-center gap-1 transition hover:text-blue-400"
+                            >
                                 <MessageCircle className="w-6 h-6" />
                                 <span className="text-[11px] font-bold">{counts[video.tweetId]?.comments || 0}</span>
                             </button>
@@ -432,6 +480,19 @@ export default function VideosContent() {
                     </div>
                 ))}
             </div>
+
+            <style jsx global>{`
+                @keyframes heart-pop {
+                    0% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+                    15% { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
+                    30% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+                    45% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+                    100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+                }
+                .animate-heart-pop {
+                    animation: heart-pop 1s ease-out forwards;
+                }
+            `}</style>
         </div>
     );
 }
