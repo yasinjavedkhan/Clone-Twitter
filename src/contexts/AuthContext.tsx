@@ -126,7 +126,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }).catch((err: any) => {
             if (err.code !== 'auth/no-current-user') {
                 console.error("Redirect result error:", err);
-                const msg = `Login failed: ${err.message} (Code: ${err.code})`;
+                let msg = `Login failed: ${err.message} (Code: ${err.code})`;
+                if (err.code === 'auth/unauthorized-domain') {
+                    msg = "🚫 Domain Permission Denied: Your website is not yet authorized in the Firebase console. Please add 'clone-twitter-fmya.vercel.app' to your Authorized Domains.";
+                }
                 setError(msg);
                 if (typeof window !== 'undefined') window.alert(msg);
             }
@@ -138,6 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signInWithGoogle = async () => {
         setLoading(true);
         setError(null);
+        console.log("🚀 Starting Google Sign-In (Key:", auth.config.apiKey?.slice(0, 8) + "...)");
         const provider = new GoogleAuthProvider();
         
         // Detect mobile or semi-mobile environments
@@ -149,8 +153,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 return;
             } catch (err: any) {
                 console.error("Redirect start error:", err);
-                setError(`Redirect failed: ${err.message}`);
-                window.alert(`Sign-in Error: ${err.message}`);
+                const msg = `Redirect failed: ${err.message} (Code: ${err.code})`;
+                setError(msg);
+                window.alert(msg);
                 setLoading(false);
             }
             return;
@@ -170,15 +175,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 try {
                     await signInWithRedirect(auth, provider);
                 } catch (redirErr: any) {
-                    setError(`Sign-in failed: ${redirErr.message}`);
-                    window.alert(`Sign-in Error: ${redirErr.message}`);
+                    const msg = `Sign-in failed: ${redirErr.message} (Code: ${redirErr.code})`;
+                    setError(msg);
+                    window.alert(msg);
                     setLoading(false);
                 }
                 return;
             }
 
             console.error("Error signing in with Google:", err);
-            const msg = `Login failed: ${err.message} (Code: ${err.code})`;
+            let msg = `Login failed: ${err.message} (Code: ${err.code})`;
+            if (err.code === 'auth/unauthorized-domain') {
+                 msg = "🚫 Domain Permission Denied: Your website is not yet authorized in Firebase. Add 'clone-twitter-fmya.vercel.app' to Authorized Domains in Settings.";
+            }
             setError(msg);
             if (typeof window !== 'undefined') window.alert(msg);
             setLoading(false);
