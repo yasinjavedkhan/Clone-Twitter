@@ -6,16 +6,38 @@ import { db } from "@/lib/firebase";
 // Your VAPID key from Firebase Console → Project Settings → Cloud Messaging
 const VAPID_KEY = (process.env.NEXT_PUBLIC_FCM_VAPID_KEY || "BJ-iGROgllfJWNW-T5chkp1hGw3rhHMAyehMQ5Yb6qFCbbfIgRvrlvR3jdE3zyG4tNNQMXczzY1i3I4ZqyhVrrJQ").replace(/['"]/g, '').trim();
 
+function urlBase64ToUint8Array(base64String: string) {
+    // 1. Strict cleaning: remove quotes, spaces, and hidden chars
+    const cleaned = base64String.replace(/['"]/g, '').trim();
+    
+    // 2. Standard base64 conversion
+    const padding = "=".repeat((4 - (cleaned.length % 4)) % 4);
+    const base64 = (cleaned + padding)
+        .replace(/\-/g, "+")
+        .replace(/_/g, "/");
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
 export async function requestNotificationPermission(userId: string): Promise<string | null> {
     try {
         if (typeof window === "undefined" || !("Notification" in window)) {
             return null;
         }
 
-        console.log("FCM: Initializing v23 (Direct String VAPID)");
+        console.log("FCM: Initializing v25 (Diagnostic VAPID)");
         if (!VAPID_KEY) {
             console.error("FCM Error: VAPID_KEY is missing.");
+            return null;
         }
+
+        console.log(`FCM Debug: VAPID Start: ${VAPID_KEY.substring(0, 5)}... End: ${VAPID_KEY.substring(VAPID_KEY.length - 5)} (Total: ${VAPID_KEY.length})`);
 
         const permission = await window.Notification.requestPermission();
         if (permission !== "granted") {
@@ -28,8 +50,16 @@ export async function requestNotificationPermission(userId: string): Promise<str
         
         if (!registration) return null;
         
+        let vapidKeyArray: any;
+        try {
+            vapidKeyArray = urlBase64ToUint8Array(VAPID_KEY);
+        } catch (err: any) {
+            console.error("FCM Critical: VAPID Decoding Failure:", err.message);
+            return null;
+        }
+
         const token = await getToken(messaging, {
-            vapidKey: VAPID_KEY,
+            vapidKey: vapidKeyArray,
             serviceWorkerRegistration: registration,
         });
 
