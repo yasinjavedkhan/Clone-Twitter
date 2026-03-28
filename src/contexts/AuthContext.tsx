@@ -142,6 +142,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(true);
         setError(null);
         console.log("🚀 Starting Google Sign-In (Key:", auth.config.apiKey?.slice(0, 8) + "...)");
+        console.log("🔍 Auth Config:", {
+            authDomain: auth.config.authDomain,
+            projectId: auth.app.options.projectId,
+            apiKey: auth.config.apiKey ? "Present" : "Missing"
+        });
+
         const provider = new GoogleAuthProvider();
         
         // Detect mobile or semi-mobile environments
@@ -149,10 +155,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (isMobile) {
             try {
+                console.log("📱 Mobile environment detected, using redirect...");
                 await signInWithRedirect(auth, provider);
                 return;
             } catch (err: any) {
-                console.error("Redirect start error:", err);
+                console.error("❌ Redirect start error:", err);
                 const msg = `Redirect failed: ${err.message} (Code: ${err.code})`;
                 setError(msg);
                 window.alert(msg);
@@ -162,16 +169,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         try {
-            await signInWithPopup(auth, provider);
+            console.log("💻 Desktop environment detected, using popup...");
+            const result = await signInWithPopup(auth, provider);
+            console.log("✅ Sign-in successful for user:", result.user.email);
             return;
         } catch (err: any) {
+            console.error("❌ Sign-in error detailed:", {
+                code: err.code,
+                message: err.message,
+                stack: err.stack
+            });
+
             if (err.code === 'auth/cancelled-popup-request' || err.code === 'auth/popup-closed-by-user') {
+                console.log("ℹ️ Popup closed by user.");
                 setLoading(false);
                 return;
             }
             
             if (err.code === 'auth/popup-blocked') {
-                console.warn("Popup blocked, falling back to redirect...");
+                console.warn("⚠️ Popup blocked, falling back to redirect...");
                 try {
                     await signInWithRedirect(auth, provider);
                 } catch (redirErr: any) {
@@ -183,11 +199,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 return;
             }
 
-            console.error("Error signing in with Google:", err);
             let msg = `Login failed: ${err.message} (Code: ${err.code})`;
             if (err.code === 'auth/unauthorized-domain') {
                  msg = "🚫 Domain Permission Denied: Your website is not yet authorized in Firebase. Add 'clone-twitter-fmya.vercel.app' to Authorized Domains in Settings.";
+            } else if (err.code === 'auth/operation-not-allowed') {
+                 msg = "🚫 Google Sign-In is not enabled in Firebase Authentication Console. Please enable it in 'Sign-in method'.";
+            } else if (err.code === 'auth/invalid-api-key') {
+                 msg = "🚫 Invalid API Key: The API key used in your configuration is incorrect.";
             }
+
             setError(msg);
             if (typeof window !== 'undefined') window.alert(msg);
             setLoading(false);
