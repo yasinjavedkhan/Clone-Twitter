@@ -35,7 +35,7 @@ function MainLayoutContent({ children }: MainLayoutProps) {
   const isVideosPage = pathname?.includes("/videos");
 
   return (
-    <div className="max-w-[1300px] mx-auto flex w-full justify-center sm:justify-start overflow-x-hidden">
+    <div className="max-w-[1300px] mx-auto flex w-full justify-center sm:justify-start">
       {!isImmersiveVideo && <Sidebar />}
       <main 
         className={cn(

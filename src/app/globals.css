@@ -18,6 +18,7 @@
       radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
     color: #f1f5f9;
     min-height: 100vh;
+    overflow-x: hidden;
   }
 }
 
