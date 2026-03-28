@@ -301,12 +301,7 @@ export default function Home() {
   return (
     <div className="flex flex-col relative w-full">
       {/* Tabs */}
-      <div 
-        className={cn(
-          "sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800 flex items-center transition-transform duration-300 w-full pl-3 sm:pl-0",
-          isHeaderVisible ? "translate-y-0" : "-translate-y-full"
-        )}
-      >
+      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800 flex items-center w-full pl-3 sm:pl-0">
         {!user && (
             <div className="shrink-0 sm:hidden pr-2">
                 <button
