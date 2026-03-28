@@ -37,10 +37,10 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'foryou' | 'following'>('foryou');
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number>(0);
+  const lastScrollY = useRef<number>(0);
 
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -119,18 +119,18 @@ export default function Home() {
       const currentScrollY = window.scrollY;
       
       // Hide if scrolling down, show if scrolling up
-      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+      if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
         setIsHeaderVisible(false);
       } else {
         setIsHeaderVisible(true);
       }
       
-      setLastScrollY(currentScrollY);
+      lastScrollY.current = currentScrollY;
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
   const onEmojiClick = (emojiData: any) => {
     setContent((prev) => prev + emojiData.emoji);
@@ -303,8 +303,8 @@ export default function Home() {
       {/* Tabs */}
       <div 
         className={cn(
-          "sticky z-40 bg-black/80 backdrop-blur-md border-b border-gray-800 flex items-center transition-all duration-300 w-full pl-3 sm:pl-0",
-          isHeaderVisible ? "top-0" : "-top-20"
+          "sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800 flex items-center transition-transform duration-300 w-full pl-3 sm:pl-0",
+          isHeaderVisible ? "translate-y-0" : "-translate-y-full"
         )}
       >
         {!user && (
