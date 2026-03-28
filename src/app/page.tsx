@@ -115,17 +115,35 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      // Hide if scrolling down, show if scrolling up
-      if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
-        setIsHeaderVisible(false);
-      } else {
-        setIsHeaderVisible(true);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          
+          if (currentScrollY > 50) {
+            // Scrolling down with a threshold of 10px
+            if (currentScrollY > lastScrollY.current + 10) {
+              setIsHeaderVisible(false);
+            } 
+            // Scrolling up with a threshold of 10px
+            else if (currentScrollY < lastScrollY.current - 10) {
+              setIsHeaderVisible(true);
+            }
+          } else {
+            // Always show at the very top
+            setIsHeaderVisible(true);
+          }
+          
+          // Only update lastScrollY if we passed a threshold, this makes the scroll logic much cleaner
+          if (Math.abs(currentScrollY - lastScrollY.current) > 10) {
+            lastScrollY.current = currentScrollY;
+          }
+          
+          ticking = false;
+        });
+        ticking = true;
       }
-      
-      lastScrollY.current = currentScrollY;
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -301,7 +319,12 @@ export default function Home() {
   return (
     <div className="flex flex-col relative w-full">
       {/* Tabs */}
-      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800 flex items-center w-full pl-3 sm:pl-0">
+      <div 
+        className={cn(
+          "sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800 flex items-center transition-transform duration-300 w-full pl-3 sm:pl-0",
+          isHeaderVisible ? "translate-y-0" : "-translate-y-full"
+        )}
+      >
         {!user && (
             <div className="shrink-0 sm:hidden pr-2">
                 <button
