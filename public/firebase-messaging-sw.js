@@ -5,7 +5,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDOOlKD6kaX92b805M73jz9Ceodagffqj0",
+  apiKey: "AIzaSyC4rVkn_Lzirs53BfV3PU9QY2yyDw5YiMI",
   authDomain: "twitter-clone-app-16eb3.firebaseapp.com",
   projectId: "twitter-clone-app-16eb3",
   storageBucket: "twitter-clone-app-16eb3.firebasestorage.app",
@@ -15,6 +15,7 @@ const firebaseConfig = {
 
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
+  console.log('[SW] Firebase Messaging Initialized (v29)');
 }
 
 const messaging = firebase.messaging();

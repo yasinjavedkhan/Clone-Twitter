@@ -20,6 +20,8 @@ export async function requestNotificationPermission(userId: string): Promise<str
         }
 
         console.log(`FCM Debug: Using VAPID: ${VAPID_KEY.substring(0, 5)}...${VAPID_KEY.substring(VAPID_KEY.length - 5)} (Length: ${VAPID_KEY.length})`);
+        
+        console.log(`FCM Debug: Firebase App is using API KEY: ${app.options.apiKey?.substring(0, 10)}... (Length: ${app.options.apiKey?.length})`);
 
         const permission = await window.Notification.requestPermission();
         if (permission !== "granted") {
@@ -47,32 +49,23 @@ export async function requestNotificationPermission(userId: string): Promise<str
 
         const messaging = getMessaging(app);
         
-        // Normalize VAPID key for Firebase SDK expectations
-        // The SDK is very sensitive to the Base64 encoding style (URL-safe vs standard)
-        const normalizedVapid = VAPID_KEY
-            .replace(/-/g, '+')
-            .replace(/_/g, '/')
-            .trim();
+        console.log("FCM: Requesting token with VAPID key...");
         
-        // Ensure padding is a multiple of 4
-        const finalVapid = normalizedVapid.length % 4 === 0 
-            ? normalizedVapid 
-            : normalizedVapid.padEnd(normalizedVapid.length + (4 - (normalizedVapid.length % 4)), '=');
-
-        console.log("FCM: Requesting token with normalized VAPID...");
-
+        // Pass the VAPID key directly to getToken. The SDK handles 
+        // Base64URL vs Standard Base64 automatically.
         const token = await getToken(messaging, {
-            vapidKey: finalVapid,
+            vapidKey: VAPID_KEY,
             serviceWorkerRegistration: registration,
         });
 
         if (token) {
+            console.log("FCM: Token generated successfully. Length:", token.length);
             // Save token to Firestore
             await updateDoc(doc(db, "users", userId), {
                 fcmToken: token,
                 fcmTokenUpdated: new Date(),
             });
-            console.log("FCM: Token generated and saved successfully.");
+            console.log("FCM: Token saved to Firestore for user:", userId);
             return token;
         }
 
@@ -81,8 +74,11 @@ export async function requestNotificationPermission(userId: string): Promise<str
     } catch (error: any) {
         console.error("CRITICAL FCM Error:", error);
         
-        if (error.code === 'messaging/token-subscribe-failed') {
-          console.error("HINT: This usually means the Domain is not authorized in Firebase Console OR the VAPID key is invalid for this project.");
+        if (error.code === 'messaging/token-subscribe-failed' || error.message?.includes('401')) {
+          console.error("DIAGNOSTIC HINT: 401/Unauthorized usually means:");
+          console.error("1. 'Firebase Cloud Messaging API' is NOT enabled in Google Cloud Console.");
+          console.error("2. The API key is restricted and doesn't have permissions for FCM.");
+          console.error("3. The VAPID key in .env.local doesn't match the current project settings.");
         }
         
         return null;
