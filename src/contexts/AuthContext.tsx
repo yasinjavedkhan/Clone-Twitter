@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
     }, []);
 
-    // Handle redirect result (for mobile sign-in)
+    // Handle redirect result (for mobile sign-in fallback if needed)
     useEffect(() => {
         // Diagnostic: Check if current domain is authorized
         if (typeof window !== 'undefined') {
@@ -142,34 +142,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(true);
         setError(null);
         console.log("🚀 Starting Google Sign-In (Key:", auth.config.apiKey?.slice(0, 8) + "...)");
-        console.log("🔍 Auth Config:", {
-            authDomain: auth.config.authDomain,
-            projectId: auth.app.options.projectId,
-            apiKey: auth.config.apiKey ? "Present" : "Missing"
-        });
-
-        const provider = new GoogleAuthProvider();
         
-        // Detect mobile or semi-mobile environments
-        const isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-        if (isMobile) {
-            try {
-                console.log("📱 Mobile environment detected, using redirect...");
-                await signInWithRedirect(auth, provider);
-                return;
-            } catch (err: any) {
-                console.error("❌ Redirect start error:", err);
-                const msg = `Redirect failed: ${err.message} (Code: ${err.code})`;
-                setError(msg);
-                window.alert(msg);
-                setLoading(false);
-            }
-            return;
-        }
+        const provider = new GoogleAuthProvider();
 
         try {
-            console.log("💻 Desktop environment detected, using popup...");
+            console.log("💻 Attempting sign-in with popup...");
             const result = await signInWithPopup(auth, provider);
             console.log("✅ Sign-in successful for user:", result.user.email);
             return;
