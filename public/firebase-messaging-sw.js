@@ -5,7 +5,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC4rVkn_Lzirs53BfV3PU9QY2yyDw5YiMI",
+  apiKey: "AIzaSyBlBMXbCnOCR4CivWedIuYQvnJIRyJHdkU",
   authDomain: "twitter-clone-app-16eb3.firebaseapp.com",
   projectId: "twitter-clone-app-16eb3",
   storageBucket: "twitter-clone-app-16eb3.firebasestorage.app",
