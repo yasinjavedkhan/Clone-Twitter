@@ -47,8 +47,8 @@ export default function Home() {
   const [lastDoc, setLastDoc] = useState<any>(null);
 
   useEffect(() => {
-    // Initial fetch of 15 tweets
-    const q = query(collection(db, "tweets"), orderBy("createdAt", "desc"), limit(15));
+    // Initial fetch of 50 tweets
+    const q = query(collection(db, "tweets"), orderBy("createdAt", "desc"), limit(50));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const tweetsData = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -56,7 +56,7 @@ export default function Home() {
       }));
       setTweets(tweetsData);
       setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
-      setHasMore(snapshot.docs.length === 15);
+      setHasMore(snapshot.docs.length === 50);
     });
 
     return () => unsubscribe();
@@ -70,7 +70,7 @@ export default function Home() {
         collection(db, "tweets"), 
         orderBy("createdAt", "desc"), 
         startAfter(lastDoc), 
-        limit(15)
+        limit(50)
       );
       const snapshot = await getDocs(q);
       const moreTweets = snapshot.docs.map(doc => ({
@@ -81,7 +81,7 @@ export default function Home() {
       if (moreTweets.length > 0) {
         setTweets(prev => [...prev, ...moreTweets]);
         setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
-        setHasMore(snapshot.docs.length === 15);
+        setHasMore(snapshot.docs.length === 50);
       } else {
         setHasMore(false);
       }
@@ -666,17 +666,7 @@ export default function Home() {
                 <Tweet key={tweet.id} tweet={tweet} />
               ))}
               
-              {hasMore && activeTab === 'foryou' && (
-                <div className="p-8 flex justify-center border-b border-gray-800">
-                  <button 
-                    onClick={loadMoreTweets}
-                    disabled={loadingMore}
-                    className="text-[var(--color-twitter-blue)] font-bold hover:bg-blue-500/10 px-6 py-2 rounded-full transition disabled:opacity-50"
-                  >
-                    {loadingMore ? "Loading more..." : "Show more posts"}
-                  </button>
-                </div>
-              )}
+
               
               {!hasMore && displayTweets.length > 0 && (
                 <div className="p-12 text-center text-gray-500 border-b border-gray-800">
