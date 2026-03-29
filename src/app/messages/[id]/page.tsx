@@ -10,7 +10,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     const { id } = use(params);
 
     return (
-        <div className="flex w-full min-h-screen">
+        <div className="flex w-full h-[100dvh] overflow-hidden">
             <div className="hidden sm:block border-r border-gray-800">
                 <ConversationList activeId={id} />
             </div>

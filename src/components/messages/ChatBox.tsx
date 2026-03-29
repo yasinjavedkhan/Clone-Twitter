@@ -186,9 +186,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     };
 
     return (
-        <div className="flex flex-col h-screen flex-grow border-r border-gray-800 bg-black">
+        <div className="flex flex-col h-[100dvh] flex-grow border-r border-gray-800 bg-black overflow-hidden relative">
             {/* Header */}
-            <div className="p-4 border-b border-gray-800 flex items-center gap-4 bg-black/80 backdrop-blur sticky top-0 z-10">
+            <div className="p-4 border-b border-gray-800 flex items-center gap-4 bg-black/90 backdrop-blur sticky top-0 z-40">
                 <Link 
                     href={otherUser?.userId ? `/profile/${otherUser.userId}` : "#"} 
                     className="flex items-center gap-4 flex-grow min-w-0 group hover:opacity-80 transition-opacity"
@@ -324,7 +324,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             </div>
 
             {/* Input Area */}
-            <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-800 flex items-center gap-2 sticky bottom-0 bg-black">
+            <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-800 flex items-center gap-2 sticky bottom-0 bg-black z-40">
                 <button type="button" className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition">
                     <Image className="w-5 h-5" />
                 </button>

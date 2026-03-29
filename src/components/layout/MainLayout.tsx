@@ -39,9 +39,9 @@ function MainLayoutContent({ children }: MainLayoutProps) {
       {!isImmersiveVideo && <Sidebar />}
       <main 
         className={cn(
-          "flex-grow border-r border-gray-800 min-h-screen w-full transition-all duration-300",
+          "flex-grow border-r border-gray-800 w-full transition-all duration-300",
           !isImmersiveVideo && "ml-0 sm:ml-20 xl:ml-64",
-          isImmersiveVideo ? "max-w-none border-none" : isMessagePage ? "max-w-none" : isHomePage ? "max-w-4xl" : "max-w-2xl"
+          isImmersiveVideo ? "max-w-none border-none" : isMessagePage ? "max-w-none h-[100dvh] overflow-hidden" : isHomePage ? "max-w-4xl pb-14 sm:pb-0 min-h-screen" : "max-w-2xl pb-14 sm:pb-0 min-h-screen"
         )}
       >
         {children}
