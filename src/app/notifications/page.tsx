@@ -75,7 +75,7 @@ export default function Notifications() {
                 <h1 className="text-xl font-bold">Notifications</h1>
             </div>
 
-            <div className="p-4 border-b border-gray-800">
+            <div className="hidden p-4 border-b border-gray-800">
                 <NotificationDiagnostic />
             </div>
 
