@@ -35,6 +35,8 @@ interface TweetProps {
     };
 }
 
+let currentlyPlayingVideo: HTMLVideoElement | null = null;
+
 const VideoItem = ({ url }: { url: string }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isMuted, setIsMuted] = useState(true);
@@ -47,6 +49,14 @@ const VideoItem = ({ url }: { url: string }) => {
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting) {
+                        // Pause the previously playing video if it's different
+                        if (currentlyPlayingVideo && currentlyPlayingVideo !== video) {
+                            currentlyPlayingVideo.pause();
+                        }
+                        
+                        // Set this video as the global active video
+                        currentlyPlayingVideo = video;
+
                         // Force muted for guaranteed mobile autoplay without user click
                         video.muted = true; 
                         setIsMuted(true);
@@ -62,14 +72,28 @@ const VideoItem = ({ url }: { url: string }) => {
                         }
                     } else {
                         video.pause();
+                        // Clear the global reference if this was the active video
+                        if (currentlyPlayingVideo === video) {
+                            currentlyPlayingVideo = null;
+                        }
                     }
                 });
             },
-            { threshold: 0.1 } // Extremely aggressive for instant start
+            { 
+                // Only trigger if the video is within the central 60% of the screen
+                rootMargin: "-20% 0px -20% 0px",
+                threshold: 0 
+            }
         );
 
         observer.observe(video);
-        return () => observer.disconnect();
+        return () => {
+            observer.disconnect();
+            if (currentlyPlayingVideo === video) {
+                currentlyPlayingVideo.pause();
+                currentlyPlayingVideo = null;
+            }
+        };
     }, []);
 
     const toggleMute = (e: React.MouseEvent) => {
