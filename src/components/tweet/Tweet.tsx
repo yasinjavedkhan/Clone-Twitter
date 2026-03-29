@@ -65,6 +65,14 @@ const VideoItem = ({ url }: { url: string }) => {
         const video = videoRef.current;
         if (!video) return;
 
+        const onSinglePlay = (e: any) => {
+            if (e.detail.target !== video) {
+                video.pause();
+                if (currentlyPlayingVideo === video) currentlyPlayingVideo = null;
+            }
+        };
+        window.addEventListener('exclusive-video-play', onSinglePlay);
+
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
@@ -76,6 +84,8 @@ const VideoItem = ({ url }: { url: string }) => {
                         
                         // Set this video as the global active video
                         currentlyPlayingVideo = video;
+                        // Broadcast to ALL OTHER videos globally to ensure they pause immediately
+                        window.dispatchEvent(new CustomEvent('exclusive-video-play', { detail: { target: video } }));
 
                         // Start with current global mute state
                         video.muted = globalIsMuted; 
@@ -109,6 +119,7 @@ const VideoItem = ({ url }: { url: string }) => {
 
         observer.observe(video);
         return () => {
+            window.removeEventListener('exclusive-video-play', onSinglePlay);
             observer.disconnect();
             if (currentlyPlayingVideo === video) {
                 currentlyPlayingVideo.pause();
