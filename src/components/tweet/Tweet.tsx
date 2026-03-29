@@ -16,24 +16,45 @@ import { userCache } from "@/lib/cache";
 import Avatar from "@/components/ui/Avatar";
 
 interface TweetProps {
-    tweet: {
-        id: string;
-        userId: string;
-        content: string;
-        mediaUrls?: string[];
-        replySetting?: 'everyone' | 'following' | 'mentions' | 'followers';
-        likesCount: number;
-        commentsCount: number;
-        retweetsCount: number;
-        viewsCount: number;
-        createdAt: any;
-        author?: {
-            displayName: string;
-            username: string;
-            profileImage?: string;
-        };
-    };
+    tweet: any;
 }
+
+const VideoItem = ({ url }: { url: string }) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        videoRef.current?.play().catch(() => {
+                            // Autoplay with sound might be blocked; browser requires 1 user click first
+                            console.log("Autoplay with sound was blocked; waiting for user interaction.");
+                        });
+                    } else {
+                        videoRef.current?.pause();
+                    }
+                });
+            },
+            { threshold: 0.5 }
+        );
+
+        if (videoRef.current) observer.observe(videoRef.current);
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <video
+            ref={videoRef}
+            src={url}
+            className="w-full h-full object-cover"
+            loop
+            playsInline
+            muted={false}
+            preload="auto"
+        />
+    );
+};
 
 const Tweet = memo(({ tweet }: TweetProps) => {
     const { user, userData } = useAuth();
@@ -503,10 +524,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                                     }}
                                 >
                                     {isVideo ? (
-                                        <video
-                                            src={url}
-                                            className="w-full h-full object-cover"
-                                        />
+                                        <VideoItem url={url} />
                                     ) : (
                                         <img
                                             src={url}
