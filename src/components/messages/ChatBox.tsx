@@ -9,6 +9,8 @@ import { Send, Image, User, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2, M
 import { format } from "date-fns";
 import { sendPushNotification } from "@/lib/notifications";
 import AgoraCall from "./AgoraCall";
+import { uploadToCloudinary } from "@/lib/cloudinary";
+import { cn } from "@/lib/utils";
 
 export default function ChatBox({ conversationId }: { conversationId: string }) {
     const { user, userData } = useAuth();
@@ -19,6 +21,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const [callType, setCallType] = useState<'voice' | 'video'>('voice');
     const [isCalling, setIsCalling] = useState(false);
     const [roomName, setRoomName] = useState("");
+    const [mediaFiles, setMediaFiles] = useState<{ file: File; type: 'image' | 'video'; preview: string }[]>([]);
+    const [isSending, setIsSending] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         // Check for call in query params
@@ -136,42 +141,83 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         }
     };
 
+    const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        // Limit to 4 items
+        const newFiles = files.slice(0, 4 - mediaFiles.length);
+        
+        newFiles.forEach(file => {
+            const type = file.type.startsWith('video/') ? 'video' : 'image';
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setMediaFiles(prev => [...prev, {
+                    file,
+                    type,
+                    preview: reader.result as string
+                }]);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
+    const removeMedia = (index: number) => {
+        setMediaFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim() || !user) return;
+        if ((!newMessage.trim() && mediaFiles.length === 0) || !user || isSending) return;
 
         const text = newMessage.trim();
+        const currentMedia = [...mediaFiles];
+        
         setNewMessage("");
+        setMediaFiles([]);
+        setIsSending(true);
 
         try {
-            // 1. Add message
+            // 1. Upload media if any
+            let mediaUrls: string[] = [];
+            if (currentMedia.length > 0) {
+                const uploadPromises = currentMedia.map(m => uploadToCloudinary(m.file));
+                mediaUrls = await Promise.all(uploadPromises);
+            }
+
+            // 2. Add message to Firestore
             await addDoc(collection(db, "conversations", conversationId, "messages"), {
                 senderId: user.uid,
                 text,
+                mediaUrls,
                 read: false,
                 createdAt: serverTimestamp(),
             });
 
-            // 2. Update conversation last message
+            // 3. Update conversation last message
             const convDoc = await getDoc(doc(db, "conversations", conversationId));
             const participants = convDoc.data()?.participants || [];
             const otherId = participants.find((p: string) => p !== user.uid);
 
             if (otherId) {
                 await updateDoc(doc(db, "conversations", conversationId), {
-                    lastMessage: text,
+                    lastMessage: text || (mediaUrls.length > 0 ? (mediaUrls.length > 1 ? "Sent multiple media" : "Sent a photo") : ""),
                     lastTimestamp: serverTimestamp(),
                     [`unreadCount.${otherId}`]: increment(1)
                 });
             }
 
-            // 3. Send push notification to the other user
+            // 4. Send push notification to the other user
             if (otherUser?.userId) {
                 const senderName = userData?.displayName || userData?.username || 'Someone';
                 await sendPushNotification({
                     toUserId: otherUser.userId,
                     title: `💬 ${senderName}`,
-                    body: text.length > 80 ? text.substring(0, 80) + '...' : text,
+                    body: text ? (text.length > 80 ? text.substring(0, 80) + '...' : text) : 'Sent you a photo',
                     data: {
                         type: 'message',
                         conversationId,
@@ -182,6 +228,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             }
         } catch (error) {
             console.error("Error sending message:", error);
+            alert("Failed to send message/media. Please try again.");
+        } finally {
+            setIsSending(false);
         }
     };
 
@@ -306,7 +355,23 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                 ? 'bg-twitter-blue text-black rounded-br-none'
                                 : 'bg-[#2f3336] text-white rounded-bl-none'
                                 }`}>
-                                {msg.text}
+                                {msg.mediaUrls && msg.mediaUrls.length > 0 && (
+                                    <div className={cn(
+                                        "grid gap-1 mb-2",
+                                        msg.mediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                                    )}>
+                                        {msg.mediaUrls.map((url: string, idx: number) => (
+                                            <div key={idx} className="rounded-lg overflow-hidden border border-gray-800 bg-gray-950">
+                                                {url.includes('.mp4') || url.includes('.mov') ? (
+                                                    <video src={url} className="max-h-60 w-full object-contain" controls />
+                                                ) : (
+                                                    <img src={url} alt="Shared" className="max-h-60 w-full object-contain" onClick={() => window.open(url, '_blank')} />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {msg.text && <div>{msg.text}</div>}
                             </div>
                             <span className="text-gray-500 text-[11px] mt-1 px-1 flex items-center">
                                 {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), 'p') : '...'}
@@ -324,25 +389,64 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             </div>
 
             {/* Input Area - Fixed with Flex at bottom */}
-            <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-800 flex items-center gap-2 bg-black z-50 pb-[max(12px,env(safe-area-inset-bottom))] shrink-0">
-                <button type="button" className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition">
-                    <Image className="w-5 h-5" />
-                </button>
-                <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Start a new message"
-                    className="flex-grow bg-[#202327] rounded-2xl py-2 px-4 outline-none focus:ring-1 focus:ring-twitter-blue transition text-[15px]"
-                />
-                <button
-                    type="submit"
-                    disabled={!newMessage.trim()}
-                    className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition disabled:opacity-50"
-                >
-                    <Send className="w-5 h-5" />
-                </button>
-            </form>
+            <div className="flex flex-col border-t border-gray-800 bg-black">
+                {/* Media Preview Area */}
+                {mediaFiles.length > 0 && (
+                    <div className="flex gap-2 p-3 overflow-x-auto bg-black/50">
+                        {mediaFiles.map((media, idx) => (
+                            <div key={idx} className="relative shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-gray-800">
+                                <button
+                                    onClick={() => removeMedia(idx)}
+                                    className="absolute top-1 right-1 z-10 bg-black/50 hover:bg-black/80 p-0.5 rounded-full text-white"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                                {media.type === 'image' ? (
+                                    <img src={media.preview} className="w-full h-full object-cover" alt="Preview" />
+                                ) : (
+                                    <video src={media.preview} className="w-full h-full object-cover" muted />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <form onSubmit={handleSendMessage} className="p-3 flex items-center gap-2 z-50 pb-[max(12px,env(safe-area-inset-bottom))]">
+                    <input
+                        type="file"
+                        accept="image/*,video/*"
+                        multiple
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={handleMediaSelect}
+                    />
+                    <button 
+                        type="button" 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition"
+                    >
+                        <Image className="w-5 h-5" />
+                    </button>
+                    <input
+                        type="text"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        placeholder="Start a new message"
+                        className="flex-grow bg-[#202327] rounded-2xl py-2 px-4 outline-none focus:ring-1 focus:ring-twitter-blue transition text-[15px]"
+                    />
+                    <button
+                        type="submit"
+                        disabled={(!newMessage.trim() && mediaFiles.length === 0) || isSending}
+                        className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition disabled:opacity-50"
+                    >
+                        {isSending ? (
+                            <div className="w-5 h-5 border-2 border-twitter-blue border-t-transparent animate-spin rounded-full" />
+                        ) : (
+                            <Send className="w-5 h-5" />
+                        )}
+                    </button>
+                </form>
+            </div>
         </div>
     );
 }
