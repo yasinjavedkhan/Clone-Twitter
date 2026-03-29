@@ -120,8 +120,9 @@ export default function Home() {
       if (!ticking) {
         window.requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
+          const isMobile = window.innerWidth < 640;
           
-          if (currentScrollY > 50) {
+          if (isMobile && currentScrollY > 50) {
             // Scrolling down with a threshold of 10px
             if (currentScrollY > lastScrollY.current + 10) {
               setIsHeaderVisible(false);
@@ -131,7 +132,7 @@ export default function Home() {
               setIsHeaderVisible(true);
             }
           } else {
-            // Always show at the very top
+            // Always show at the very top or on desktop
             setIsHeaderVisible(true);
           }
           
