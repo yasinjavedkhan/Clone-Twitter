@@ -424,66 +424,70 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     </div>
                 </Link>
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                    <button 
-                        onClick={async () => { 
-                            const generatedRoom = `DirectCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
-                            setCallType('voice'); 
-                            setRoomName(generatedRoom);
-                            setIsCalling(true);
-                            // 1. Record in chat history
-                            await recordCallEvent('voice');
-                            // 2. Signal
-                            if (otherUser?.userId) {
-                                await sendPushNotification({
-                                    toUserId: otherUser.userId,
-                                    title: "Incoming Voice Call",
-                                    body: `${user?.displayName || 'Someone'} is calling...`,
-                                    data: {
-                                        type: 'call',
-                                        callType: 'voice',
-                                        conversationId,
-                                        roomName: generatedRoom,
-                                        fromUserName: user?.displayName || user?.email?.split('@')[0] || 'Someone',
-                                        fromUserAvatar: (user as any)?.profileImage || ''
+                    {!otherUser?.isSelf && (
+                        <>
+                            <button 
+                                onClick={async () => { 
+                                    const generatedRoom = `DirectCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
+                                    setCallType('voice'); 
+                                    setRoomName(generatedRoom);
+                                    setIsCalling(true);
+                                    // 1. Record in chat history
+                                    await recordCallEvent('voice');
+                                    // 2. Signal
+                                    if (otherUser?.userId) {
+                                        await sendPushNotification({
+                                            toUserId: otherUser.userId,
+                                            title: "Incoming Voice Call",
+                                            body: `${user?.displayName || 'Someone'} is calling...`,
+                                            data: {
+                                                type: 'call',
+                                                callType: 'voice',
+                                                conversationId,
+                                                roomName: generatedRoom,
+                                                fromUserName: user?.displayName || user?.email?.split('@')[0] || 'Someone',
+                                                fromUserAvatar: (user as any)?.profileImage || ''
+                                            }
+                                        });
                                     }
-                                });
-                            }
-                        }}
-                        className="p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200"
-                        title="Audio Call"
-                    >
-                        <Phone className="w-5 h-5" />
-                    </button>
-                    <button 
-                        onClick={async () => { 
-                            const generatedRoom = `DirectCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
-                            setCallType('video'); 
-                            setRoomName(generatedRoom);
-                            setIsCalling(true);
-                            // 1. Record in chat history
-                            await recordCallEvent('video');
-                            // 2. Signal
-                            if (otherUser?.userId) {
-                                await sendPushNotification({
-                                    toUserId: otherUser.userId,
-                                    title: "Incoming Video Call",
-                                    body: `${user?.displayName || 'Someone'} is video calling...`,
-                                    data: {
-                                        type: 'call',
-                                        callType: 'video',
-                                        conversationId,
-                                        roomName: generatedRoom,
-                                        fromUserName: user?.displayName || user?.email?.split('@')[0] || 'Someone',
-                                        fromUserAvatar: (user as any)?.profileImage || ''
+                                }}
+                                className="p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200"
+                                title="Audio Call"
+                            >
+                                <Phone className="w-5 h-5" />
+                            </button>
+                            <button 
+                                onClick={async () => { 
+                                    const generatedRoom = `DirectCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
+                                    setCallType('video'); 
+                                    setRoomName(generatedRoom);
+                                    setIsCalling(true);
+                                    // 1. Record in chat history
+                                    await recordCallEvent('video');
+                                    // 2. Signal
+                                    if (otherUser?.userId) {
+                                        await sendPushNotification({
+                                            toUserId: otherUser.userId,
+                                            title: "Incoming Video Call",
+                                            body: `${user?.displayName || 'Someone'} is video calling...`,
+                                            data: {
+                                                type: 'call',
+                                                callType: 'video',
+                                                conversationId,
+                                                roomName: generatedRoom,
+                                                fromUserName: user?.displayName || user?.email?.split('@')[0] || 'Someone',
+                                                fromUserAvatar: (user as any)?.profileImage || ''
+                                            }
+                                        });
                                     }
-                                });
-                            }
-                        }}
-                        className="p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200"
-                        title="Video Call"
-                    >
-                        <Video className="w-6 h-6" />
-                    </button>
+                                }}
+                                className="p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200"
+                                title="Video Call"
+                            >
+                                <Video className="w-6 h-6" />
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
