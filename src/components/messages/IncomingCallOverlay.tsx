@@ -13,6 +13,7 @@ export default function IncomingCallOverlay() {
     const router = useRouter();
     const { user } = useAuth();
     const ringtoneRef = useRef<HTMLAudioElement | null>(null);
+    const [isAnswering, setIsAnswering] = useState(false);
 
     useEffect(() => {
         // Fallback: Listen for incoming FCM call signals for edge cases
@@ -71,8 +72,6 @@ export default function IncomingCallOverlay() {
     if (!incomingCall) return null;
 
     const { callType, conversationId, fromUserName, fromUserAvatar, roomName, id } = incomingCall;
-
-    const [isAnswering, setIsAnswering] = useState(false);
 
     const handleAccept = async () => {
         setIsAnswering(true);
