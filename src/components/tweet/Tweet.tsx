@@ -102,9 +102,8 @@ const VideoItem = ({ url }: { url: string }) => {
                 });
             },
             { 
-                // Only trigger if the video is within the central 60% of the screen
-                rootMargin: "-20% 0px -20% 0px",
-                threshold: 0 
+                // Play if at least 50% of the video is visible on screen
+                threshold: 0.5 
             }
         );
 
