@@ -526,7 +526,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         >
                             <div className="relative flex items-center group/bubble">
                                 {isMe && !isSystemMessage && (
-                                    <div className="opacity-0 group-hover/bubble:opacity-100 transition-opacity mr-2">
+                                    <div className={cn(
+                                        "transition-opacity mr-2",
+                                        deleteMenuMessageId === msg.id ? "opacity-100 z-[160]" : "opacity-0 group-hover/bubble:opacity-100"
+                                    )}>
                                         <button 
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -538,7 +541,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                         </button>
                                         
                                         {deleteMenuMessageId === msg.id && (
-                                            <div className="absolute bottom-full right-0 mb-2 w-48 bg-[#15181c] border border-gray-800 rounded-xl shadow-2xl z-[150] overflow-hidden animate-in fade-in zoom-in duration-200">
+                                            <div 
+                                                className="absolute bottom-full right-0 mb-2 w-48 bg-[#15181c] border border-gray-800 rounded-xl shadow-2xl z-[150] overflow-hidden animate-in fade-in zoom-in duration-200"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
                                                 <button 
                                                     onClick={() => handleDeleteForMe(msg.id)}
                                                     className="w-full text-left px-4 py-3 text-[14px] text-white hover:bg-white/5 flex items-center gap-2"
@@ -595,7 +601,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                 </div>
 
                                 {!isMe && !isSystemMessage && (
-                                    <div className="opacity-0 group-hover/bubble:opacity-100 transition-opacity ml-2">
+                                    <div className={cn(
+                                        "transition-opacity ml-2",
+                                        deleteMenuMessageId === msg.id ? "opacity-100 z-[160]" : "opacity-0 group-hover/bubble:opacity-100"
+                                    )}>
                                         <button 
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -607,7 +616,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                         </button>
                                         
                                         {deleteMenuMessageId === msg.id && (
-                                            <div className="absolute bottom-full left-0 mb-2 w-40 bg-[#15181c] border border-gray-800 rounded-xl shadow-2xl z-[150] overflow-hidden animate-in fade-in zoom-in duration-200">
+                                            <div 
+                                                className="absolute bottom-full left-0 mb-2 w-40 bg-[#15181c] border border-gray-800 rounded-xl shadow-2xl z-[150] overflow-hidden animate-in fade-in zoom-in duration-200"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
                                                 <button 
                                                     onClick={() => handleDeleteForMe(msg.id)}
                                                     className="w-full text-left px-4 py-3 text-[14px] text-white hover:bg-white/5 flex items-center gap-2"
