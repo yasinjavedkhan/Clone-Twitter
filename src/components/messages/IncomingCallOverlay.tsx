@@ -43,6 +43,19 @@ export default function IncomingCallOverlay() {
             if (!snapshot.empty) {
                 const callDoc = snapshot.docs[0];
                 const callData = callDoc.data();
+                
+                // Expiration Guard: Ignore calls older than 60 seconds (Ghost Call fix)
+                const createdAt = callData.createdAt?.toDate ? callData.createdAt.toDate() : new Date();
+                const ageInSeconds = (Date.now() - createdAt.getTime()) / 1000;
+                
+                if (ageInSeconds > 60) {
+                    console.log("FCM: Ignoring stale call (Age:", ageInSeconds, "s)");
+                    deleteDoc(callDoc.ref).catch(() => {});
+                    setIncomingCall(null);
+                    stopRingtone();
+                    return;
+                }
+                
                 setIncomingCall({ ...callData, id: callDoc.id });
                 playRingtone();
             } else {

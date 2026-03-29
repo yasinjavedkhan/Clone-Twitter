@@ -174,7 +174,15 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     }, [hasMounted]);
 
     useEffect(() => {
-        if (!isCalling || !roomName) return;
+        if (!isCalling || !roomName || !manuallyInitiated.current) return;
+
+        // Auto-cancel call after 60 seconds if not answered
+        const timeout = setTimeout(async () => {
+            console.log("Call timed out after 60s");
+            setIsCalling(false);
+            manuallyInitiated.current = false;
+            await deleteDoc(doc(db, "calls", roomName)).catch(() => {});
+        }, 60000);
 
         console.log("Listening to call status for room:", roomName);
         const unsub = onSnapshot(doc(db, "calls", roomName), (docSnap) => {
@@ -182,12 +190,16 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                  console.log("Call document deleted (ended by other party)");
                  setIsCalling(false);
                  manuallyInitiated.current = false;
+                 clearTimeout(timeout);
             }
         }, (error) => {
             console.error("Call status listener error:", error);
         });
 
-        return () => unsub();
+        return () => {
+            unsub();
+            clearTimeout(timeout);
+        };
     }, [isCalling, roomName]);
 
     const recordCallEvent = async (type: 'voice' | 'video') => {
