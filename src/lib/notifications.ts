@@ -89,9 +89,10 @@ export function onForegroundMessage(callback: (payload: any) => void) {
     if (typeof window === "undefined") return () => {};
     try {
         const messaging = getMessaging(app);
+        if (!messaging) return () => {};
         return onMessage(messaging, callback);
     } catch (error) {
-        console.error("Error setting up foreground message handler:", error);
+        console.warn("FCM: Foreground listener could not be established (likely missing credentials).", error);
         return () => {};
     }
 }

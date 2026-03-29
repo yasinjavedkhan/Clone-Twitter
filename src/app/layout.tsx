@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { Suspense } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import RightSidebar from "@/components/layout/RightSidebar";
 import MobileNav from "@/components/layout/MobileNav";
@@ -33,12 +34,14 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className={`${outfit.className} bg-black text-white min-h-screen`}>
+      <body className={`${outfit.className} bg-black text-white min-h-screen`} suppressHydrationWarning>
         <AuthProvider>
           <MainLayout>
             {children}
           </MainLayout>
-          <IncomingCallOverlay />
+          <Suspense fallback={null}>
+            <IncomingCallOverlay />
+          </Suspense>
         </AuthProvider>
       </body>
     </html>
