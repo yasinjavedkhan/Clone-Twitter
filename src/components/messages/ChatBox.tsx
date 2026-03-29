@@ -38,6 +38,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const [deleteMenuMessageId, setDeleteMenuMessageId] = useState<string | null>(null);
     const manuallyInitiated = useRef(false);
     const [hasMounted, setHasMounted] = useState(false);
+    const [showOfflineOverlay, setShowOfflineOverlay] = useState(false);
 
     useEffect(() => {
         setHasMounted(true);
@@ -512,7 +513,11 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     {otherUser && otherUser.userId !== user?.uid && (
                         <>
                             <button 
-                                onClick={async () => { 
+                                onClick={async () => {
+                                    if (!isUserActive(otherUser.lastSeen)) {
+                                        setShowOfflineOverlay(true);
+                                        return;
+                                    }
                                     const generatedRoom = `DirectCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
                                     
                                     // 1. Record in chat history
@@ -556,14 +561,17 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                     setRoomName(generatedRoom);
                                     setIsCalling(true);
                                 }}
-                                disabled={!isUserActive(otherUser.lastSeen)}
-                                className="p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200 disabled:opacity-20 disabled:cursor-not-allowed disabled:grayscale"
+                                className={`p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200 ${!isUserActive(otherUser.lastSeen) ? 'opacity-20 grayscale cursor-pointer' : ''}`}
                                 title={isUserActive(otherUser.lastSeen) ? "Voice Call" : "User Offline"}
                             >
                                 <Phone className="w-5 h-5" />
                             </button>
                             <button 
                                 onClick={async () => { 
+                                    if (!isUserActive(otherUser.lastSeen)) {
+                                        setShowOfflineOverlay(true);
+                                        return;
+                                    }
                                     const generatedRoom = `DirectCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
                                     
                                     // 1. Record in chat history
@@ -607,8 +615,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                     setRoomName(generatedRoom);
                                     setIsCalling(true);
                                 }}
-                                disabled={!isUserActive(otherUser.lastSeen)}
-                                className="p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200 disabled:opacity-20 disabled:cursor-not-allowed disabled:grayscale"
+                                className={`p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200 ${!isUserActive(otherUser.lastSeen) ? 'opacity-20 grayscale cursor-pointer' : ''}`}
                                 title={isUserActive(otherUser.lastSeen) ? "Video Call" : "User Offline"}
                             >
                                 <Video className="w-6 h-6" />
@@ -618,7 +625,38 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 </div>
             </div>
 
-            {/* Real Call Overlay (Agora) */}
+            {/* Offline Call Attempt Overlay */}
+            {showOfflineOverlay && (
+                <div className="fixed inset-0 z-[110] bg-black/95 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in zoom-in duration-300">
+                    <div className="max-w-md w-full bg-gray-900 border border-gray-800 rounded-3xl p-8 flex flex-col items-center text-center shadow-2xl">
+                        <div className="relative mb-6">
+                            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-800 shadow-xl">
+                                {otherUser?.profileImage ? (
+                                    <img src={otherUser.profileImage} alt={otherUser.displayName} className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                                        <User className="w-10 h-10 text-gray-600" />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gray-500 border-4 border-gray-900 rounded-full" />
+                        </div>
+                        
+                        <h3 className="text-2xl font-bold text-white mb-2">{otherUser?.displayName || "User"} is offline</h3>
+                        <p className="text-gray-400 mb-8 leading-relaxed">
+                            You cannot start a call right now because this person is offline. 
+                            You can only call users who are currently <span className="text-green-500 font-bold">Active now</span>.
+                        </p>
+                        
+                        <button 
+                            onClick={() => setShowOfflineOverlay(false)}
+                            className="w-full bg-white text-black hover:bg-gray-200 py-3 rounded-full font-bold transition-all active:scale-95 shadow-lg"
+                        >
+                            Got it
+                        </button>
+                    </div>
+                </div>
+            )}
             {isCalling && (
                 <div className="fixed inset-0 z-[100] bg-black flex flex-col">
                     <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black">
