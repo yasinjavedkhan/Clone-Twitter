@@ -5,8 +5,8 @@ import Link from "next/link";
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Send, Image, User, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2, Minimize2, MoreHorizontal, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { Send, Image, User, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2, Minimize2, MoreHorizontal, Trash2, Circle } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
 import { sendPushNotification } from "@/lib/notifications";
 import AgoraCall from "./AgoraCall";
 import { uploadToCloudinary } from "@/lib/cloudinary";
@@ -103,35 +103,53 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         return () => unsubscribe();
     }, [conversationId, user?.uid]);
 
-    // Fetch other user info
+    // Fetch other user info with real-time presence
     useEffect(() => {
         if (!conversationId || !user) return;
 
-        const fetchOtherUser = async () => {
+        let unsubUser: () => void;
+
+        const setupUserListener = async () => {
             try {
                 const convDoc = await getDoc(doc(db, "conversations", conversationId));
                 if (convDoc.exists()) {
                     const participants = convDoc.data().participants;
-                    const otherId = participants.find((p: string) => p !== user.uid);
-                    if (otherId) {
-                        const userDoc = await getDoc(doc(db, "users", otherId));
-                        if (userDoc.exists()) {
-                            setOtherUser({ userId: userDoc.id, ...userDoc.data() });
+                    const otherId = participants.find((p: string) => p !== user.uid) || user.uid;
+
+                    unsubUser = onSnapshot(doc(db, "users", otherId), (docSnap) => {
+                        if (docSnap.exists()) {
+                            setOtherUser({ 
+                                userId: docSnap.id, 
+                                ...docSnap.data(),
+                                isSelf: otherId === user.uid 
+                            });
                         }
-                    } else {
-                        // Self chat
-                        const userDoc = await getDoc(doc(db, "users", user.uid));
-                        if (userDoc.exists()) {
-                            setOtherUser({ userId: userDoc.id, ...userDoc.data(), isSelf: true });
-                        }
-                    }
+                    });
                 }
             } catch (error) {
-                console.error("Error fetching other user:", error);
+                console.error("Error setting up user presence listener:", error);
             }
         };
-        fetchOtherUser();
+
+        setupUserListener();
+        return () => unsubUser?.();
     }, [conversationId, user]);
+
+    const formatLastSeen = (lastSeen: any) => {
+        if (!lastSeen) return null;
+        const date = lastSeen.toDate ? lastSeen.toDate() : new Date(lastSeen);
+        const diffInMinutes = (Date.now() - date.getTime()) / 60000;
+
+        if (diffInMinutes < 2) return "Active now";
+        return `Active ${formatDistanceToNow(date)} ago`;
+    };
+
+    // Force re-render every minute to update the "Last seen" relative time
+    const [, setTick] = useState(0);
+    useEffect(() => {
+        const timer = setInterval(() => setTick(prev => prev + 1), 60000);
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         if (!isCalling || !roomName) return;
@@ -439,9 +457,19 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             {otherUser?.displayName || otherUser?.username || (conversationId ? "..." : "Select a chat")}
                             {otherUser?.isSelf ? " (You)" : ""}
                         </h2>
-                        {otherUser?.username && (
-                            <p className="text-gray-500 text-[12px] sm:text-[13px] truncate">@{otherUser.username}</p>
-                        )}
+                        <div className="flex items-center gap-1.5 truncate">
+                            {otherUser?.lastSeen && (
+                                <div className="flex items-center gap-1">
+                                    <div className={`w-2 h-2 rounded-full ${(Date.now() - (otherUser.lastSeen?.toDate ? otherUser.lastSeen.toDate().getTime() : 0)) / 60000 < 2 ? 'bg-green-500' : 'bg-gray-500'}`} />
+                                    <p className={`text-[12px] sm:text-[13px] ${ (Date.now() - (otherUser.lastSeen?.toDate ? otherUser.lastSeen.toDate().getTime() : 0)) / 60000 < 2 ? 'text-green-500 font-medium' : 'text-gray-500'}`}>
+                                        {formatLastSeen(otherUser.lastSeen)}
+                                    </p>
+                                </div>
+                            )}
+                            {!otherUser?.lastSeen && otherUser?.username && (
+                                <p className="text-gray-500 text-[12px] sm:text-[13px] truncate">@{otherUser.username}</p>
+                            )}
+                        </div>
                     </div>
                 </Link>
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0">

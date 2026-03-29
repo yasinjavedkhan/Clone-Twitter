@@ -70,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             followingCount: 0,
                             tweetCount: 0,
                             createdAt: serverTimestamp(),
+                            lastSeen: serverTimestamp(),
                         };
                         await setDoc(userDocRef, newUser);
                         setUserData(newUser);
@@ -107,6 +108,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (unsubscribeUser) unsubscribeUser();
         };
     }, []);
+
+    // Presence Tracking / Last Seen heartbeat
+    useEffect(() => {
+        if (!user?.uid) return;
+
+        const updateLastSeen = async () => {
+            const userRef = doc(db, "users", user.uid);
+            await updateDoc(userRef, {
+                lastSeen: serverTimestamp()
+            }).catch(err => console.error("Error updating last seen:", err));
+        };
+
+        // Initial update
+        updateLastSeen();
+
+        // Heartbeat every 60 seconds
+        const interval = setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                updateLastSeen();
+            }
+        }, 60000);
+
+        // Update on focus
+        const handleFocus = () => updateLastSeen();
+        window.addEventListener('focus', handleFocus);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, [user?.uid]);
 
     // Handle redirect result (for mobile sign-in fallback if needed)
     useEffect(() => {
