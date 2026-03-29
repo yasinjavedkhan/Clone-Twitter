@@ -48,20 +48,33 @@ let globalObserver: IntersectionObserver | null = null;
 const registeredVideos = new Set<HTMLVideoElement>();
 let evaluationTimeout: NodeJS.Timeout | null = null;
 
+let scrollListenerAdded = false;
+
 const evaluateVideos = () => {
     let bestVideo: HTMLVideoElement | null = null;
-    let minDistance = Infinity;
-    const windowCenter = window.innerHeight / 2;
+    let maxVisibleHeight = -1;
 
-    // Find the one closest to the center of the screen
+    // Find the video occupying the most vertical space on screen right now
     registeredVideos.forEach(video => {
         const rect = video.getBoundingClientRect();
-        // If it's somewhat on screen
-        if (rect.bottom > 0 && rect.top < window.innerHeight) {
+        
+        const visibleTop = Math.max(0, rect.top);
+        const visibleBottom = Math.min(window.innerHeight, rect.bottom);
+        const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+        
+        if (visibleHeight > maxVisibleHeight && visibleHeight > 0) {
+            maxVisibleHeight = visibleHeight;
+            bestVideo = video;
+        } else if (visibleHeight === maxVisibleHeight && visibleHeight > 0) {
+            // Tie-breaker: distance to center
+            if (!bestVideo) return; 
+            const windowCenter = window.innerHeight / 2;
             const videoCenter = rect.top + (rect.height / 2);
-            const distance = Math.abs(windowCenter - videoCenter);
-            if (distance < minDistance) {
-                minDistance = distance;
+            
+            const bestRect = bestVideo.getBoundingClientRect();
+            const bestCenter = bestRect.top + (bestRect.height / 2);
+            
+            if (Math.abs(windowCenter - videoCenter) < Math.abs(windowCenter - bestCenter)) {
                 bestVideo = video;
             }
         }
@@ -102,8 +115,25 @@ const evaluateVideos = () => {
     });
 };
 
+const setupScrollTracking = () => {
+    if (typeof window !== 'undefined' && !scrollListenerAdded) {
+        scrollListenerAdded = true;
+        
+        const onScroll = () => {
+            if (evaluationTimeout) clearTimeout(evaluationTimeout);
+            evaluationTimeout = setTimeout(evaluateVideos, 30);
+        };
+        
+        // Capture true ensures we catch all scroll events anywhere on the page
+        window.addEventListener('scroll', onScroll, { passive: true, capture: true }); 
+        window.addEventListener('resize', onScroll, { passive: true });
+    }
+};
+
 const getGlobalObserver = () => {
     if (typeof window === 'undefined') return null;
+    setupScrollTracking();
+    
     if (!globalObserver) {
         globalObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -119,10 +149,10 @@ const getGlobalObserver = () => {
             
             // Queue evaluation to run after intersection updates
             if (evaluationTimeout) clearTimeout(evaluationTimeout);
-            evaluationTimeout = setTimeout(evaluateVideos, 50);
+            evaluationTimeout = setTimeout(evaluateVideos, 30);
         }, {
-            // Evaluates frequently as user scrolls up/down
-            threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1] 
+            // Keep threshold simple since global scroll tracking handles precision
+            threshold: 0 
         });
     }
     return globalObserver;
