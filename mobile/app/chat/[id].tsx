@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Modal, Image } from 'react-native';
+import { StyleSheet, Text, View, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Modal, Image, Alert } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment } from 'firebase/firestore';
@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Send, ChevronLeft, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
+import { formatDistanceToNow } from 'date-fns';
 
 // Configuration for API requests
 const IS_PROD = true; // Set to false for local testing
@@ -21,21 +22,58 @@ export default function ChatDetailScreen() {
     const flatListRef = useRef<FlatList>(null);
     const [otherUserData, setOtherUserData] = useState<any>(null);
 
+    // Force re-render frequently (3s) to keep presence text accurate
+    const [, setTick] = useState(0);
+    useEffect(() => {
+        const timer = setInterval(() => setTick(prev => prev + 1), 3000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const isUserActive = (lastSeen: any) => {
+        if (!lastSeen) return false;
+        try {
+            const date = lastSeen.toDate ? lastSeen.toDate() : new Date(lastSeen);
+            // 5-second threshold matches the 3-second mobile heartbeat
+            return (Date.now() - date.getTime()) / 1000 < 5;
+        } catch {
+            return false;
+        }
+    };
+
+    const formatLastSeenText = (lastSeen: any) => {
+        if (!lastSeen) return "";
+        try {
+            const date = lastSeen.toDate ? lastSeen.toDate() : new Date(lastSeen);
+            const diffInSeconds = (Date.now() - date.getTime()) / 1000;
+            if (diffInSeconds < 5) return "Active now";
+            if (diffInSeconds < 60) return `Active ${Math.floor(diffInSeconds)}s ago`;
+            return `Active ${formatDistanceToNow(date)} ago`;
+        } catch {
+            return "Active recently";
+        }
+    };
+
     // Fetch other user info for the call screen
     useEffect(() => {
         if (!id || !user) return;
+        
+        let unsubUser: any = null;
+
         const fetchOther = async () => {
             const convDoc = await getDoc(doc(db, "conversations", id as string));
             const participants = convDoc.data()?.participants || [];
             const otherId = participants.find((p: string) => p !== user.uid);
             if (otherId) {
-                const userSnapshot = await getDoc(doc(db, "users", otherId));
-                if (userSnapshot.exists()) {
-                    setOtherUserData({ userId: userSnapshot.id, ...userSnapshot.data() });
-                }
+                // Real-time listener for the other user's presence state
+                unsubUser = onSnapshot(doc(db, "users", otherId), (snapshot) => {
+                    if (snapshot.exists()) {
+                        setOtherUserData({ userId: snapshot.id, ...snapshot.data() });
+                    }
+                });
             }
         };
         fetchOther();
+        return () => unsubUser?.();
     }, [id, user]);
 
     useEffect(() => {
@@ -146,6 +184,8 @@ export default function ChatDetailScreen() {
         );
     };
 
+    const isOnline = isUserActive(otherUserData?.lastSeen);
+
     return (
         <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
             <Stack.Screen options={{ headerShown: false }} />
@@ -156,13 +196,30 @@ export default function ChatDetailScreen() {
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                         <ChevronLeft size={28} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Chat</Text>
+                    <View>
+                        <Text style={styles.headerTitle}>{otherUserData?.displayName || otherUserData?.username || "Chat"}</Text>
+                        {otherUserData?.lastSeen && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: isOnline ? '#22c55e' : '#71767b' }} />
+                                <Text style={{ color: isOnline ? '#22c55e' : '#71767b', fontSize: 11, fontWeight: isOnline ? '600' : '400' }}>
+                                    {formatLastSeenText(otherUserData.lastSeen)}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
                 </View>
                 <View style={styles.headerActions}>
-                    <TouchableOpacity style={styles.headerIcon} onPress={async () => {
+                    <TouchableOpacity 
+                      style={[styles.headerIcon, !isOnline && { opacity: 0.3 }]} 
+                      onPress={async () => {
                         const otherId = otherUserData?.userId || otherUserData?.id;
-                        if (!otherId) return alert("User data not loaded yet.");
+                        if (!otherId) return;
                         
+                        // Restriction: Block call if offline
+                        if (!isOnline) {
+                            return Alert.alert("User Offline", `${otherUserData?.displayName || 'User'} is offline. You can only call active users.`);
+                        }
+
                         // 1. Record in chat history
                         await recordCallEvent('voice');
 
@@ -187,9 +244,16 @@ export default function ChatDetailScreen() {
                     }}>
                         <Phone size={22} color="#1d9bf0" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerIcon} onPress={async () => {
+                    <TouchableOpacity 
+                      style={[styles.headerIcon, !isOnline && { opacity: 0.3 }]} 
+                      onPress={async () => {
                         const otherId = otherUserData?.userId || otherUserData?.id;
-                        if (!otherId) return alert("User data not loaded yet.");
+                        if (!otherId) return;
+
+                        // Restriction: Block call if offline
+                        if (!isOnline) {
+                            return Alert.alert("User Offline", `${otherUserData?.displayName || 'User'} is offline. You can only call active users.`);
+                        }
 
                         // 1. Record in chat history
                         await recordCallEvent('video');

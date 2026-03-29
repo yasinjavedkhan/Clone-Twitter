@@ -1,10 +1,10 @@
 import { Stack } from 'expo-router';
-import { View, Platform } from 'react-native';
+import { View, Platform, AppState } from 'react-native';
 import IncomingCallOverlay from '../src/components/IncomingCallOverlay';
 import * as Notifications from 'expo-notifications';
 import { auth, db } from '../src/lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
-import { useCallback, useEffect } from 'react';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useCallback, useEffect, useRef } from 'react';
 import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
@@ -22,6 +22,7 @@ Notifications.setNotificationHandler({
 });
 
 export default function RootLayout() {
+  const appState = useRef(AppState.currentState);
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_700Bold,
@@ -32,6 +33,42 @@ export default function RootLayout() {
       await SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
+
+  // Presence Heartbeat (Mobile)
+  useEffect(() => {
+    const unsubAuth = auth.onAuthStateChanged((user) => {
+      if (!user) return;
+
+      const updateLastSeen = async () => {
+        if (appState.current === 'active') {
+          await updateDoc(doc(db, "users", user.uid), {
+            lastSeen: serverTimestamp()
+          }).catch(() => {});
+        }
+      };
+
+      // Initial update
+      updateLastSeen();
+
+      // 3-second heartbeat for hyper-responsive presence
+      const interval = setInterval(updateLastSeen, 3000);
+
+      // Listen for app coming to foreground
+      const subscription = AppState.addEventListener('change', nextAppState => {
+        appState.current = nextAppState;
+        if (appState.current === 'active') {
+          updateLastSeen();
+        }
+      });
+
+      return () => {
+        clearInterval(interval);
+        subscription.remove();
+      };
+    });
+
+    return () => unsubAuth();
+  }, []);
 
   useEffect(() => {
     async function registerForPushNotificationsAsync() {
