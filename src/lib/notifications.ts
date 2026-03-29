@@ -30,6 +30,11 @@ export async function requestNotificationPermission(userId: string): Promise<str
         }
 
         // 1. Ensure Service Worker is registered AND active
+        if (typeof window === "undefined" || !("serviceWorker" in window.navigator)) {
+            console.warn("FCM: Service workers not supported in this browser.");
+            return null;
+        }
+
         let registration = await window.navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
         
         if (!registration) {

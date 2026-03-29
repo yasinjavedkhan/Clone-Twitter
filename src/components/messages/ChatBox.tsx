@@ -137,16 +137,27 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
     const formatLastSeen = (lastSeen: any) => {
         if (!lastSeen) return null;
-        const date = lastSeen.toDate ? lastSeen.toDate() : new Date(lastSeen);
-        const diffInMinutes = (Date.now() - date.getTime()) / 60000;
+        try {
+            // Handle Firestore Timestamp vs Date object vs Number
+            const date = lastSeen.toDate ? lastSeen.toDate() : new Date(lastSeen);
+            
+            // Safety check for invalid dates (especially from pending server timestamps)
+            if (isNaN(date.getTime())) return "Active recently";
 
-        if (diffInMinutes < 2) return "Active now";
-        return `Active ${formatDistanceToNow(date)} ago`;
+            const diffInMinutes = (Date.now() - date.getTime()) / 60000;
+            if (diffInMinutes < 2) return "Active now";
+            
+            return `Active ${formatDistanceToNow(date)} ago`;
+        } catch (err) {
+            console.warn("Error formatting last seen:", err);
+            return "Active recently";
+        }
     };
 
     // Force re-render every minute to update the "Last seen" relative time
     const [, setTick] = useState(0);
     useEffect(() => {
+        // Use a longer interval for re-renders to be mobile-friendly
         const timer = setInterval(() => setTick(prev => prev + 1), 60000);
         return () => clearInterval(timer);
     }, []);

@@ -125,13 +125,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Heartbeat every 60 seconds
         const interval = setInterval(() => {
-            if (document.visibilityState === 'visible') {
+            if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
                 updateLastSeen();
             }
         }, 60000);
 
         // Update on focus
-        const handleFocus = () => updateLastSeen();
+        const handleFocus = () => {
+            if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+                updateLastSeen();
+            }
+        };
         window.addEventListener('focus', handleFocus);
 
         return () => {
