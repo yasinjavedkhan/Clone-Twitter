@@ -36,6 +36,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
     const [deleteMenuMessageId, setDeleteMenuMessageId] = useState<string | null>(null);
+    const manuallyInitiated = useRef(false);
 
     useEffect(() => {
         // Check for call in query params
@@ -44,10 +45,13 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             const type = searchParams.get('type') as any;
             const rName = searchParams.get('room');
             if (type) setCallType(type);
-            if (rName) setRoomName(rName || "");
-            setIsCalling(true);
+            if (rName && rName !== roomName) {
+                console.log("Call pickup from URL:", rName);
+                setRoomName(rName);
+                setIsCalling(true);
+            }
         }
-    }, [searchParams, conversationId]);
+    }, [searchParams, conversationId, roomName]);
 
     useEffect(() => {
         if (!conversationId || !user?.uid) return;
@@ -132,9 +136,12 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     useEffect(() => {
         if (!isCalling || !roomName) return;
 
+        console.log("Listening to call status for room:", roomName);
         const unsub = onSnapshot(doc(db, "calls", roomName), (docSnap) => {
             if (!docSnap.exists()) {
+                 console.log("Call document deleted (ended by other party)");
                  setIsCalling(false);
+                 manuallyInitiated.current = false;
             }
         }, (error) => {
             console.error("Call status listener error:", error);
@@ -480,6 +487,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                     }
 
                                     // 4. Update UI - Now safe because document exists
+                                    manuallyInitiated.current = true;
                                     setCallType('voice'); 
                                     setRoomName(generatedRoom);
                                     setIsCalling(true);
@@ -529,6 +537,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                     }
 
                                     // 4. Update UI
+                                    manuallyInitiated.current = true;
                                     setCallType('video'); 
                                     setRoomName(generatedRoom);
                                     setIsCalling(true);
@@ -551,6 +560,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         <button 
                             onClick={async () => {
                                 setIsCalling(false);
+                                manuallyInitiated.current = false;
                                 await deleteDoc(doc(db, "calls", roomName)).catch(() => {});
                             }}
                             className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full font-bold transition flex items-center gap-2"
@@ -564,6 +574,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         otherUser={otherUser}
                         onEndCall={async () => {
                             setIsCalling(false);
+                            manuallyInitiated.current = false;
                             await deleteDoc(doc(db, "calls", roomName)).catch(() => {});
                         }} 
                     />

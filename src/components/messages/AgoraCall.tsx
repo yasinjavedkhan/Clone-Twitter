@@ -13,6 +13,7 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
     const [isVideoOff, setIsVideoOff] = useState(callType === 'voice');
     const [initError, setInitError] = useState<string | null>(null);
     const localVideoRef = useRef<HTMLDivElement>(null);
+    const joinInProgress = useRef(false);
 
     useEffect(() => {
         let agoraClient: IAgoraRTCClient;
@@ -20,8 +21,13 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
         let video: ICameraVideoTrack | null = null;
 
         const init = async () => {
+            if (joinInProgress.current) return;
+            joinInProgress.current = true;
+
+            console.log("Agora: Starting initialization for room:", roomName);
+
             if (!APP_ID || APP_ID === "YOUR_AGORA_APP_ID") {
-                console.error("Agora App ID is missing.");
+                console.error("Agora: App ID is missing.");
                 setInitError("Agora App ID is missing. Please check configuration.");
                 return;
             }
@@ -31,6 +37,7 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
                 setClient(agoraClient);
 
                 agoraClient.on("user-published", async (user, mediaType) => {
+                    console.log("Agora: Remote user published:", user.uid, mediaType);
                     await agoraClient.subscribe(user, mediaType);
                     if (mediaType === "video") {
                         setRemoteUsers((prev) => {
@@ -44,20 +51,29 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
                 });
 
                 agoraClient.on("user-unpublished", (user) => {
+                    console.log("Agora: Remote user unpublished:", user.uid);
                     setRemoteUsers((prev) => prev.filter((u) => u.uid !== user.uid));
                 });
 
+                console.log("Agora: Joining channel...");
                 await agoraClient.join(APP_ID, roomName, null, null);
+                
+                console.log("Agora: Creating local tracks...");
                 audio = await AgoraRTC.createMicrophoneAudioTrack();
                 
                 if (callType === 'video') {
-                    video = await AgoraRTC.createCameraVideoTrack().catch(() => null);
+                    video = await AgoraRTC.createCameraVideoTrack().catch((err) => {
+                        console.warn("Agora: Camera access failed, falling back to audio only.", err);
+                        return null;
+                    });
+                    
                     if (video) {
                         setLocalTracks([audio, video]);
                         await agoraClient.publish([audio, video]);
-                        if (localVideoRef.current) video.play(localVideoRef.current);
+                        if (localVideoRef.current) {
+                            video.play(localVideoRef.current);
+                        }
                     } else {
-                        // Fallback to audio if camera fails
                         setLocalTracks([audio]);
                         await agoraClient.publish([audio]);
                         setIsVideoOff(true);
@@ -66,8 +82,10 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
                     setLocalTracks([audio]);
                     await agoraClient.publish([audio]);
                 }
+                console.log("Agora: Local tracks published successfully.");
             } catch (error: any) {
-                console.error("Agora init error:", error);
+                console.error("Agora: Initialization failed:", error);
+                joinInProgress.current = false;
                 if (error.name === 'NotAllowedError' || error.message?.includes('PERMISSION_DENIED')) {
                     setInitError("Mic/Camera access denied. Please check site permissions.");
                 } else if (error.message?.includes('INVALID_APP_ID')) {
@@ -78,15 +96,17 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
             }
         };
 
-        init();
+        if (roomName) init();
 
         return () => {
+            console.log("Agora: Cleaning up tracks and leaving channel...");
+            joinInProgress.current = false;
             audio?.stop();
             audio?.close();
             video?.stop();
             video?.close();
             if (agoraClient) {
-                agoraClient.leave().catch(() => {});
+                agoraClient.leave().catch((err) => console.warn("Agora: Error during leave:", err));
             }
         };
     }, [roomName, callType]);
