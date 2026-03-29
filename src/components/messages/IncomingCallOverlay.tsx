@@ -1,42 +1,87 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { onForegroundMessage } from "@/lib/notifications";
 import { Phone, PhoneOff, Video, X } from "lucide-react";
-import Avatar from "@/components/ui/Avatar";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { collection, query, where, onSnapshot, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function IncomingCallOverlay() {
     const [incomingCall, setIncomingCall] = useState<any>(null);
     const router = useRouter();
+    const { user } = useAuth();
+    const ringtoneRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
-        // Listen for incoming call signals
-        const unsubscribe = onForegroundMessage((payload) => {
-            if (payload.data?.type === 'call') {
+        // Fallback: Listen for incoming FCM call signals for edge cases
+        const unsubscribeFCM = onForegroundMessage((payload) => {
+            if (payload.data?.type === 'call' && !incomingCall) {
                 setIncomingCall(payload.data);
-                // Play ringtone
-                const audio = new Audio('/ringtone.mp3');
-                audio.play().catch(() => console.log("User interaction needed for audio"));
+                playRingtone();
             }
         });
 
         return () => {
-            if (typeof unsubscribe === 'function') unsubscribe();
+            if (typeof unsubscribeFCM === 'function') unsubscribeFCM();
         };
     }, []);
 
+    useEffect(() => {
+        if (!user?.uid) return;
+
+        // Primary: Real-time In-App Firestore listener for rock-solid reliability
+        const q = query(
+            collection(db, "calls"), 
+            where("toUserId", "==", user.uid),
+            where("status", "==", "ringing")
+        );
+
+        const unsubFirestore = onSnapshot(q, (snapshot) => {
+            if (!snapshot.empty) {
+                const callDoc = snapshot.docs[0];
+                const callData = callDoc.data();
+                setIncomingCall({ ...callData, id: callDoc.id });
+                playRingtone();
+            } else {
+                setIncomingCall(null);
+                stopRingtone();
+            }
+        });
+
+        return () => unsubFirestore();
+    }, [user?.uid]);
+
+    const playRingtone = () => {
+        if (!ringtoneRef.current) {
+            ringtoneRef.current = new Audio('/ringtone.mp3');
+            ringtoneRef.current.loop = true;
+        }
+        ringtoneRef.current.play().catch(() => console.log("User interaction needed for audio"));
+    };
+
+    const stopRingtone = () => {
+        if (ringtoneRef.current) {
+            ringtoneRef.current.pause();
+            ringtoneRef.current.currentTime = 0;
+        }
+    };
+
     if (!incomingCall) return null;
 
-    const { callType, conversationId, fromUserName, fromUserAvatar, roomName } = incomingCall;
+    const { callType, conversationId, fromUserName, fromUserAvatar, roomName, id } = incomingCall;
 
-    const handleAccept = () => {
+    const handleAccept = async () => {
+        stopRingtone();
+        if (id) await updateDoc(doc(db, "calls", id), { status: 'accepted' }).catch(() => {});
         setIncomingCall(null);
-        // Navigate to the chat where the call will be active
         router.push(`/messages/${conversationId}?call=true&type=${callType}&room=${roomName}`);
     };
 
-    const handleDecline = () => {
+    const handleDecline = async () => {
+        stopRingtone();
+        if (id) await deleteDoc(doc(db, "calls", id)).catch(() => {});
         setIncomingCall(null);
     };
 

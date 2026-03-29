@@ -11,7 +11,7 @@ import { sendPushNotification } from "@/lib/notifications";
 import AgoraCall from "./AgoraCall";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { cn } from "@/lib/utils";
-import { deleteDoc, arrayUnion } from "firebase/firestore";
+import { deleteDoc, arrayUnion, setDoc } from "firebase/firestore";
 
 export default function ChatBox({ conversationId }: { conversationId: string }) {
     const { user, userData } = useAuth();
@@ -128,6 +128,20 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         };
         fetchOtherUser();
     }, [conversationId, user]);
+
+    useEffect(() => {
+        if (!isCalling || !roomName) return;
+
+        const unsub = onSnapshot(doc(db, "calls", roomName), (docSnap) => {
+            if (!docSnap.exists()) {
+                 setIsCalling(false);
+            }
+        }, (error) => {
+            console.error("Call status listener error:", error);
+        });
+
+        return () => unsub();
+    }, [isCalling, roomName]);
 
     const recordCallEvent = async (type: 'voice' | 'video') => {
         if (!user || !conversationId) return;
@@ -434,19 +448,33 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                     setIsCalling(true);
                                     // 1. Record in chat history
                                     await recordCallEvent('voice');
-                                    // 2. Signal
-                                    if (otherUser?.userId) {
+                                    // 2. Real-time in-app ringing via Firestore
+                                    if (user && otherUser?.userId) {
+                                        await setDoc(doc(db, "calls", generatedRoom), {
+                                            toUserId: otherUser.userId,
+                                            fromUserId: user.uid,
+                                            fromUserName: user.displayName || userData?.username || "Someone",
+                                            fromUserAvatar: (user as any).profileImage || '',
+                                            callType: 'voice',
+                                            roomName: generatedRoom,
+                                            conversationId,
+                                            status: 'ringing',
+                                            createdAt: serverTimestamp()
+                                        }).catch(console.error);
+                                    }
+                                    // 3. Fallback push notification for offline devices
+                                    if (user && otherUser?.userId) {
                                         await sendPushNotification({
                                             toUserId: otherUser.userId,
                                             title: "Incoming Voice Call",
-                                            body: `${user?.displayName || 'Someone'} is calling...`,
+                                            body: `${user.displayName || 'Someone'} is calling...`,
                                             data: {
                                                 type: 'call',
                                                 callType: 'voice',
                                                 conversationId,
                                                 roomName: generatedRoom,
-                                                fromUserName: user?.displayName || user?.email?.split('@')[0] || 'Someone',
-                                                fromUserAvatar: (user as any)?.profileImage || ''
+                                                fromUserName: user.displayName || user.email?.split('@')[0] || 'Someone',
+                                                fromUserAvatar: (user as any).profileImage || ''
                                             }
                                         });
                                     }
@@ -464,19 +492,33 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                     setIsCalling(true);
                                     // 1. Record in chat history
                                     await recordCallEvent('video');
-                                    // 2. Signal
-                                    if (otherUser?.userId) {
+                                    // 2. Real-time in-app ringing via Firestore
+                                    if (user && otherUser?.userId) {
+                                        await setDoc(doc(db, "calls", generatedRoom), {
+                                            toUserId: otherUser.userId,
+                                            fromUserId: user.uid,
+                                            fromUserName: user.displayName || userData?.username || "Someone",
+                                            fromUserAvatar: (user as any).profileImage || '',
+                                            callType: 'video',
+                                            roomName: generatedRoom,
+                                            conversationId,
+                                            status: 'ringing',
+                                            createdAt: serverTimestamp()
+                                        }).catch(console.error);
+                                    }
+                                    // 3. Fallback push notification for offline devices
+                                    if (user && otherUser?.userId) {
                                         await sendPushNotification({
                                             toUserId: otherUser.userId,
                                             title: "Incoming Video Call",
-                                            body: `${user?.displayName || 'Someone'} is video calling...`,
+                                            body: `${user.displayName || 'Someone'} is video calling...`,
                                             data: {
                                                 type: 'call',
                                                 callType: 'video',
                                                 conversationId,
                                                 roomName: generatedRoom,
-                                                fromUserName: user?.displayName || user?.email?.split('@')[0] || 'Someone',
-                                                fromUserAvatar: (user as any)?.profileImage || ''
+                                                fromUserName: user.displayName || user.email?.split('@')[0] || 'Someone',
+                                                fromUserAvatar: (user as any).profileImage || ''
                                             }
                                         });
                                     }
@@ -497,7 +539,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black">
                         <h3 className="text-white font-bold">Call with {otherUser?.displayName || "User"}</h3>
                         <button 
-                            onClick={() => setIsCalling(false)}
+                            onClick={async () => {
+                                setIsCalling(false);
+                                await deleteDoc(doc(db, "calls", roomName)).catch(() => {});
+                            }}
                             className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full font-bold transition flex items-center gap-2"
                         >
                             <X className="w-5 h-5" /> End Call
@@ -506,7 +551,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     <AgoraCall 
                         roomName={roomName} 
                         callType={callType} 
-                        onEndCall={() => setIsCalling(false)} 
+                        onEndCall={async () => {
+                            setIsCalling(false);
+                            await deleteDoc(doc(db, "calls", roomName)).catch(() => {});
+                        }} 
                     />
                 </div>
             )}

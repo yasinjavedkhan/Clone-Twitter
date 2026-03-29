@@ -210,16 +210,27 @@ const VideoItem = ({ url }: { url: string }) => {
         }
     };
 
+    const handleVideoEnd = () => {
+        if (!videoRef.current) return;
+        
+        // Find the parent Tweet container
+        const currentArticle = videoRef.current.closest('article');
+        if (currentArticle && currentArticle.nextElementSibling) {
+            // Smoothly scroll to the next Tweet in the feed
+            currentArticle.nextElementSibling.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
     return (
         <div className="relative w-full h-full group/video bg-black" onClick={toggleMute}>
             <video
                 ref={videoRef}
                 src={url}
                 className="w-full h-full object-contain"
-                loop
                 playsInline
                 muted={true}
                 preload="auto"
+                onEnded={handleVideoEnd}
             />
             {/* Mute/Unmute Indicator */}
             <div className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-full text-white backdrop-blur-sm transition-all duration-300">
