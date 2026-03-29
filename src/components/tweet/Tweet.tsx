@@ -16,7 +16,23 @@ import { userCache } from "@/lib/cache";
 import Avatar from "@/components/ui/Avatar";
 
 interface TweetProps {
-    tweet: any;
+    tweet: {
+        id: string;
+        userId: string;
+        content: string;
+        mediaUrls?: string[];
+        replySetting?: 'everyone' | 'following' | 'mentions' | 'followers';
+        likesCount: number;
+        commentsCount: number;
+        retweetsCount: number;
+        viewsCount: number;
+        createdAt: any;
+        author?: {
+            displayName: string;
+            username: string;
+            profileImage?: string;
+        };
+    };
 }
 
 const VideoItem = ({ url }: { url: string }) => {
@@ -542,7 +558,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                             tweet.mediaUrls.length === 3 ? "grid-rows-2" : ""
                         )}
                     >
-                        {tweet.mediaUrls.map((url, index) => {
+                        {tweet.mediaUrls.map((url: string, index: number) => {
                             const isVideo = url.toLowerCase().includes('.mp4') || 
                                            url.toLowerCase().includes('.mov') || 
                                            url.toLowerCase().includes('.webm') ||
@@ -845,7 +861,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                         {/* Dot indicators for multi-media */}
                         {tweet.mediaUrls.length > 1 && (
                             <div className="flex gap-2">
-                                {tweet.mediaUrls.map((_, i) => (
+                                {tweet.mediaUrls.map((_: any, i: number) => (
                                     <button
                                         key={i}
                                         onClick={(e) => { e.stopPropagation(); setLightboxIndex(i); }}
