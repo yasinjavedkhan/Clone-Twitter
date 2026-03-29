@@ -128,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
                 updateLastSeen();
             }
-        }, 60000);
+        }, 3000); 
 
         // Update on focus
         const handleFocus = () => {

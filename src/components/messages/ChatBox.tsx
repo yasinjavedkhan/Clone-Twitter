@@ -146,8 +146,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             const date = lastSeen.toDate ? lastSeen.toDate() : new Date(lastSeen);
             if (isNaN(date.getTime())) return "Active recently";
 
-            const diffInMinutes = (Date.now() - date.getTime()) / 60000;
-            if (diffInMinutes < 2) return "Active now";
+            const diffInSeconds = (Date.now() - date.getTime()) / 1000;
+            if (diffInSeconds < 5) return "Active now"; // Match 3s heartbeat
+            
+            if (diffInSeconds < 60) return `Active ${Math.floor(diffInSeconds)}s ago`;
             
             return `Active ${formatDistanceToNow(date)} ago`;
         } catch (err) {
@@ -159,17 +161,18 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         if (!lastSeen || !hasMounted) return false;
         try {
             const date = lastSeen.toDate ? lastSeen.toDate() : new Date(lastSeen);
-            return (Date.now() - date.getTime()) / 60000 < 2;
+            // Hyper-responsive: 5-second threshold for the 3-second heartbeat
+            return (Date.now() - date.getTime()) / 1000 < 5;
         } catch {
             return false;
         }
     };
 
-    // Force re-render every minute to update the "Last seen" relative time
+    // Force re-render frequently (3s) to keep up with the hyper-responsive heartbeats
     const [, setTick] = useState(0);
     useEffect(() => {
         if (!hasMounted) return;
-        const timer = setInterval(() => setTick(prev => prev + 1), 60000);
+        const timer = setInterval(() => setTick(prev => prev + 1), 3000);
         return () => clearInterval(timer);
     }, [hasMounted]);
 
