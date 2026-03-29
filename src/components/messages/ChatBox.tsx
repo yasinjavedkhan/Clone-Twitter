@@ -424,7 +424,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     </div>
                 </Link>
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                    {!otherUser?.isSelf && (
+                    {otherUser && otherUser.userId !== user?.uid && (
                         <>
                             <button 
                                 onClick={async () => { 
