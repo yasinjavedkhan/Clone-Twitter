@@ -556,8 +556,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                     setRoomName(generatedRoom);
                                     setIsCalling(true);
                                 }}
-                                className="p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200"
-                                title="Voice Call"
+                                disabled={!isUserActive(otherUser.lastSeen)}
+                                className="p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200 disabled:opacity-20 disabled:cursor-not-allowed disabled:grayscale"
+                                title={isUserActive(otherUser.lastSeen) ? "Voice Call" : "User Offline"}
                             >
                                 <Phone className="w-5 h-5" />
                             </button>
@@ -606,8 +607,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                     setRoomName(generatedRoom);
                                     setIsCalling(true);
                                 }}
-                                className="p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200"
-                                title="Video Call"
+                                disabled={!isUserActive(otherUser.lastSeen)}
+                                className="p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200 disabled:opacity-20 disabled:cursor-not-allowed disabled:grayscale"
+                                title={isUserActive(otherUser.lastSeen) ? "Video Call" : "User Offline"}
                             >
                                 <Video className="w-6 h-6" />
                             </button>
