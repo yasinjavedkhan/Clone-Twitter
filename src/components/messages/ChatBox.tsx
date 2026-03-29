@@ -5,12 +5,13 @@ import Link from "next/link";
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Send, Image, User, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2, Minimize2 } from "lucide-react";
+import { Send, Image, User, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2, Minimize2, MoreHorizontal, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { sendPushNotification } from "@/lib/notifications";
 import AgoraCall from "./AgoraCall";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { cn } from "@/lib/utils";
+import { deleteDoc, arrayUnion } from "firebase/firestore";
 
 export default function ChatBox({ conversationId }: { conversationId: string }) {
     const { user, userData } = useAuth();
@@ -31,6 +32,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
     const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const [deleteMenuMessageId, setDeleteMenuMessageId] = useState<string | null>(null);
 
     useEffect(() => {
         // Check for call in query params
@@ -352,6 +354,33 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         }
     };
 
+    const handleDeleteForMe = async (messageId: string) => {
+        if (!user || !conversationId) return;
+        try {
+            await updateDoc(doc(db, "conversations", conversationId, "messages", messageId), {
+                deletedBy: arrayUnion(user.uid)
+            });
+            setDeleteMenuMessageId(null);
+        } catch (error) {
+            console.error("Error deleting for me:", error);
+        }
+    };
+
+    const handleDeleteForBoth = async (messageId: string) => {
+        if (!user || !conversationId) return;
+        try {
+            await updateDoc(doc(db, "conversations", conversationId, "messages", messageId), {
+                text: "🚫 This message was deleted",
+                mediaUrls: [],
+                audioUrl: null,
+                isDeletedForEveryone: true
+            });
+            setDeleteMenuMessageId(null);
+        } catch (error) {
+            console.error("Error deleting for both:", error);
+        }
+    };
+
     return (
         <div className="flex flex-col h-[100dvh] w-full max-h-[100dvh] border-r border-gray-800 bg-black overflow-hidden relative">
             {/* Header - Fixed with Flex */}
@@ -462,59 +491,123 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             )}
 
             {/* Messages Area - Standard Scroll */}
-            <div className="flex-grow overflow-y-auto px-4 py-4 flex flex-col gap-3 scroll-smooth">
-                {messages.map((msg) => {
+            <div className="flex-grow overflow-y-auto px-4 py-4 flex flex-col gap-3 scroll-smooth" onClick={() => setDeleteMenuMessageId(null)}>
+                {messages.filter(msg => !msg.deletedBy?.includes(user?.uid)).map((msg) => {
                     const isMe = msg.senderId === user?.uid;
+                    const isSystemMessage = msg.isDeletedForEveryone;
+
                     return (
                         <div
                             key={msg.id}
-                            className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
+                            className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group relative`}
                         >
-                            <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-[15px] ${isMe
-                                ? 'bg-twitter-blue text-black rounded-br-none'
-                                : 'bg-[#2f3336] text-white rounded-bl-none'
-                                }`}>
-                                {msg.mediaUrls && msg.mediaUrls.length > 0 && (
-                                    <div className={cn(
-                                        "grid gap-1 mb-2",
-                                        msg.mediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"
-                                    )}>
-                                        {msg.mediaUrls.map((url: string, idx: number) => (
-                                            <div key={idx} className="rounded-lg overflow-hidden border border-gray-800 bg-gray-950">
-                                                {url.includes('.mp4') || url.includes('.mov') ? (
-                                                    <video src={url} className="max-h-60 w-full object-contain" controls />
-                                                ) : (
-                                                    <img src={url} alt="Shared" className="max-h-60 w-full object-contain" onClick={() => window.open(url, '_blank')} />
-                                                )}
+                            <div className="relative flex items-center group/bubble">
+                                {isMe && !isSystemMessage && (
+                                    <div className="opacity-0 group-hover/bubble:opacity-100 transition-opacity mr-2">
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setDeleteMenuMessageId(deleteMenuMessageId === msg.id ? null : msg.id);
+                                            }}
+                                            className="p-1 hover:bg-white/10 rounded-full text-gray-500"
+                                        >
+                                            <MoreHorizontal className="w-4 h-4" />
+                                        </button>
+                                        
+                                        {deleteMenuMessageId === msg.id && (
+                                            <div className="absolute bottom-full right-0 mb-2 w-48 bg-[#15181c] border border-gray-800 rounded-xl shadow-2xl z-[150] overflow-hidden animate-in fade-in zoom-in duration-200">
+                                                <button 
+                                                    onClick={() => handleDeleteForMe(msg.id)}
+                                                    className="w-full text-left px-4 py-3 text-[14px] text-white hover:bg-white/5 flex items-center gap-2"
+                                                >
+                                                    <Trash2 className="w-4 h-4 text-gray-400" /> Delete for me
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleDeleteForBoth(msg.id)}
+                                                    className="w-full text-left px-4 py-3 text-[14px] text-red-500 hover:bg-red-500/10 border-t border-gray-800 flex items-center gap-2"
+                                                >
+                                                    <Trash2 className="w-4 h-4" /> Delete for both
+                                                </button>
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
                                 )}
-                                {msg.audioUrl && (
-                                    <div className="flex flex-col gap-2 min-w-[200px] py-1">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center">
-                                                <Mic className="w-4 h-4 text-inherit" />
-                                            </div>
-                                            <audio 
-                                                src={msg.audioUrl} 
-                                                controls 
-                                                className="h-8 max-w-[180px] custom-audio-player"
-                                            />
+
+                                <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-[15px] ${isMe
+                                    ? 'bg-twitter-blue text-black rounded-br-none'
+                                    : 'bg-[#2f3336] text-white rounded-bl-none'
+                                    } ${isSystemMessage ? 'opacity-50 italic border border-gray-800 bg-transparent text-gray-500' : ''}`}>
+                                    
+                                    {!isSystemMessage && msg.mediaUrls && msg.mediaUrls.length > 0 && (
+                                        <div className={cn(
+                                            "grid gap-1 mb-2",
+                                            msg.mediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                                        )}>
+                                            {msg.mediaUrls.map((url: string, idx: number) => (
+                                                <div key={idx} className="rounded-lg overflow-hidden border border-gray-800 bg-gray-950">
+                                                    {url.includes('.mp4') || url.includes('.mov') ? (
+                                                        <video src={url} className="max-h-60 w-full object-contain" controls />
+                                                    ) : (
+                                                        <img src={url} alt="Shared" className="max-h-60 w-full object-contain" onClick={() => window.open(url, '_blank')} />
+                                                    )}
+                                                </div>
+                                            ))}
                                         </div>
+                                    )}
+                                    {!isSystemMessage && msg.audioUrl && (
+                                        <div className="flex flex-col gap-2 min-w-[200px] py-1">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center">
+                                                    <Mic className="w-4 h-4 text-inherit" />
+                                                </div>
+                                                <audio 
+                                                    src={msg.audioUrl} 
+                                                    controls 
+                                                    className="h-8 max-w-[180px] custom-audio-player"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                    {msg.text && <div>{msg.text}</div>}
+                                </div>
+
+                                {!isMe && !isSystemMessage && (
+                                    <div className="opacity-0 group-hover/bubble:opacity-100 transition-opacity ml-2">
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setDeleteMenuMessageId(deleteMenuMessageId === msg.id ? null : msg.id);
+                                            }}
+                                            className="p-1 hover:bg-white/10 rounded-full text-gray-500"
+                                        >
+                                            <MoreHorizontal className="w-4 h-4" />
+                                        </button>
+                                        
+                                        {deleteMenuMessageId === msg.id && (
+                                            <div className="absolute bottom-full left-0 mb-2 w-40 bg-[#15181c] border border-gray-800 rounded-xl shadow-2xl z-[150] overflow-hidden animate-in fade-in zoom-in duration-200">
+                                                <button 
+                                                    onClick={() => handleDeleteForMe(msg.id)}
+                                                    className="w-full text-left px-4 py-3 text-[14px] text-white hover:bg-white/5 flex items-center gap-2"
+                                                >
+                                                    <Trash2 className="w-4 h-4 text-gray-400" /> Delete for me
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
-                                {msg.text && <div>{msg.text}</div>}
                             </div>
-                            <span className="text-gray-500 text-[11px] mt-1 px-1 flex items-center">
-                                {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), 'p') : '...'}
-                                {isMe && (
-                                    <span className={`font-bold ml-1.5 flex items-center gap-0.5 ${msg.read ? 'text-twitter-blue' : 'text-gray-500'}`}>
-                                        <div className={`w-1 h-1 rounded-full ${msg.read ? 'bg-twitter-blue' : 'bg-gray-500'}`}></div>
-                                        {msg.read ? 'Seen' : 'Sent'}
-                                    </span>
-                                )}
-                            </span>
+                            
+                            {!isSystemMessage && (
+                                <span className="text-gray-500 text-[11px] mt-1 px-1 flex items-center">
+                                    {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), 'p') : '...'}
+                                    {isMe && (
+                                        <span className={`font-bold ml-1.5 flex items-center gap-0.5 ${msg.read ? 'text-twitter-blue' : 'text-gray-500'}`}>
+                                            <div className={`w-1 h-1 rounded-full ${msg.read ? 'bg-twitter-blue' : 'bg-gray-500'}`}></div>
+                                            {msg.read ? 'Seen' : 'Sent'}
+                                        </span>
+                                    )}
+                                </span>
+                            )}
                         </div>
                     );
                 })}
