@@ -32,6 +32,7 @@ function MainLayoutContent({ children }: MainLayoutProps) {
   const isMessagePage = pathname?.startsWith("/messages");
   // Immersive mode is only when we are on /videos AND have a specific 'url' parameter
   const isImmersiveVideo = pathname?.includes("/videos") && searchParams?.get('url');
+  const isMessageConversation = pathname?.startsWith("/messages/") && pathname !== "/messages";
   const isVideosPage = pathname?.includes("/videos");
 
   return (
@@ -47,7 +48,7 @@ function MainLayoutContent({ children }: MainLayoutProps) {
         {children}
       </main>
       {!isMessagePage && !isHomePage && !isImmersiveVideo && <RightSidebar />}
-      {!isImmersiveVideo && <MobileNav />}
+      {!isImmersiveVideo && !isMessageConversation && <MobileNav />}
       
       {/* Notification Banner for Mobile */}
       {showNotificationNotice && user && (

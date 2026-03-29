@@ -186,9 +186,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     };
 
     return (
-        <div className="flex flex-col h-[100dvh] w-full max-h-[100dvh] border-r border-gray-800 bg-black overflow-hidden relative select-none overscroll-none">
-            {/* Header - Fixed to top */}
-            <div className="absolute top-0 left-0 right-0 h-[68px] border-b border-gray-800 flex items-center px-4 gap-4 bg-black/95 backdrop-blur-md z-50">
+        <div className="flex flex-col h-[100dvh] w-full max-h-[100dvh] border-r border-gray-800 bg-black overflow-hidden relative select-none">
+            {/* Header - Fixed with Flex */}
+            <div className="h-[68px] border-b border-gray-800 flex items-center px-4 gap-4 bg-black/95 backdrop-blur-md z-50 shrink-0">
                 <Link 
                     href={otherUser?.userId ? `/profile/${otherUser.userId}` : "#"} 
                     className="flex items-center gap-4 flex-grow min-w-0 group hover:opacity-80 transition-opacity"
@@ -293,8 +293,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 </div>
             )}
 
-            {/* Messages Area - Added padding for header/input */}
-            <div className="flex-grow overflow-y-auto pt-[68px] pb-[75px] px-4 flex flex-col gap-3 scroll-smooth">
+            {/* Messages Area - Standard Scroll */}
+            <div className="flex-grow overflow-y-auto px-4 py-4 flex flex-col gap-3 scroll-smooth">
                 {messages.map((msg) => {
                     const isMe = msg.senderId === user?.uid;
                     return (
@@ -323,8 +323,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 <div ref={scrollRef} />
             </div>
 
-            {/* Input Area - Fixed at bottom */}
-            <form onSubmit={handleSendMessage} className="absolute bottom-0 left-0 right-0 p-3 border-t border-gray-800 flex items-center gap-2 bg-black z-50 pb-[max(12px,env(safe-area-inset-bottom))]">
+            {/* Input Area - Fixed with Flex at bottom */}
+            <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-800 flex items-center gap-2 bg-black z-50 pb-[max(12px,env(safe-area-inset-bottom))] shrink-0">
                 <button type="button" className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition">
                     <Image className="w-5 h-5" />
                 </button>
