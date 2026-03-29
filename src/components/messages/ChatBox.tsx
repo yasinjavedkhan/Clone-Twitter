@@ -235,7 +235,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     };
 
     return (
-        <div className="flex flex-col h-[100dvh] w-full max-h-[100dvh] border-r border-gray-800 bg-black overflow-hidden relative select-none">
+        <div className="flex flex-col h-[100dvh] w-full max-h-[100dvh] border-r border-gray-800 bg-black overflow-hidden relative">
             {/* Header - Fixed with Flex */}
             <div className="min-h-[64px] h-auto pt-[env(safe-area-inset-top)] border-b border-gray-800 flex items-center px-4 gap-3 sm:gap-4 bg-black/95 backdrop-blur-md z-[110] shrink-0">
                 <Link 
@@ -413,6 +413,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
                 <form onSubmit={handleSendMessage} className="p-3 flex items-center gap-2 z-50 pb-[max(12px,env(safe-area-inset-bottom))]">
                     <input
+                        id="chat-file-input"
                         type="file"
                         accept="image/*,video/*"
                         multiple
@@ -420,13 +421,12 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         ref={fileInputRef}
                         onChange={handleMediaSelect}
                     />
-                    <button 
-                        type="button" 
-                        onClick={() => fileInputRef.current?.click()}
-                        className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition"
+                    <label 
+                        htmlFor="chat-file-input"
+                        className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition cursor-pointer"
                     >
                         <Image className="w-5 h-5" />
-                    </button>
+                    </label>
                     <input
                         type="text"
                         value={newMessage}
