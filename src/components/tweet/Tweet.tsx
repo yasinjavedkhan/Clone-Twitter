@@ -24,27 +24,35 @@ const VideoItem = ({ url }: { url: string }) => {
     const [isMuted, setIsMuted] = useState(true);
 
     useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
-                    const video = videoRef.current;
-                    if (!video) return;
-
                     if (entry.isIntersecting) {
-                        // Try to play. If sound-blocked, autoplay might fail unless muted.
-                        // We start muted by default to ensure it works on mobile.
-                        video.play().catch((err) => {
-                            console.log("Autoplay issue:", err);
-                        });
+                        // Force muted for guaranteed mobile autoplay without user click
+                        video.muted = true; 
+                        setIsMuted(true);
+                        
+                        const playPromise = video.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch((error) => {
+                                console.log("Force-autoplay fallback error:", error);
+                                // Retry one more time with explicit attributes
+                                video.muted = true;
+                                video.play();
+                            });
+                        }
                     } else {
                         video.pause();
                     }
                 });
             },
-            { threshold: 0.3 } // Lower threshold for faster mobile start
+            { threshold: 0.1 } // Extremely aggressive for instant start
         );
 
-        if (videoRef.current) observer.observe(videoRef.current);
+        observer.observe(video);
         return () => observer.disconnect();
     }, []);
 
@@ -54,31 +62,34 @@ const VideoItem = ({ url }: { url: string }) => {
             const newMuted = !videoRef.current.muted;
             videoRef.current.muted = newMuted;
             setIsMuted(newMuted);
+            // After unmuting, ensure it's playing
+            videoRef.current.play().catch(() => {});
         }
     };
 
     return (
-        <div className="relative w-full h-full group/video" onClick={toggleMute}>
+        <div className="relative w-full h-full group/video bg-black" onClick={toggleMute}>
             <video
                 ref={videoRef}
                 src={url}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 loop
                 playsInline
-                muted={isMuted}
+                muted={true}
                 preload="auto"
                 autoPlay
             />
             {/* Mute/Unmute Indicator */}
-            <div className="absolute bottom-2 right-2 bg-black/50 p-1.5 rounded-full text-white opacity-0 group-hover/video:opacity-100 transition-opacity">
+            <div className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-full text-white backdrop-blur-sm transition-all duration-300">
                 {isMuted ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
                     </svg>
                 ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-twitter-blue" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.5c-1.105 0-2 .895-2 2v5c0 1.105.895 2 2 2h2.44l4.5 4.5c.944.945 2.56.276 2.56-1.06V4.06zM15.5 12c0-1.66-1-3.07-2.43-3.69v7.38c1.43-.62 2.43-2.03 2.43-3.69z" />
+                        <path d="M13.07 1.64v2.09c3.08.77 5.43 3.55 5.43 6.27s-2.35 5.5-5.43 6.27v2.09c4.23-.82 7.43-4.51 7.43-8.36s-3.2-7.54-7.43-8.36z" />
                     </svg>
                 )}
             </div>
