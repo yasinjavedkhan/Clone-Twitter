@@ -44,6 +44,90 @@ const setGlobalMuted = (muted: boolean) => {
     muteListeners.forEach(listener => listener(muted));
 };
 
+let globalObserver: IntersectionObserver | null = null;
+const registeredVideos = new Set<HTMLVideoElement>();
+let evaluationTimeout: NodeJS.Timeout | null = null;
+
+const evaluateVideos = () => {
+    let bestVideo: HTMLVideoElement | null = null;
+    let minDistance = Infinity;
+    const windowCenter = window.innerHeight / 2;
+
+    // Find the one closest to the center of the screen
+    registeredVideos.forEach(video => {
+        const rect = video.getBoundingClientRect();
+        // If it's somewhat on screen
+        if (rect.bottom > 0 && rect.top < window.innerHeight) {
+            const videoCenter = rect.top + (rect.height / 2);
+            const distance = Math.abs(windowCenter - videoCenter);
+            if (distance < minDistance) {
+                minDistance = distance;
+                bestVideo = video;
+            }
+        }
+    });
+
+    if (bestVideo && bestVideo !== currentlyPlayingVideo) {
+        if (currentlyPlayingVideo && !currentlyPlayingVideo.paused) {
+            currentlyPlayingVideo.pause();
+        }
+        
+        const videoToPlay = bestVideo as HTMLVideoElement;
+        currentlyPlayingVideo = videoToPlay;
+        
+        // Start the best video
+        videoToPlay.muted = globalIsMuted;
+        
+        // Let the local component know it needs to sync its UI state
+        videoToPlay.dispatchEvent(new CustomEvent('sync-mute-ui', { detail: { isMuted: globalIsMuted } }));
+
+        const p = videoToPlay.play();
+        if (p !== undefined) {
+            p.catch(() => {
+                // If unmuted autoplay fails, fallback to muted
+                if (videoToPlay) {
+                    videoToPlay.muted = true;
+                    setGlobalMuted(true);
+                    videoToPlay.play().catch(console.error);
+                }
+            });
+        }
+    }
+
+    // Double check all others are strictly paused
+    registeredVideos.forEach(video => {
+        if (video !== currentlyPlayingVideo && !video.paused) {
+            video.pause();
+        }
+    });
+};
+
+const getGlobalObserver = () => {
+    if (typeof window === 'undefined') return null;
+    if (!globalObserver) {
+        globalObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const video = entry.target as HTMLVideoElement;
+                if (entry.isIntersecting) {
+                    registeredVideos.add(video);
+                } else {
+                    registeredVideos.delete(video);
+                    if (!video.paused) video.pause();
+                    if (currentlyPlayingVideo === video) currentlyPlayingVideo = null;
+                }
+            });
+            
+            // Queue evaluation to run after intersection updates
+            if (evaluationTimeout) clearTimeout(evaluationTimeout);
+            evaluationTimeout = setTimeout(evaluateVideos, 50);
+        }, {
+            // Evaluates frequently as user scrolls up/down
+            threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1] 
+        });
+    }
+    return globalObserver;
+};
+
 const VideoItem = ({ url }: { url: string }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isMuted, setIsMuted] = useState(globalIsMuted);
@@ -65,66 +149,22 @@ const VideoItem = ({ url }: { url: string }) => {
         const video = videoRef.current;
         if (!video) return;
 
-        const onSinglePlay = (e: any) => {
-            if (e.detail.target !== video) {
-                video.pause();
-                if (currentlyPlayingVideo === video) currentlyPlayingVideo = null;
-            }
-        };
-        window.addEventListener('exclusive-video-play', onSinglePlay);
+        const observer = getGlobalObserver();
+        if (observer) observer.observe(video);
 
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        // Pause the previously playing video if it's different
-                        if (currentlyPlayingVideo && currentlyPlayingVideo !== video) {
-                            currentlyPlayingVideo.pause();
-                        }
-                        
-                        // Set this video as the global active video
-                        currentlyPlayingVideo = video;
-                        // Broadcast to ALL OTHER videos globally to ensure they pause immediately
-                        window.dispatchEvent(new CustomEvent('exclusive-video-play', { detail: { target: video } }));
+        const onSyncUI = (e: any) => setIsMuted(e.detail.isMuted);
+        video.addEventListener('sync-mute-ui', onSyncUI);
 
-                        // Start with current global mute state
-                        video.muted = globalIsMuted; 
-                        setIsMuted(globalIsMuted);
-                        
-                        const playPromise = video.play();
-                        if (playPromise !== undefined) {
-                            playPromise.catch((error) => {
-                                console.log("Force-autoplay fallback error:", error);
-                                // If unmuted autoplay fails, fallback to muted and update global state
-                                video.muted = true;
-                                setIsMuted(true);
-                                setGlobalMuted(true);
-                                video.play().catch(console.error);
-                            });
-                        }
-                    } else {
-                        video.pause();
-                        // Clear the global reference if this was the active video
-                        if (currentlyPlayingVideo === video) {
-                            currentlyPlayingVideo = null;
-                        }
-                    }
-                });
-            },
-            { 
-                // Play if at least 50% of the video is visible on screen
-                threshold: 0.5 
-            }
-        );
-
-        observer.observe(video);
         return () => {
-            window.removeEventListener('exclusive-video-play', onSinglePlay);
-            observer.disconnect();
+            registeredVideos.delete(video);
+            video.removeEventListener('sync-mute-ui', onSyncUI);
+            if (!video.paused) video.pause();
             if (currentlyPlayingVideo === video) {
-                currentlyPlayingVideo.pause();
                 currentlyPlayingVideo = null;
+                if (evaluationTimeout) clearTimeout(evaluationTimeout);
+                evaluationTimeout = setTimeout(evaluateVideos, 50);
             }
+            if (observer) observer.unobserve(video);
         };
     }, []);
 
