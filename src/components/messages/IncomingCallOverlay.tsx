@@ -10,38 +10,33 @@ import { db } from "@/lib/firebase";
 
 export default function IncomingCallOverlay() {
     const [incomingCall, setIncomingCall] = useState<any>(null);
-    const [mounted, setMounted] = useState(false);
+    const [isAnswering, setIsAnswering] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+    
     const router = useRouter();
     const { user } = useAuth();
     const ringtoneRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
-        setMounted(true);
+        setIsMounted(true);
+        // Fallback: Listen for incoming FCM call signals
+        const unsubscribeFCM = onForegroundMessage((payload) => {
+            if (payload.data?.type === 'call' && !incomingCall) {
+                setIncomingCall(payload.data);
+                playRingtone();
+            }
+        });
+
+        return () => {
+            if (typeof unsubscribeFCM === 'function') unsubscribeFCM();
+            stopRingtone();
+        };
     }, []);
 
     useEffect(() => {
-        if (!mounted) return;
-        // Fallback: Listen for incoming FCM call signals for edge cases
-        try {
-            const unsubscribeFCM = onForegroundMessage((payload) => {
-                if (payload?.data?.type === 'call' && !incomingCall) {
-                    setIncomingCall(payload.data);
-                    playRingtone();
-                }
-            });
+        if (!user?.uid || !isMounted) return;
 
-            return () => {
-                if (typeof unsubscribeFCM === 'function') unsubscribeFCM();
-            };
-        } catch (err) {
-            console.warn("FCM Listener Error:", err);
-        }
-    }, [mounted]);
-
-    useEffect(() => {
-        if (!user?.uid || !mounted) return;
-
-        // Primary: Real-time In-App Firestore listener for rock-solid reliability
+        // Primary: Real-time In-App Firestore listener
         const q = query(
             collection(db, "calls"), 
             where("toUserId", "==", user.uid),
@@ -58,25 +53,21 @@ export default function IncomingCallOverlay() {
                 setIncomingCall(null);
                 stopRingtone();
             }
-        }, (err) => {
-            console.warn("Firestore Call Listener Error:", err);
         });
 
         return () => unsubFirestore();
-    }, [user?.uid, mounted]);
+    }, [user?.uid, isMounted]);
 
     const playRingtone = () => {
-        if (typeof window === "undefined") return;
+        if (typeof window === 'undefined') return;
         try {
             if (!ringtoneRef.current) {
                 ringtoneRef.current = new Audio('/ringtone.mp3');
                 ringtoneRef.current.loop = true;
             }
-            ringtoneRef.current.play().catch((err) => {
-                console.log("Ringtone blocked or missing:", err.message);
-            });
-        } catch (err) {
-            console.warn("Audio initialization failed:", err);
+            ringtoneRef.current.play().catch(() => console.log("Sound check: Interaction needed or file missing."));
+        } catch (e) {
+            console.error("Audio error:", e);
         }
     };
 
@@ -87,31 +78,32 @@ export default function IncomingCallOverlay() {
         }
     };
 
-    if (!incomingCall) return null;
-
-    const { callType, conversationId, fromUserName, fromUserAvatar, roomName, id } = incomingCall;
-
-    const [isAnswering, setIsAnswering] = useState(false);
-
     const handleAccept = async () => {
+        if (!incomingCall) return;
         setIsAnswering(true);
         stopRingtone();
+        const { id, conversationId, callType, roomName } = incomingCall;
         if (id) await updateDoc(doc(db, "calls", id), { status: 'accepted' }).catch(() => {});
-        // Note: Don't setIncomingCall(null) immediately to allow navigation to complete
+        
         router.push(`/messages/${conversationId}?call=true&type=${callType}&room=${roomName}`);
         
-        // Brief delay before removing overlay to ensure ChatBox has time to mount AgoraCall
         setTimeout(() => {
             setIncomingCall(null);
             setIsAnswering(false);
-        }, 800);
+        }, 1000);
     };
 
     const handleDecline = async () => {
+        if (!incomingCall) return;
         stopRingtone();
+        const { id } = incomingCall;
         if (id) await deleteDoc(doc(db, "calls", id)).catch(() => {});
         setIncomingCall(null);
     };
+
+    if (!isMounted || !incomingCall) return null;
+
+    const { callType, fromUserName, fromUserAvatar } = incomingCall;
 
     return (
         <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
