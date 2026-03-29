@@ -36,10 +36,30 @@ interface TweetProps {
 }
 
 let currentlyPlayingVideo: HTMLVideoElement | null = null;
+let globalIsMuted = true;
+const muteListeners = new Set<(muted: boolean) => void>();
+
+const setGlobalMuted = (muted: boolean) => {
+    globalIsMuted = muted;
+    muteListeners.forEach(listener => listener(muted));
+};
 
 const VideoItem = ({ url }: { url: string }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
-    const [isMuted, setIsMuted] = useState(true);
+    const [isMuted, setIsMuted] = useState(globalIsMuted);
+
+    useEffect(() => {
+        const listener = (muted: boolean) => {
+            setIsMuted(muted);
+            if (videoRef.current) {
+                videoRef.current.muted = muted;
+            }
+        };
+        muteListeners.add(listener);
+        return () => {
+            muteListeners.delete(listener);
+        };
+    }, []);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -57,17 +77,19 @@ const VideoItem = ({ url }: { url: string }) => {
                         // Set this video as the global active video
                         currentlyPlayingVideo = video;
 
-                        // Force muted for guaranteed mobile autoplay without user click
-                        video.muted = true; 
-                        setIsMuted(true);
+                        // Start with current global mute state
+                        video.muted = globalIsMuted; 
+                        setIsMuted(globalIsMuted);
                         
                         const playPromise = video.play();
                         if (playPromise !== undefined) {
                             playPromise.catch((error) => {
                                 console.log("Force-autoplay fallback error:", error);
-                                // Retry one more time with explicit attributes
+                                // If unmuted autoplay fails, fallback to muted and update global state
                                 video.muted = true;
-                                video.play();
+                                setIsMuted(true);
+                                setGlobalMuted(true);
+                                video.play().catch(console.error);
                             });
                         }
                     } else {
@@ -100,8 +122,9 @@ const VideoItem = ({ url }: { url: string }) => {
         e.stopPropagation();
         if (videoRef.current) {
             const newMuted = !videoRef.current.muted;
-            videoRef.current.muted = newMuted;
-            setIsMuted(newMuted);
+            // Unmute globally everywhere
+            setGlobalMuted(newMuted);
+            
             // After unmuting, ensure it's playing
             videoRef.current.play().catch(() => {});
         }
