@@ -21,38 +21,68 @@ interface TweetProps {
 
 const VideoItem = ({ url }: { url: string }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const [isMuted, setIsMuted] = useState(true);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
+                    const video = videoRef.current;
+                    if (!video) return;
+
                     if (entry.isIntersecting) {
-                        videoRef.current?.play().catch(() => {
-                            // Autoplay with sound might be blocked; browser requires 1 user click first
-                            console.log("Autoplay with sound was blocked; waiting for user interaction.");
+                        // Try to play. If sound-blocked, autoplay might fail unless muted.
+                        // We start muted by default to ensure it works on mobile.
+                        video.play().catch((err) => {
+                            console.log("Autoplay issue:", err);
                         });
                     } else {
-                        videoRef.current?.pause();
+                        video.pause();
                     }
                 });
             },
-            { threshold: 0.5 }
+            { threshold: 0.3 } // Lower threshold for faster mobile start
         );
 
         if (videoRef.current) observer.observe(videoRef.current);
         return () => observer.disconnect();
     }, []);
 
+    const toggleMute = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (videoRef.current) {
+            const newMuted = !videoRef.current.muted;
+            videoRef.current.muted = newMuted;
+            setIsMuted(newMuted);
+        }
+    };
+
     return (
-        <video
-            ref={videoRef}
-            src={url}
-            className="w-full h-full object-cover"
-            loop
-            playsInline
-            muted={false}
-            preload="auto"
-        />
+        <div className="relative w-full h-full group/video" onClick={toggleMute}>
+            <video
+                ref={videoRef}
+                src={url}
+                className="w-full h-full object-cover"
+                loop
+                playsInline
+                muted={isMuted}
+                preload="auto"
+                autoPlay
+            />
+            {/* Mute/Unmute Indicator */}
+            <div className="absolute bottom-2 right-2 bg-black/50 p-1.5 rounded-full text-white opacity-0 group-hover/video:opacity-100 transition-opacity">
+                {isMuted ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                    </svg>
+                ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                    </svg>
+                )}
+            </div>
+        </div>
     );
 };
 
