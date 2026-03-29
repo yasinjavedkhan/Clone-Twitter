@@ -188,7 +188,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     return (
         <div className="flex flex-col h-[100dvh] w-full max-h-[100dvh] border-r border-gray-800 bg-black overflow-hidden relative select-none">
             {/* Header - Fixed with Flex */}
-            <div className="h-[68px] border-b border-gray-800 flex items-center px-4 gap-4 bg-black/95 backdrop-blur-md z-50 shrink-0">
+            <div className="min-h-[64px] h-auto pt-[env(safe-area-inset-top)] border-b border-gray-800 flex items-center px-4 gap-3 sm:gap-4 bg-black/95 backdrop-blur-md z-[110] shrink-0">
                 <Link 
                     href={otherUser?.userId ? `/profile/${otherUser.userId}` : "#"} 
                     className="flex items-center gap-4 flex-grow min-w-0 group hover:opacity-80 transition-opacity"
@@ -200,12 +200,12 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             (otherUser?.displayName || otherUser?.username || "?")[0]
                         )}
                     </div>
-                    <div className="flex flex-col min-w-0 flex-grow mr-2">
-                        <h2 className="font-bold text-white text-[17px] leading-tight truncate group-hover:underline">
+                    <div className="flex flex-col min-w-0 flex-1 mr-1 sm:mr-2">
+                        <h2 className="font-bold text-white text-[16px] sm:text-[17px] leading-tight truncate group-hover:underline">
                             {otherUser?.displayName || otherUser?.username || (conversationId ? "..." : "Select a chat")}
                         </h2>
                         {otherUser?.username && (
-                            <p className="text-gray-500 text-[13px] truncate">@{otherUser.username}</p>
+                            <p className="text-gray-500 text-[12px] sm:text-[13px] truncate">@{otherUser.username}</p>
                         )}
                     </div>
                 </Link>
