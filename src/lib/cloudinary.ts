@@ -6,8 +6,8 @@ export const uploadToCloudinary = async (file: File): Promise<string> => {
   formData.append("file", file);
   formData.append("upload_preset", uploadPreset);
 
-  // Detect resource type (image or video)
-  const resourceType = file.type.startsWith("video/") ? "video" : "image";
+  // Detect resource type (image, video, or audio)
+  const resourceType = file.type.startsWith("video/") || file.type.startsWith("audio/") ? "video" : "image";
 
   try {
     const response = await fetch(

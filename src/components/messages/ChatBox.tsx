@@ -25,6 +25,13 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const [isSending, setIsSending] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Voice Message states
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingDuration, setRecordingDuration] = useState(0);
+    const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+    const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+
     useEffect(() => {
         // Check for call in query params
         if (typeof window !== "undefined") {
@@ -168,6 +175,109 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
     const removeMedia = (index: number) => {
         setMediaFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const sendVoiceMessage = async (file: File) => {
+        if (!user) return;
+        setIsSending(true);
+        try {
+            const audioUrl = await uploadToCloudinary(file);
+            
+            await addDoc(collection(db, "conversations", conversationId, "messages"), {
+                senderId: user.uid,
+                audioUrl,
+                type: 'voice',
+                read: false,
+                createdAt: serverTimestamp(),
+            });
+
+            const senderName = userData?.displayName || userData?.username || 'Someone';
+            
+            const convDoc = await getDoc(doc(db, "conversations", conversationId));
+            const participants = convDoc.data()?.participants || [];
+            const otherId = participants.find((p: string) => p !== user.uid);
+
+            if (otherId) {
+                await updateDoc(doc(db, "conversations", conversationId), {
+                    lastMessage: "🎤 Sent a voice message",
+                    lastTimestamp: serverTimestamp(),
+                    [`unreadCount.${otherId}`]: increment(1)
+                });
+
+                await sendPushNotification({
+                    toUserId: otherId,
+                    title: `💬 ${senderName}`,
+                    body: "🎤 Sent you a voice message",
+                    data: {
+                        type: 'message',
+                        conversationId,
+                        fromUserId: user.uid,
+                        url: `/messages/${conversationId}`,
+                    },
+                });
+            }
+        } catch (err) {
+            console.error("Error sending voice message:", err);
+            alert("Failed to send voice message. Please try again.");
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const recorder = new MediaRecorder(stream);
+            const chunks: Blob[] = [];
+
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) chunks.push(e.data);
+            };
+
+            recorder.onstop = async () => {
+                const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+                const audioFile = new File([audioBlob], `voice-message-${Date.now()}.webm`, { type: 'audio/webm' });
+                await sendVoiceMessage(audioFile);
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            setAudioChunks(chunks);
+            setMediaRecorder(recorder);
+            recorder.start();
+            setIsRecording(true);
+            setRecordingDuration(0);
+
+            timerRef.current = setInterval(() => {
+                setRecordingDuration(prev => prev + 1);
+            }, 1000);
+        } catch (error) {
+            console.error("Error starting recording:", error);
+            alert("Microphone access is required for voice messages.");
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.stop();
+            setIsRecording(false);
+            if (timerRef.current) clearInterval(timerRef.current);
+        }
+    };
+
+    const cancelRecording = () => {
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.onstop = null;
+            mediaRecorder.stop();
+            setIsRecording(false);
+            if (timerRef.current) clearInterval(timerRef.current);
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        }
+    };
+
+    const formatDuration = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
     const handleSendMessage = async (e: React.FormEvent) => {
@@ -371,6 +481,20 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                         ))}
                                     </div>
                                 )}
+                                {msg.audioUrl && (
+                                    <div className="flex flex-col gap-2 min-w-[200px] py-1">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center">
+                                                <Mic className="w-4 h-4 text-inherit" />
+                                            </div>
+                                            <audio 
+                                                src={msg.audioUrl} 
+                                                controls 
+                                                className="h-8 max-w-[180px] custom-audio-player"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                                 {msg.text && <div>{msg.text}</div>}
                             </div>
                             <span className="text-gray-500 text-[11px] mt-1 px-1 flex items-center">
@@ -412,39 +536,77 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 )}
 
                 <form onSubmit={handleSendMessage} className="p-3 flex items-center gap-2 z-50 pb-[max(12px,env(safe-area-inset-bottom))]">
-                    <input
-                        id="chat-file-input"
-                        type="file"
-                        accept="image/*,video/*"
-                        multiple
-                        className="hidden"
-                        ref={fileInputRef}
-                        onChange={handleMediaSelect}
-                    />
-                    <label 
-                        htmlFor="chat-file-input"
-                        className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition cursor-pointer"
-                    >
-                        <Image className="w-5 h-5" />
-                    </label>
-                    <input
-                        type="text"
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Start a new message"
-                        className="flex-grow bg-[#202327] rounded-2xl py-2 px-4 outline-none focus:ring-1 focus:ring-twitter-blue transition text-[15px]"
-                    />
-                    <button
-                        type="submit"
-                        disabled={(!newMessage.trim() && mediaFiles.length === 0) || isSending}
-                        className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition disabled:opacity-50"
-                    >
-                        {isSending ? (
-                            <div className="w-5 h-5 border-2 border-twitter-blue border-t-transparent animate-spin rounded-full" />
-                        ) : (
-                            <Send className="w-5 h-5" />
-                        )}
-                    </button>
+                    {isRecording ? (
+                        <div className="flex-grow flex items-center bg-[#202327] rounded-2xl py-2 px-4 gap-4 animate-in fade-in duration-300">
+                            <div className="flex items-center gap-2 flex-grow">
+                                <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+                                <span className="font-mono text-white text-[15px]">{formatDuration(recordingDuration)}</span>
+                                <div className="flex gap-0.5 h-4 items-center flex-grow justify-center opacity-50">
+                                    {[1, 2, 3, 4, 5, 6, 7].map(i => (
+                                        <div key={i} className="w-1 bg-white rounded-full animate-bounce" style={{ height: `${20 + Math.random() * 80}%`, animationDelay: `${i * 0.1}s` }} />
+                                    ))}
+                                </div>
+                            </div>
+                            <button 
+                                type="button" 
+                                onClick={cancelRecording}
+                                className="text-gray-500 hover:text-white font-bold text-sm transition"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="button" 
+                                onClick={stopRecording}
+                                className="bg-twitter-blue hover:brightness-110 text-black p-1.5 rounded-full shadow-lg shadow-twitter-blue/20 transition active:scale-90"
+                            >
+                                <Send className="w-4 h-4 fill-current" />
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            <input
+                                id="chat-file-input"
+                                type="file"
+                                accept="image/*,video/*"
+                                multiple
+                                className="hidden"
+                                ref={fileInputRef}
+                                onChange={handleMediaSelect}
+                            />
+                            <label 
+                                htmlFor="chat-file-input"
+                                className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition cursor-pointer shrink-0"
+                            >
+                                <Image className="w-5 h-5" />
+                            </label>
+                            <button 
+                                type="button" 
+                                onClick={startRecording}
+                                className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition shrink-0"
+                                title="Voice Message"
+                            >
+                                <Mic className="w-5 h-5" />
+                            </button>
+                            <input
+                                type="text"
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                placeholder="Start a new message"
+                                className="flex-grow bg-[#202327] rounded-2xl py-2 px-4 outline-none focus:ring-1 focus:ring-twitter-blue transition text-[15px] min-w-0"
+                            />
+                            <button
+                                type="submit"
+                                disabled={(!newMessage.trim() && mediaFiles.length === 0) || isSending}
+                                className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition disabled:opacity-50 shrink-0"
+                            >
+                                {isSending ? (
+                                    <div className="w-5 h-5 border-2 border-twitter-blue border-t-transparent animate-spin rounded-full" />
+                                ) : (
+                                    <Send className="w-5 h-5" />
+                                )}
+                            </button>
+                        </>
+                    )}
                 </form>
             </div>
         </div>
