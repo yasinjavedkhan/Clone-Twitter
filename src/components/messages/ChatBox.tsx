@@ -186,9 +186,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     };
 
     return (
-        <div className="flex flex-col h-[100dvh] flex-grow border-r border-gray-800 bg-black overflow-hidden relative">
-            {/* Header */}
-            <div className="p-4 border-b border-gray-800 flex items-center gap-4 bg-black/90 backdrop-blur sticky top-0 z-40">
+        <div className="flex flex-col h-[100dvh] flex-grow border-r border-gray-800 bg-black overflow-hidden scroll-none">
+            {/* Header - Fixed in place by flex-none */}
+            <div className="flex-none p-4 border-b border-gray-800 flex items-center gap-4 bg-black/95 backdrop-blur z-50">
                 <Link 
                     href={otherUser?.userId ? `/profile/${otherUser.userId}` : "#"} 
                     className="flex items-center gap-4 flex-grow min-w-0 group hover:opacity-80 transition-opacity"
@@ -293,8 +293,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 </div>
             )}
 
-            {/* Messages Area */}
-            <div className="flex-grow overflow-y-auto p-4 flex flex-col gap-3">
+            {/* Messages Area - Only this part scrolls */}
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 overscroll-contain">
                 {messages.map((msg) => {
                     const isMe = msg.senderId === user?.uid;
                     return (
@@ -323,8 +323,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 <div ref={scrollRef} />
             </div>
 
-            {/* Input Area */}
-            <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-800 flex items-center gap-2 sticky bottom-0 bg-black z-40">
+            {/* Input Area - Fixed in place by flex-none */}
+            <form onSubmit={handleSendMessage} className="flex-none p-3 border-t border-gray-800 flex items-center gap-2 bg-black z-50">
                 <button type="button" className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition">
                     <Image className="w-5 h-5" />
                 </button>
