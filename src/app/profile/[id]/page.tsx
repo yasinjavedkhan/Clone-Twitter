@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, addDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, addDoc, getCountFromServer } from "firebase/firestore";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, User as UserIcon, Mail, Camera, X } from "lucide-react";
 import { format } from "date-fns";
@@ -42,9 +42,19 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 const data = await userCache.fetchUser(profileId);
                 if (data) {
                     setProfileData(data);
+                    
+                    // Fetch REAL-TIME Counts from follows collection
+                    const followersQuery = query(collection(db, "follows"), where("followingId", "==", profileId));
+                    const followingQuery = query(collection(db, "follows"), where("followerId", "==", profileId));
+                    
+                    const [followersSnap, followingSnap] = await Promise.all([
+                        getCountFromServer(followersQuery),
+                        getCountFromServer(followingQuery)
+                    ]);
+                    
                     setFollowCounts({
-                        following: data.followingCount || 0,
-                        followers: data.followersCount || 0
+                        followers: followersSnap.data().count,
+                        following: followingSnap.data().count
                     });
                 }
 
