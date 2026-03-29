@@ -150,7 +150,6 @@ const VideoItem = ({ url }: { url: string }) => {
                 playsInline
                 muted={true}
                 preload="auto"
-                autoPlay
             />
             {/* Mute/Unmute Indicator */}
             <div className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-full text-white backdrop-blur-sm transition-all duration-300">
