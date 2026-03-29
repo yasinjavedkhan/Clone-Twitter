@@ -4,7 +4,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 // Your VAPID key from Firebase Console → Project Settings → Cloud Messaging
-const VAPID_KEY = (process.env.NEXT_PUBLIC_FCM_VAPID_KEY || "BCcmN4vF9H1SQSK-h9ATcbPyOaab-smwsGOI-d8GSstu1Lwos0DeoGYr_epF3o9pY911wVSLqPM2v33FH2hWLVA").replace(/['"]/g, '').trim();
+const VAPID_KEY = (process.env.NEXT_PUBLIC_FCM_VAPID_KEY || "BJ-iGROgllfJWNW-T5chkp1hGw3rhHMAyehMQ5Yb6qFCbbfIgRvrlvR3jdE3zyG4tNNQMXczzY1i3I4ZqyhVrrJQ").replace(/['"]/g, '').trim();
 
 export async function requestNotificationPermission(userId: string): Promise<string | null> {
     try {
@@ -89,10 +89,9 @@ export function onForegroundMessage(callback: (payload: any) => void) {
     if (typeof window === "undefined") return () => {};
     try {
         const messaging = getMessaging(app);
-        if (!messaging) return () => {};
         return onMessage(messaging, callback);
     } catch (error) {
-        console.warn("FCM: Foreground listener could not be established (likely missing credentials).", error);
+        console.error("Error setting up foreground message handler:", error);
         return () => {};
     }
 }

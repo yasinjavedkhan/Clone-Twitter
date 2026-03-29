@@ -37,7 +37,6 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
     const [deleteMenuMessageId, setDeleteMenuMessageId] = useState<string | null>(null);
     const manuallyInitiated = useRef(false);
-    const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
 
     useEffect(() => {
         // Check for call in query params
@@ -104,12 +103,6 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         return () => unsubscribe();
     }, [conversationId, user?.uid]);
 
-    useEffect(() => {
-        if (typeof window !== "undefined" && "Notification" in window) {
-            setNotifPermission(Notification.permission);
-        }
-    }, []);
-
     // Fetch other user info
     useEffect(() => {
         if (!conversationId || !user) return;
@@ -139,15 +132,6 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         };
         fetchOtherUser();
     }, [conversationId, user]);
-
-    const handleRequestPermission = async () => {
-        if (!user) return;
-        const { requestNotificationPermission } = await import("@/lib/notifications");
-        const token = await requestNotificationPermission(user.uid);
-        if (token) setNotifPermission('granted');
-        else if ((window as any).Notification?.permission === 'denied') setNotifPermission('denied');
-        else if ((window as any).Notification?.permission === 'granted') setNotifPermission('granted');
-    };
 
     useEffect(() => {
         if (!isCalling || !roomName) return;
@@ -451,35 +435,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         )}
                     </div>
                     <div className="flex flex-col min-w-0 flex-1 mr-1 sm:mr-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <h2 className="font-bold text-white text-[16px] sm:text-[17px] leading-tight truncate group-hover:underline">
-                                {otherUser?.displayName || otherUser?.username || (conversationId ? "..." : "Select a chat")}
-                                {otherUser?.isSelf ? " (You)" : ""}
-                            </h2>
-                            
-                            {/* Diagnostic Badge for Local User */}
-                            {notifPermission !== 'granted' && (
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRequestPermission(); }}
-                                    className="flex items-center gap-1 bg-yellow-500/10 border border-yellow-500/20 px-1.5 py-0.5 rounded text-[9px] text-yellow-600 hover:bg-yellow-500/20 transition-all font-bold uppercase shrink-0"
-                                    title="Click to allow notifications to receive calls when app is closed"
-                                >
-                                    <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse" />
-                                    Enable Push
-                                </button>
-                            )}
-
-                            {/* Diagnostic Badge for Other User */}
-                            {otherUser && !otherUser.fcmToken && !otherUser.isSelf && (
-                                <div 
-                                    className="flex items-center gap-1 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded text-[9px] text-red-500 font-bold uppercase shrink-0"
-                                    title="This user hasn't enabled background notifications. They won't see calls while offline."
-                                >
-                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
-                                    Offline
-                                </div>
-                            )}
-                        </div>
+                        <h2 className="font-bold text-white text-[16px] sm:text-[17px] leading-tight truncate group-hover:underline">
+                            {otherUser?.displayName || otherUser?.username || (conversationId ? "..." : "Select a chat")}
+                            {otherUser?.isSelf ? " (You)" : ""}
+                        </h2>
                         {otherUser?.username && (
                             <p className="text-gray-500 text-[12px] sm:text-[13px] truncate">@{otherUser.username}</p>
                         )}

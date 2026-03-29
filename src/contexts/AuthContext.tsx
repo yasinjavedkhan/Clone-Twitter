@@ -85,11 +85,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     }
                     setLoading(false);
                     
-                    // Request notification permission after login (deferred for stability)
+                    // Request notification permission after login
                     if (currentUser) {
                         setTimeout(() => {
-                            requestNotificationPermission(currentUser.uid).catch(console.warn);
-                        }, 5000);
+                            requestNotificationPermission(currentUser.uid).catch(console.error);
+                        }, 3000);
                     }
                 }, (error) => {
                     console.error("User snapshot error:", error);
