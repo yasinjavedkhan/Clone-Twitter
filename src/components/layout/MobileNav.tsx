@@ -53,12 +53,22 @@ export default function MobileNav() {
 
     useEffect(() => {
         const handleScroll = () => {
+            // Only apply this behavior on the Home page
+            if (pathname !== "/") {
+                setIsNavVisible(true);
+                return;
+            }
+
             const currentScrollY = window.scrollY;
             
             // Hide if scrolling down, show if scrolling up
             if (currentScrollY > lastScrollY && currentScrollY > 50) {
                 setIsNavVisible(false);
             } else {
+                setIsNavVisible(true);
+            }
+            
+            if (currentScrollY < 50) {
                 setIsNavVisible(true);
             }
             
