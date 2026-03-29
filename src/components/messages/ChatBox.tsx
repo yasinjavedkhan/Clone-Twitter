@@ -32,6 +32,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
     const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
     const [deleteMenuMessageId, setDeleteMenuMessageId] = useState<string | null>(null);
 
     useEffect(() => {
@@ -381,6 +382,22 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         }
     };
 
+    const handleLongPress = (messageId: string) => {
+        if (navigator.vibrate) navigator.vibrate(50);
+        setDeleteMenuMessageId(messageId);
+    };
+
+    const startPress = (messageId: string) => {
+        longPressTimerRef.current = setTimeout(() => handleLongPress(messageId), 500);
+    };
+
+    const endPress = () => {
+        if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+        }
+    };
+
     return (
         <div className="flex flex-col h-[100dvh] w-full max-h-[100dvh] border-r border-gray-800 bg-black overflow-hidden relative">
             {/* Header - Fixed with Flex */}
@@ -499,7 +516,13 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     return (
                         <div
                             key={msg.id}
-                            className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group relative`}
+                            className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group relative select-none`}
+                            onContextMenu={(e) => !isSystemMessage && e.preventDefault()}
+                            onTouchStart={() => !isSystemMessage && startPress(msg.id)}
+                            onTouchEnd={endPress}
+                            onMouseDown={() => !isSystemMessage && startPress(msg.id)}
+                            onMouseUp={endPress}
+                            onMouseLeave={endPress}
                         >
                             <div className="relative flex items-center group/bubble">
                                 {isMe && !isSystemMessage && (
