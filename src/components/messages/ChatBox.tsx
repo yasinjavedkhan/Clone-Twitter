@@ -187,21 +187,21 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         if (!user) return;
         setIsSending(true);
         try {
+            const convDoc = await getDoc(doc(db, "conversations", conversationId));
+            const participants = convDoc.data()?.participants || [];
+            const otherId = participants.find((p: string) => p !== user.uid);
+            
             const audioUrl = await uploadToCloudinary(file);
             
             await addDoc(collection(db, "conversations", conversationId, "messages"), {
                 senderId: user.uid,
                 audioUrl,
                 type: 'voice',
-                read: false,
+                read: otherId ? false : true,
                 createdAt: serverTimestamp(),
             });
 
             const senderName = userData?.displayName || userData?.username || 'Someone';
-            
-            const convDoc = await getDoc(doc(db, "conversations", conversationId));
-            const participants = convDoc.data()?.participants || [];
-            const otherId = participants.find((p: string) => p !== user.uid);
 
             // Update conversation last message for everyone
             await updateDoc(doc(db, "conversations", conversationId), {
@@ -300,6 +300,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         setIsSending(true);
 
         try {
+            const convDoc = await getDoc(doc(db, "conversations", conversationId));
+            const participants = convDoc.data()?.participants || [];
+            const otherId = participants.find((p: string) => p !== user.uid);
+
             // 1. Upload media if any
             let mediaUrls: string[] = [];
             if (currentMedia.length > 0) {
@@ -312,14 +316,11 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 senderId: user.uid,
                 text,
                 mediaUrls,
-                read: false,
+                read: otherId ? false : true,
                 createdAt: serverTimestamp(),
             });
 
-            // 3. Update conversation last message
-            const convDoc = await getDoc(doc(db, "conversations", conversationId));
-            const participants = convDoc.data()?.participants || [];
-            const otherId = participants.find((p: string) => p !== user.uid);
+            // 3. Update conversation last message values
 
             // Update conversation last message for everyone
             await updateDoc(doc(db, "conversations", conversationId), {
