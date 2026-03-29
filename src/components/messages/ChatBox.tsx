@@ -527,38 +527,18 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             <div className="relative flex items-center group/bubble">
                                 {isMe && !isSystemMessage && (
                                     <div className={cn(
-                                        "transition-opacity mr-2",
-                                        deleteMenuMessageId === msg.id ? "opacity-100 z-[160]" : "opacity-0 group-hover/bubble:opacity-100"
+                                        "transition-opacity mr-2 hidden sm:block",
+                                        deleteMenuMessageId === msg.id ? "opacity-100" : "opacity-0 group-hover/bubble:opacity-100"
                                     )}>
                                         <button 
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                setDeleteMenuMessageId(deleteMenuMessageId === msg.id ? null : msg.id);
+                                                setDeleteMenuMessageId(msg.id === deleteMenuMessageId ? null : msg.id);
                                             }}
                                             className="p-1 hover:bg-white/10 rounded-full text-gray-500"
                                         >
                                             <MoreHorizontal className="w-4 h-4" />
                                         </button>
-                                        
-                                        {deleteMenuMessageId === msg.id && (
-                                            <div 
-                                                className="absolute bottom-full right-0 mb-2 w-48 bg-[#15181c] border border-gray-800 rounded-xl shadow-2xl z-[150] overflow-hidden animate-in fade-in zoom-in duration-200"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <button 
-                                                    onClick={() => handleDeleteForMe(msg.id)}
-                                                    className="w-full text-left px-4 py-3 text-[14px] text-white hover:bg-white/5 flex items-center gap-2"
-                                                >
-                                                    <Trash2 className="w-4 h-4 text-gray-400" /> Delete for me
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleDeleteForBoth(msg.id)}
-                                                    className="w-full text-left px-4 py-3 text-[14px] text-red-500 hover:bg-red-500/10 border-t border-gray-800 flex items-center gap-2"
-                                                >
-                                                    <Trash2 className="w-4 h-4" /> Delete for both
-                                                </button>
-                                            </div>
-                                        )}
                                     </div>
                                 )}
 
@@ -602,32 +582,18 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
                                 {!isMe && !isSystemMessage && (
                                     <div className={cn(
-                                        "transition-opacity ml-2",
-                                        deleteMenuMessageId === msg.id ? "opacity-100 z-[160]" : "opacity-0 group-hover/bubble:opacity-100"
+                                        "transition-opacity ml-2 hidden sm:block",
+                                        deleteMenuMessageId === msg.id ? "opacity-100" : "opacity-0 group-hover/bubble:opacity-100"
                                     )}>
                                         <button 
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                setDeleteMenuMessageId(deleteMenuMessageId === msg.id ? null : msg.id);
+                                                setDeleteMenuMessageId(msg.id === deleteMenuMessageId ? null : msg.id);
                                             }}
                                             className="p-1 hover:bg-white/10 rounded-full text-gray-500"
                                         >
                                             <MoreHorizontal className="w-4 h-4" />
                                         </button>
-                                        
-                                        {deleteMenuMessageId === msg.id && (
-                                            <div 
-                                                className="absolute bottom-full left-0 mb-2 w-40 bg-[#15181c] border border-gray-800 rounded-xl shadow-2xl z-[150] overflow-hidden animate-in fade-in zoom-in duration-200"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <button 
-                                                    onClick={() => handleDeleteForMe(msg.id)}
-                                                    className="w-full text-left px-4 py-3 text-[14px] text-white hover:bg-white/5 flex items-center gap-2"
-                                                >
-                                                    <Trash2 className="w-4 h-4 text-gray-400" /> Delete for me
-                                                </button>
-                                            </div>
-                                        )}
                                     </div>
                                 )}
                             </div>
@@ -746,6 +712,50 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     )}
                 </form>
             </div>
+            {/* Global Delete Action Sheet Overlay */}
+            {deleteMenuMessageId && (
+                <div 
+                    className="fixed inset-0 z-[200] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+                    onClick={() => setDeleteMenuMessageId(null)}
+                >
+                    <div 
+                        className="w-full sm:max-w-sm bg-[#15181c] rounded-t-3xl sm:rounded-3xl border-t sm:border border-gray-800 overflow-hidden animate-in slide-in-from-bottom duration-300"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-4 sm:p-6 text-center">
+                            <h3 className="text-white font-bold text-lg mb-1">Delete message?</h3>
+                            <p className="text-gray-500 text-sm">This action cannot be undone.</p>
+                        </div>
+                        
+                        <div className="flex flex-col border-t border-gray-800">
+                            <button 
+                                onClick={() => handleDeleteForMe(deleteMenuMessageId)}
+                                className="w-full py-4 text-white font-bold hover:bg-white/5 transition border-b border-gray-800"
+                            >
+                                Delete for me
+                            </button>
+                            
+                            {messages.find(m => m.id === deleteMenuMessageId)?.senderId === user?.uid && (
+                                <button 
+                                    onClick={() => handleDeleteForBoth(deleteMenuMessageId)}
+                                    className="w-full py-4 text-red-500 font-bold hover:bg-red-500/10 transition border-b border-gray-800"
+                                >
+                                    Delete for everyone
+                                </button>
+                            )}
+                            
+                            <button 
+                                onClick={() => setDeleteMenuMessageId(null)}
+                                className="w-full py-4 text-gray-400 hover:bg-white/5 transition"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                        {/* Safe area for mobile */}
+                        <div className="h-[env(safe-area-inset-bottom)] sm:hidden" />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
