@@ -12,8 +12,10 @@ import AgoraCall from "./AgoraCall";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { cn } from "@/lib/utils";
 import { deleteDoc, arrayUnion, setDoc } from "firebase/firestore";
+import { useSearchParams } from "next/navigation";
 
 export default function ChatBox({ conversationId }: { conversationId: string }) {
+    const searchParams = useSearchParams();
     const { user, userData } = useAuth();
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState("");
@@ -37,17 +39,15 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
     useEffect(() => {
         // Check for call in query params
-        if (typeof window !== "undefined") {
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('call') === 'true') {
-                const type = params.get('type') as any;
-                const rName = params.get('room');
-                if (type) setCallType(type);
-                if (rName) setRoomName(rName);
-                setIsCalling(true);
-            }
+        const callTrigger = searchParams.get('call');
+        if (callTrigger === 'true') {
+            const type = searchParams.get('type') as any;
+            const rName = searchParams.get('room');
+            if (type) setCallType(type);
+            if (rName) setRoomName(rName || "");
+            setIsCalling(true);
         }
-    }, [conversationId]);
+    }, [searchParams, conversationId]);
 
     useEffect(() => {
         if (!conversationId || !user?.uid) return;
