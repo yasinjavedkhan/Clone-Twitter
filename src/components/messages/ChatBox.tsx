@@ -37,6 +37,11 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
     const [deleteMenuMessageId, setDeleteMenuMessageId] = useState<string | null>(null);
     const manuallyInitiated = useRef(false);
+    const [hasMounted, setHasMounted] = useState(false);
+
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
 
     useEffect(() => {
         // Check for call in query params
@@ -136,12 +141,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     }, [conversationId, user]);
 
     const formatLastSeen = (lastSeen: any) => {
-        if (!lastSeen) return null;
+        if (!lastSeen || !hasMounted) return null;
         try {
-            // Handle Firestore Timestamp vs Date object vs Number
             const date = lastSeen.toDate ? lastSeen.toDate() : new Date(lastSeen);
-            
-            // Safety check for invalid dates (especially from pending server timestamps)
             if (isNaN(date.getTime())) return "Active recently";
 
             const diffInMinutes = (Date.now() - date.getTime()) / 60000;
@@ -149,18 +151,27 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             
             return `Active ${formatDistanceToNow(date)} ago`;
         } catch (err) {
-            console.warn("Error formatting last seen:", err);
             return "Active recently";
+        }
+    };
+
+    const isUserActive = (lastSeen: any) => {
+        if (!lastSeen || !hasMounted) return false;
+        try {
+            const date = lastSeen.toDate ? lastSeen.toDate() : new Date(lastSeen);
+            return (Date.now() - date.getTime()) / 60000 < 2;
+        } catch {
+            return false;
         }
     };
 
     // Force re-render every minute to update the "Last seen" relative time
     const [, setTick] = useState(0);
     useEffect(() => {
-        // Use a longer interval for re-renders to be mobile-friendly
+        if (!hasMounted) return;
         const timer = setInterval(() => setTick(prev => prev + 1), 60000);
         return () => clearInterval(timer);
-    }, []);
+    }, [hasMounted]);
 
     useEffect(() => {
         if (!isCalling || !roomName) return;
@@ -468,18 +479,17 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             {otherUser?.displayName || otherUser?.username || (conversationId ? "..." : "Select a chat")}
                             {otherUser?.isSelf ? " (You)" : ""}
                         </h2>
-                        <div className="flex items-center gap-1.5 truncate">
-                            {otherUser?.lastSeen && (
+                        <div className="flex items-center gap-1.5 truncate h-5">
+                            {hasMounted && otherUser?.lastSeen ? (
                                 <div className="flex items-center gap-1">
-                                    <div className={`w-2 h-2 rounded-full ${(Date.now() - (otherUser.lastSeen?.toDate ? otherUser.lastSeen.toDate().getTime() : 0)) / 60000 < 2 ? 'bg-green-500' : 'bg-gray-500'}`} />
-                                    <p className={`text-[12px] sm:text-[13px] ${ (Date.now() - (otherUser.lastSeen?.toDate ? otherUser.lastSeen.toDate().getTime() : 0)) / 60000 < 2 ? 'text-green-500 font-medium' : 'text-gray-500'}`}>
+                                    <div className={`w-2 h-2 rounded-full ${isUserActive(otherUser.lastSeen) ? 'bg-green-500' : 'bg-gray-500'}`} />
+                                    <p className={`text-[12px] sm:text-[13px] ${isUserActive(otherUser.lastSeen) ? 'text-green-500 font-medium' : 'text-gray-500'}`}>
                                         {formatLastSeen(otherUser.lastSeen)}
                                     </p>
                                 </div>
-                            )}
-                            {!otherUser?.lastSeen && otherUser?.username && (
+                            ) : otherUser?.username ? (
                                 <p className="text-gray-500 text-[12px] sm:text-[13px] truncate">@{otherUser.username}</p>
-                            )}
+                            ) : null}
                         </div>
                     </div>
                 </Link>
