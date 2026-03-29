@@ -443,11 +443,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             <button 
                                 onClick={async () => { 
                                     const generatedRoom = `DirectCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
-                                    setCallType('voice'); 
-                                    setRoomName(generatedRoom);
-                                    setIsCalling(true);
+                                    
                                     // 1. Record in chat history
                                     await recordCallEvent('voice');
+
                                     // 2. Real-time in-app ringing via Firestore
                                     if (user && otherUser?.userId) {
                                         await setDoc(doc(db, "calls", generatedRoom), {
@@ -462,6 +461,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                             createdAt: serverTimestamp()
                                         }).catch(console.error);
                                     }
+
                                     // 3. Fallback push notification for offline devices
                                     if (user && otherUser?.userId) {
                                         await sendPushNotification({
@@ -478,20 +478,24 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                             }
                                         });
                                     }
+
+                                    // 4. Update UI - Now safe because document exists
+                                    setCallType('voice'); 
+                                    setRoomName(generatedRoom);
+                                    setIsCalling(true);
                                 }}
                                 className="p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200"
-                                title="Audio Call"
+                                title="Voice Call"
                             >
                                 <Phone className="w-5 h-5" />
                             </button>
                             <button 
                                 onClick={async () => { 
                                     const generatedRoom = `DirectCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
-                                    setCallType('video'); 
-                                    setRoomName(generatedRoom);
-                                    setIsCalling(true);
+                                    
                                     // 1. Record in chat history
                                     await recordCallEvent('video');
+
                                     // 2. Real-time in-app ringing via Firestore
                                     if (user && otherUser?.userId) {
                                         await setDoc(doc(db, "calls", generatedRoom), {
@@ -506,6 +510,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                             createdAt: serverTimestamp()
                                         }).catch(console.error);
                                     }
+
                                     // 3. Fallback push notification for offline devices
                                     if (user && otherUser?.userId) {
                                         await sendPushNotification({
@@ -522,6 +527,11 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                             }
                                         });
                                     }
+
+                                    // 4. Update UI
+                                    setCallType('video'); 
+                                    setRoomName(generatedRoom);
+                                    setIsCalling(true);
                                 }}
                                 className="p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200"
                                 title="Video Call"
@@ -551,6 +561,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     <AgoraCall 
                         roomName={roomName} 
                         callType={callType} 
+                        otherUser={otherUser}
                         onEndCall={async () => {
                             setIsCalling(false);
                             await deleteDoc(doc(db, "calls", roomName)).catch(() => {});
