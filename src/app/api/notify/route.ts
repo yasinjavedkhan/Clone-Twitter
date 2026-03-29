@@ -106,8 +106,13 @@ export async function POST(req: NextRequest) {
                     notification: {
                         title,
                         body,
-                        requireInteraction: true,
+                        requireInteraction: data?.type === 'call',
                         vibrate: [200, 100, 200],
+                        tag: data?.type === 'call' ? `call-${data.roomName}` : (data?.type || 'general'),
+                        actions: data?.type === 'call' ? [
+                            { action: 'answer', title: 'Answer', icon: '/icon-192.png' },
+                            { action: 'decline', title: 'Decline', icon: '/icon-192.png' }
+                        ] : [],
                     },
                 },
             });
