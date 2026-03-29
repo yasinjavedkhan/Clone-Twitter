@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -188,21 +189,26 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         <div className="flex flex-col h-screen flex-grow border-r border-gray-800 bg-black">
             {/* Header */}
             <div className="p-4 border-b border-gray-800 flex items-center gap-4 bg-black/80 backdrop-blur sticky top-0 z-10">
-                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0 font-bold text-white uppercase overflow-hidden text-lg">
-                    {otherUser?.profileImage ? (
-                        <img src={otherUser.profileImage} className="w-full h-full rounded-full object-cover" alt="Avatar" />
-                    ) : (
-                        (otherUser?.displayName || otherUser?.username || "?")[0]
-                    )}
-                </div>
-                <div className="flex flex-col min-w-0 flex-grow mr-2">
-                    <h2 className="font-bold text-white text-[17px] leading-tight truncate">
-                        {otherUser?.displayName || otherUser?.username || (conversationId ? "..." : "Select a chat")}
-                    </h2>
-                    {otherUser?.username && (
-                        <p className="text-gray-500 text-[13px] truncate">@{otherUser.username}</p>
-                    )}
-                </div>
+                <Link 
+                    href={otherUser?.userId ? `/profile/${otherUser.userId}` : "#"} 
+                    className="flex items-center gap-4 flex-grow min-w-0 group hover:opacity-80 transition-opacity"
+                >
+                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0 font-bold text-white uppercase overflow-hidden text-lg">
+                        {otherUser?.profileImage ? (
+                            <img src={otherUser.profileImage} className="w-full h-full rounded-full object-cover" alt="Avatar" />
+                        ) : (
+                            (otherUser?.displayName || otherUser?.username || "?")[0]
+                        )}
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-grow mr-2">
+                        <h2 className="font-bold text-white text-[17px] leading-tight truncate group-hover:underline">
+                            {otherUser?.displayName || otherUser?.username || (conversationId ? "..." : "Select a chat")}
+                        </h2>
+                        {otherUser?.username && (
+                            <p className="text-gray-500 text-[13px] truncate">@{otherUser.username}</p>
+                        )}
+                    </div>
+                </Link>
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                     <button 
                         onClick={async () => { 
