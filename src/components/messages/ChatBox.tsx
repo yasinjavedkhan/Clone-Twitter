@@ -111,6 +111,12 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         if (userDoc.exists()) {
                             setOtherUser({ userId: userDoc.id, ...userDoc.data() });
                         }
+                    } else {
+                        // Self chat
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if (userDoc.exists()) {
+                            setOtherUser({ userId: userDoc.id, ...userDoc.data(), isSelf: true });
+                        }
                     }
                 }
             } catch (error) {
@@ -197,13 +203,15 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             const participants = convDoc.data()?.participants || [];
             const otherId = participants.find((p: string) => p !== user.uid);
 
-            if (otherId) {
-                await updateDoc(doc(db, "conversations", conversationId), {
-                    lastMessage: "🎤 Sent a voice message",
-                    lastTimestamp: serverTimestamp(),
-                    [`unreadCount.${otherId}`]: increment(1)
-                });
+            // Update conversation last message for everyone
+            await updateDoc(doc(db, "conversations", conversationId), {
+                lastMessage: "🎤 Sent a voice message",
+                lastTimestamp: serverTimestamp(),
+                ...(otherId ? { [`unreadCount.${otherId}`]: increment(1) } : {})
+            });
 
+            // Signal via push only if not self
+            if (otherId && otherId !== user.uid) {
                 await sendPushNotification({
                     toUserId: otherId,
                     title: `💬 ${senderName}`,
@@ -313,16 +321,15 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             const participants = convDoc.data()?.participants || [];
             const otherId = participants.find((p: string) => p !== user.uid);
 
-            if (otherId) {
-                await updateDoc(doc(db, "conversations", conversationId), {
-                    lastMessage: text || (mediaUrls.length > 0 ? (mediaUrls.length > 1 ? "Sent multiple media" : "Sent a photo") : ""),
-                    lastTimestamp: serverTimestamp(),
-                    [`unreadCount.${otherId}`]: increment(1)
-                });
-            }
+            // Update conversation last message for everyone
+            await updateDoc(doc(db, "conversations", conversationId), {
+                lastMessage: text || (mediaUrls.length > 0 ? (mediaUrls.length > 1 ? "Sent multiple media" : "Sent a photo") : ""),
+                lastTimestamp: serverTimestamp(),
+                ...(otherId ? { [`unreadCount.${otherId}`]: increment(1) } : {})
+            });
 
             // 4. Send push notification to the other user
-            if (otherUser?.userId) {
+            if (otherUser?.userId && otherUser.userId !== user.uid) {
                 const senderName = userData?.displayName || userData?.username || 'Someone';
                 await sendPushNotification({
                     toUserId: otherUser.userId,
@@ -362,6 +369,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     <div className="flex flex-col min-w-0 flex-1 mr-1 sm:mr-2">
                         <h2 className="font-bold text-white text-[16px] sm:text-[17px] leading-tight truncate group-hover:underline">
                             {otherUser?.displayName || otherUser?.username || (conversationId ? "..." : "Select a chat")}
+                            {otherUser?.isSelf ? " (You)" : ""}
                         </h2>
                         {otherUser?.username && (
                             <p className="text-gray-500 text-[12px] sm:text-[13px] truncate">@{otherUser.username}</p>

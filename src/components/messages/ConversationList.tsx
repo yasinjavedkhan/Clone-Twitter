@@ -40,7 +40,9 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                         const otherUser = await userCache.fetchUser(otherId);
                         return { ...conv, otherUser };
                     }
-                    return { ...conv, otherUser: null };
+                    // Handle self-chat case
+                    const selfUser = await userCache.fetchUser(user.uid);
+                    return { ...conv, otherUser: selfUser ? { ...selfUser, isSelf: true } : null };
                 }));
 
                 const sorted = convsWithUsers.sort((a, b) => {
@@ -78,8 +80,7 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                 );
                 const snapshot = await getDocs(q);
                 const users = snapshot.docs
-                    .map(doc => ({ id: doc.id, ...doc.data() }))
-                    .filter(u => u.id !== user?.uid);
+                    .map(doc => ({ id: doc.id, ...doc.data() }));
                 setSearchResults(users);
             } catch (error) {
                 console.error("Search error:", error);
@@ -198,7 +199,9 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                                     >
                                         <Avatar src={u.profileImage} fallbackText={u.displayName || u.username} size="lg" />
                                         <div className="flex flex-col truncate min-w-0">
-                                            <span className="font-bold text-white truncate text-[15px]">{u.displayName || u.username}</span>
+                                            <span className="font-bold text-white truncate text-[15px]">
+                                                {u.displayName || u.username}{u.id === user?.uid ? " (You)" : ""}
+                                            </span>
                                             <span className="text-gray-500 text-sm truncate">@{u.username}</span>
                                         </div>
                                     </Link>
@@ -241,6 +244,7 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                                         <div className="flex items-center gap-1.5 min-w-0">
                                             <span className={`font-bold truncate text-[15px] ${isActive ? 'text-white' : 'text-white'}`}>
                                                 {otherUser?.displayName || otherUser?.username || "Unknown"}
+                                                {conv.participants.every((p: string) => p === user?.uid) ? " (You)" : ""}
                                             </span>
                                             {user && conv.unreadCount && conv.unreadCount[user.uid] > 0 && (
                                                 <div className="w-2 h-2 rounded-full bg-[var(--color-twitter-blue)] shrink-0"></div>
