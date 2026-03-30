@@ -2,16 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment, deleteDoc, arrayUnion, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Send, Image, User, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2, Minimize2, MoreHorizontal, Trash2, Circle, Info, ArrowLeft, ShieldAlert } from "lucide-react";
+import { Send, Image, User, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2, Minimize2, MoreHorizontal, Trash2, Circle, Info, ArrowLeft, ShieldAlert, Edit } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { sendPushNotification } from "@/lib/notifications";
 import AgoraCall from "./AgoraCall";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { cn } from "@/lib/utils";
-import { deleteDoc, arrayUnion, setDoc } from "firebase/firestore";
 import { useSearchParams } from "next/navigation";
 
 export default function ChatBox({ conversationId }: { conversationId: string }) {
@@ -923,8 +922,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="p-6 text-center">
-                            <h3 className="text-white font-bold text-lg mb-1">Delete message?</h3>
-                            <p className="text-gray-500 text-sm">This action cannot be undone.</p>
+                            <h3 className="text-white font-bold text-lg mb-1">Message Options</h3>
+                            <p className="text-gray-500 text-sm">Choose an action for this message.</p>
                         </div>
                         
                         <div className="flex flex-col border-t border-gray-800 font-bold">
@@ -932,8 +931,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                 <>
                                     <button 
                                         onClick={() => handleStartEdit(deleteMenuMessageId, messages.find(m => m.id === deleteMenuMessageId)?.text || "")}
-                                        className="w-full py-4 text-twitter-blue hover:bg-black/40 transition border-b border-gray-800 active:bg-black flex items-center justify-center gap-2"
+                                        className="w-full py-4 text-[var(--color-twitter-blue)] hover:bg-black/40 transition border-b border-gray-800 active:bg-black flex items-center justify-center gap-2"
                                     >
+                                        <Edit className="w-4 h-4" />
                                         Edit Message
                                     </button>
                                     <button 
