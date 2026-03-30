@@ -254,13 +254,22 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                                             {conv.lastTimestamp?.toDate ? formatDistanceToNow(conv.lastTimestamp.toDate(), { addSuffix: false }) : 'now'}
                                         </span>
                                     </div>
-                                    <p className={`text-[14px] truncate leading-tight ${otherUser && conv.typing?.[otherUser.userId] ? 'text-[var(--color-twitter-blue)] font-medium animate-pulse' : 'text-gray-500'}`}>
+                                    <div className="h-5 flex items-center">
                                         {otherUser && conv.typing?.[otherUser.userId] ? (
-                                            "Typing..."
+                                            <p className="text-[var(--color-twitter-blue)] text-[14px] font-bold animate-pulse flex items-center gap-1">
+                                                <span className="flex gap-0.5">
+                                                    <span className="w-1 h-1 bg-[var(--color-twitter-blue)] rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                                    <span className="w-1 h-1 bg-[var(--color-twitter-blue)] rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                                    <span className="w-1 h-1 bg-[var(--color-twitter-blue)] rounded-full animate-bounce"></span>
+                                                </span>
+                                                Typing...
+                                            </p>
                                         ) : (
-                                            conv.lastMessage || <span className="italic">No messages yet</span>
+                                            <p className="text-gray-500 text-[14px] truncate leading-tight">
+                                                {conv.lastMessage || <span className="italic">No messages yet</span>}
+                                            </p>
                                         )}
-                                    </p>
+                                    </div>
                                 </div>
                             </Link>
                         );
