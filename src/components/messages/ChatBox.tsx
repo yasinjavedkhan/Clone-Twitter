@@ -513,7 +513,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     return (
         <div className="flex flex-col h-[100dvh] w-full max-h-[100dvh] border-r border-gray-800 bg-black overflow-hidden relative">
             {/* Header - Fixed with Flex */}
-            <div className="min-h-[64px] h-auto pt-[env(safe-area-inset-top)] border-b border-gray-800 flex items-center px-4 gap-3 sm:gap-4 bg-black/95 backdrop-blur-md z-[110] shrink-0">
+            <div className="min-h-[calc(64px+env(safe-area-inset-top))] h-auto pt-[env(safe-area-inset-top)] border-b border-gray-800 flex items-center px-4 gap-3 sm:gap-4 bg-black/95 backdrop-blur-md z-[110] sticky top-0 shrink-0">
                 <Link 
                     href={otherUser?.userId ? `/profile/${otherUser.userId}` : "#"} 
                     className="flex items-center gap-4 flex-grow min-w-0 group hover:opacity-80 transition-opacity"
@@ -526,7 +526,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         )}
                     </div>
                     <div className="flex flex-col min-w-0 flex-1 mr-1 sm:mr-2">
-                        <h2 className="font-bold text-white text-[16px] sm:text-[17px] leading-tight truncate group-hover:underline">
+                        <h2 className="font-bold text-white text-[16px] sm:text-[17px] leading-tight truncate px-0.5 group-hover:underline">
                             {otherUser?.displayName || otherUser?.username || (conversationId ? "..." : "Select a chat")}
                             {otherUser?.isSelf ? " (You)" : ""}
                         </h2>
