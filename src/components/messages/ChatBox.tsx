@@ -5,7 +5,7 @@ import Link from "next/link";
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Send, Image, User, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2, Minimize2, MoreHorizontal, Trash2, Circle } from "lucide-react";
+import { Send, Image, User, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2, Minimize2, MoreHorizontal, Trash2, Circle, Info, ArrowLeft, ShieldAlert } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { sendPushNotification } from "@/lib/notifications";
 import AgoraCall from "./AgoraCall";
@@ -512,12 +512,12 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     };
 
     return (
-        <div className="flex flex-col fixed inset-0 sm:relative h-[100dvh] w-full max-h-[100dvh] border-r border-gray-800 bg-black overflow-hidden isolate z-[50] sm:z-auto">
-            {/* Header - Fixed on mobile to prevent disappearing when keyboard opens */}
-            <div className="fixed sm:sticky top-0 left-0 right-0 z-[120] min-h-[calc(64px+env(safe-area-inset-top))] h-auto pt-[env(safe-area-inset-top)] border-b border-gray-800 flex items-center px-4 gap-3 sm:gap-4 bg-black/95 backdrop-blur-md shrink-0 transform-gpu">
+        <div className="flex flex-col h-[100dvh] w-full max-h-[100dvh] border-r border-gray-800 bg-black overflow-hidden relative isolate">
+            {/* Header - Pure Flex Item (stays at top naturally) */}
+            <header className="flex-none w-full min-h-[64px] border-b border-gray-800 flex items-center px-4 gap-3 sm:gap-4 bg-black/95 backdrop-blur-md z-[20] pt-[env(safe-area-inset-top)]">
                 <Link 
                     href={otherUser?.userId ? `/profile/${otherUser.userId}` : "#"} 
-                    className="flex items-center gap-4 flex-grow min-w-0 group hover:opacity-80 transition-opacity"
+                    className="flex items-center gap-3 sm:gap-4 flex-grow min-w-0 group hover:opacity-80 transition-opacity"
                 >
                     <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0 font-bold text-white uppercase overflow-hidden text-lg">
                         {otherUser?.profileImage ? (
@@ -526,17 +526,19 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             (otherUser?.displayName || otherUser?.username || "?")[0]
                         )}
                     </div>
-                    <div className="flex flex-col min-w-0 flex-1 mr-1 sm:mr-2">
-                        <h2 className="font-bold text-white text-[16px] sm:text-[17px] leading-tight truncate px-0.5 group-hover:underline">
+                    <div className="flex flex-col min-w-0 flex-1">
+                        <h2 className="font-bold text-white text-[16px] sm:text-[17px] leading-tight truncate group-hover:underline">
                             {otherUser?.displayName || otherUser?.username || (conversationId ? "..." : "Select a chat")}
                             {otherUser?.isSelf ? " (You)" : ""}
                         </h2>
                         <div className="flex items-center gap-1.5 truncate h-5">
                             {otherUserIsTyping ? (
-                                <p className="text-twitter-blue text-[12px] sm:text-[13px] animate-pulse font-medium">Typing...</p>
+                                <p className="text-twitter-blue text-[12px] sm:text-[13px] animate-pulse font-medium">
+                                     Typing...
+                                </p>
                             ) : hasMounted && otherUser?.lastSeen ? (
                                 <div className="flex items-center gap-1">
-                                    <div className={`w-2 h-2 rounded-full ${isUserActive(otherUser.lastSeen) ? 'bg-green-500' : 'bg-gray-500'}`} />
+                                    <div className={`w-1.5 h-1.5 rounded-full ${isUserActive(otherUser.lastSeen) ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]' : 'bg-gray-500'}`} />
                                     <p className={`text-[12px] sm:text-[13px] ${isUserActive(otherUser.lastSeen) ? 'text-green-500 font-medium' : 'text-gray-500'}`}>
                                         {formatLastSeen(otherUser.lastSeen)}
                                     </p>
@@ -557,11 +559,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                         return;
                                     }
                                     const generatedRoom = `DirectCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
-                                    
-                                    // 1. Record in chat history
                                     await recordCallEvent('voice');
-
-                                    // 2. Real-time in-app ringing via Firestore
                                     if (user && otherUser?.userId) {
                                         await setDoc(doc(db, "calls", generatedRoom), {
                                             toUserId: otherUser.userId,
@@ -575,47 +573,20 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                             createdAt: serverTimestamp()
                                         }).catch(console.error);
                                     }
-
-                                    // 3. Fallback push notification for offline devices
-                                    if (user && otherUser?.userId) {
-                                        await sendPushNotification({
-                                            toUserId: otherUser.userId,
-                                            title: "Incoming Voice Call",
-                                            body: `${user.displayName || 'Someone'} is calling...`,
-                                            data: {
-                                                type: 'call',
-                                                callType: 'voice',
-                                                conversationId,
-                                                roomName: generatedRoom,
-                                                fromUserName: user.displayName || user.email?.split('@')[0] || 'Someone',
-                                                fromUserAvatar: (user as any).profileImage || ''
-                                            }
-                                        });
-                                    }
-
-                                    // 4. Update UI - Now safe because document exists
-                                    manuallyInitiated.current = true;
-                                    setCallType('voice'); 
-                                    setRoomName(generatedRoom);
-                                    setIsCalling(true);
                                 }}
-                                className={`p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200 ${!isUserActive(otherUser.lastSeen) ? 'opacity-20 grayscale cursor-pointer' : ''}`}
-                                title={isUserActive(otherUser.lastSeen) ? "Voice Call" : "User Offline"}
+                                className="p-2 hover:bg-white/10 rounded-full text-white transition-colors"
+                                title="Voice Call"
                             >
                                 <Phone className="w-5 h-5" />
                             </button>
                             <button 
-                                onClick={async () => { 
+                                onClick={async () => {
                                     if (!isUserActive(otherUser.lastSeen)) {
                                         setShowOfflineOverlay(true);
                                         return;
                                     }
-                                    const generatedRoom = `DirectVideoCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
-                                    
-                                    // 1. Record in chat history
+                                    const generatedRoom = `DirectCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
                                     await recordCallEvent('video');
-
-                                    // 2. Real-time in-app ringing via Firestore
                                     if (user && otherUser?.userId) {
                                         await setDoc(doc(db, "calls", generatedRoom), {
                                             toUserId: otherUser.userId,
@@ -629,69 +600,33 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                             createdAt: serverTimestamp()
                                         }).catch(console.error);
                                     }
-
-                                    // 3. Fallback push notification for offline devices
-                                    if (user && otherUser?.userId) {
-                                        await sendPushNotification({
-                                            toUserId: otherUser.userId,
-                                            title: "Incoming Video Call",
-                                            body: `${user.displayName || 'Someone'} is calling...`,
-                                            data: {
-                                                type: 'call',
-                                                callType: 'video',
-                                                conversationId,
-                                                roomName: generatedRoom,
-                                                fromUserName: user.displayName || user.email?.split('@')[0] || 'Someone',
-                                                fromUserAvatar: (user as any).profileImage || ''
-                                            }
-                                        });
-                                    }
-
-                                    // 4. Update UI - Now safe because document exists
-                                    manuallyInitiated.current = true;
-                                    setCallType('video');
-                                    setRoomName(generatedRoom);
-                                    setIsCalling(true);
                                 }}
-                                className={`p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200 ${!isUserActive(otherUser.lastSeen) ? 'opacity-20 grayscale cursor-pointer' : ''}`}
-                                title={isUserActive(otherUser.lastSeen) ? "Video Call" : "User Offline"}
+                                className="p-2 hover:bg-white/10 rounded-full text-white transition-colors"
+                                title="Video Call"
                             >
                                 <Video className="w-5 h-5" />
                             </button>
                         </>
                     )}
+                    <button className="p-2 hover:bg-white/10 rounded-full text-white transition-colors hidden sm:block">
+                        <Info className="w-5 h-5" />
+                    </button>
                 </div>
-            </div>
+            </header>
 
-            {/* Offline/Presence Overlay for Calls */}
-            {showOfflineOverlay && (
-                <div className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-[#15181c] border border-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
-                        <div className="flex flex-col items-center text-center gap-4">
-                            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center">
-                                <Phone className="w-8 h-8 text-red-500" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-bold text-white mb-2">User is Offline</h3>
-                                <p className="text-gray-400 text-[15px]">
-                                    {otherUser?.displayName || "The user"} is not currently active. You can only start calls when both participants are online.
-                                </p>
-                            </div>
-                            <button 
-                                onClick={() => setShowOfflineOverlay(false)}
-                                className="w-full mt-2 py-3 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition active:scale-95"
-                            >
-                                Got it
-                            </button>
-                        </div>
-                    </div>
+            {/* Offline Message Indicator */}
+            {otherUser && !isUserActive(otherUser.lastSeen) && (hasMounted) && (
+                <div className="flex-none bg-zinc-900 border-b border-gray-800 px-4 py-2 text-center">
+                    <p className="text-[11px] text-gray-400 font-medium tracking-tight">
+                        {otherUser.displayName || otherUser.username} is currently offline. Calls are disabled.
+                    </p>
                 </div>
             )}
 
-            {/* Messages Area - Added padding for fixed header/footer on mobile */}
+            {/* Messages Area - FLEX-1 (Scrolls and shrinks with keyboard) */}
             <div 
                 ref={scrollRef}
-                className="flex-grow overflow-y-auto px-4 py-4 pt-[calc(80px+env(safe-area-inset-top))] pb-[calc(110px+env(safe-area-inset-bottom))] sm:pt-4 sm:pb-4 space-y-4 scroll-smooth"
+                className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scroll-smooth"
             >
                 {loadingMessages ? (
                     <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-500">
@@ -699,8 +634,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         <p className="text-sm font-medium">Loading messages...</p>
                     </div>
                 ) : messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-12 text-center h-full pt-20">
-                        <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-3xl font-bold text-white uppercase overflow-hidden mb-4">
+                    <div className="flex flex-col items-center justify-center p-12 text-center h-full">
+                        <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-3xl font-bold text-white uppercase overflow-hidden mb-4 shadow-xl">
                             {otherUser?.profileImage ? (
                                 <img src={otherUser.profileImage} className="w-full h-full object-cover" alt="" />
                             ) : (
@@ -716,8 +651,6 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 ) : (
                     messages.map((msg, index) => {
                         const isMine = msg.senderId === user?.uid;
-                        
-                        // Check if this message was deleted by the user
                         if (msg.deletedBy && msg.deletedBy.includes(user?.uid)) return null;
 
                         return (
@@ -726,7 +659,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                 className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
                                 onTouchStart={() => startPress(msg.id)}
                                 onTouchEnd={endPress}
-                                onMouseDown={() => startPress(msg.id)} // Desktop support
+                                onMouseDown={() => startPress(msg.id)}
                                 onMouseUp={endPress}
                                 onMouseLeave={endPress}
                             >
@@ -738,7 +671,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                                 ? "bg-twitter-blue text-white rounded-2xl rounded-tr-none" 
                                                 : msg.isDeletedForEveryone 
                                                     ? "bg-transparent border border-gray-800 text-gray-500 italic rounded-2xl rounded-tl-none"
-                                                    : "bg-[#202327] text-white rounded-2xl rounded-tl-none"
+                                                    : "bg-[#202327] text-white rounded-2xl rounded-tl-none border border-white/5"
                                         )}
                                     >
                                         {msg.mediaUrls && msg.mediaUrls.length > 0 && (
@@ -780,18 +713,18 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     })
                 )}
                 {/* Visual anchor for scrolling */}
-                <div className="h-6 w-full" />
-                <div ref={scrollRef} className="h-2" />
+                <div className="h-2 w-full" />
+                <div ref={scrollRef} className="h-1" />
             </div>
 
-            {/* Input Area - Fixed on mobile to ensure it stays above keyboard */}
-            <div className="fixed sm:relative bottom-0 left-0 right-0 z-[110] bg-black border-t border-gray-800 shrink-0 overflow-visible">
+            {/* Input Area - FLEX-NONE (Stays at bottom) */}
+            <div className="flex-none bg-black border-t border-gray-800 pb-[env(safe-area-inset-bottom)] z-[30] relative overflow-visible">
                 
-                {/* Floating Typing Indicator Bubble - specifically for mobile visibility */}
+                {/* Floating Typing Indicator Bubble - specifically for mobile keyboard visibility */}
                 {otherUserIsTyping && (
-                    <div className="sm:hidden absolute -top-14 left-4 z-[150] animate-in slide-in-from-bottom-3 duration-300 pointer-events-none">
+                    <div className="sm:hidden absolute -top-12 left-4 z-[40] animate-in slide-in-from-bottom-2 duration-300 pointer-events-none">
                         <div className="bg-[#202327]/95 border border-twitter-blue/40 rounded-full px-3 py-1.5 flex items-center gap-2 shadow-2xl backdrop-blur-md">
-                            <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white uppercase overflow-hidden shrink-0">
+                            <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white uppercase overflow-hidden shrink-0">
                                 {otherUser?.profileImage ? (
                                     <img src={otherUser.profileImage} className="w-full h-full object-cover" alt="" />
                                 ) : (
@@ -805,7 +738,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     </div>
                 )}
 
-                {/* Media Previews (shown above the main input) */}
+                {/* Media Previews */}
                 {mediaFiles.length > 0 && (
                     <div className="p-3 flex gap-2 overflow-x-auto bg-black border-b border-gray-800 scrollbar-hide">
                         {mediaFiles.map((m, i) => (
@@ -831,7 +764,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     </div>
                 )}
 
-                <form onSubmit={handleSendMessage} className="p-3 flex items-center gap-2 z-50 pb-[max(12px,env(safe-area-inset-bottom))]">
+                <form onSubmit={handleSendMessage} className="p-3 flex items-center gap-2">
                     {isRecording ? (
                         <div className="flex-grow flex items-center bg-[#202327] rounded-2xl py-2 px-4 gap-4 animate-in fade-in duration-300">
                             <div className="flex items-center gap-2 flex-grow">
@@ -843,70 +776,25 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                     ))}
                                 </div>
                             </div>
-                            <button 
-                                type="button" 
-                                onClick={cancelRecording}
-                                className="text-gray-500 hover:text-white font-bold text-sm transition"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                type="button" 
-                                onClick={stopRecording}
-                                className="bg-twitter-blue hover:brightness-110 text-black p-1.5 rounded-full shadow-lg shadow-twitter-blue/20 transition active:scale-90"
-                            >
-                                <Send className="w-4 h-4 fill-current" />
-                            </button>
+                            <button type="button" onClick={cancelRecording} className="text-gray-500 hover:text-white font-bold text-sm transition text-nowrap">Cancel</button>
+                            <button type="button" onClick={stopRecording} className="bg-twitter-blue hover:brightness-110 text-black p-1.5 rounded-full"><Send className="w-4 h-4 fill-current" /></button>
                         </div>
                     ) : (
                         <>
-                            <input
-                                id="chat-file-input"
-                                type="file"
-                                accept="image/*,video/*"
-                                multiple
-                                className="hidden"
-                                ref={fileInputRef}
-                                onChange={handleMediaSelect}
-                            />
-                            <label 
-                                htmlFor="chat-file-input"
-                                className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition cursor-pointer shrink-0"
-                            >
-                                <Image className="w-5 h-5" />
-                            </label>
-                            <button 
-                                type="button" 
-                                onClick={startRecording}
-                                className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition shrink-0"
-                                title="Voice Message"
-                            >
-                                <Mic className="w-5 h-5" />
-                            </button>
+                            <input id="chat-file-input" type="file" accept="image/*,video/*" multiple className="hidden" ref={fileInputRef} onChange={handleMediaSelect} />
+                            <label htmlFor="chat-file-input" className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition cursor-pointer shrink-0"><Image className="w-5 h-5" /></label>
+                            <button type="button" onClick={startRecording} className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition shrink-0"><Mic className="w-5 h-5" /></button>
                             <input
                                 type="text"
                                 value={newMessage}
                                 onChange={(e) => {
                                     setNewMessage(e.target.value);
-                                    
-                                    // Handle typing status
                                     if (user?.uid && conversationId) {
-                                        // Set typing to true
-                                        updateDoc(doc(db, "conversations", conversationId), {
-                                            [`typing.${user.uid}`]: true
-                                        }).catch(() => {});
-
-                                        // Clear previous timeout
-                                        if (typingTimeoutRef.current) {
-                                            clearTimeout(typingTimeoutRef.current);
-                                        }
-
-                                        // Set timeout to clear typing status
+                                        updateDoc(doc(db, "conversations", conversationId), { [`typing.${user.uid}`]: true }).catch(() => {});
+                                        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
                                         typingTimeoutRef.current = setTimeout(() => {
-                                            updateDoc(doc(db, "conversations", conversationId), {
-                                                [`typing.${user.uid}`]: false
-                                            }).catch(() => {});
-                                        }, 4000); // 4 seconds after last keypress
+                                            updateDoc(doc(db, "conversations", conversationId), { [`typing.${user.uid}`]: false }).catch(() => {});
+                                        }, 4000);
                                     }
                                 }}
                                 placeholder="Start a new message"
@@ -927,6 +815,28 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     )}
                 </form>
             </div>
+
+            {/* Offline Calls Overlay */}
+            {showOfflineOverlay && (
+                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div className="bg-zinc-900 border border-gray-800 rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl animate-in zoom-in-95 duration-300">
+                        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Phone className="w-8 h-8 text-red-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">User Offline</h3>
+                        <p className="text-gray-400 text-sm mb-6">
+                            You can only call {otherUser?.displayName || otherUser?.username} when they are "Active now".
+                        </p>
+                        <button 
+                            onClick={() => setShowOfflineOverlay(false)}
+                            className="w-full bg-white text-black font-bold py-3 rounded-full hover:bg-gray-200 transition active:scale-95"
+                        >
+                            Got it
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Global Delete Action Sheet Overlay */}
             {deleteMenuMessageId && (
                 <div 
