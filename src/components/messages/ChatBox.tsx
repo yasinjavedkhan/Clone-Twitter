@@ -44,6 +44,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const [loadingMessages, setLoadingMessages] = useState(true);
     const [viewportHeight, setViewportHeight] = useState('100dvh');
     const [viewportTop, setViewportTop] = useState(0);
+    const [toast, setToast] = useState<string | null>(null);
 
 
     useEffect(() => {
@@ -504,6 +505,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             await updateDoc(doc(db, "conversations", conversationId, "messages", messageId), {
                 deletedBy: arrayUnion(user.uid)
             });
+            setToast("Message deleted");
+            setTimeout(() => setToast(null), 3000);
             setDeleteMenuMessageId(null);
         } catch (error) {
             console.error("Error deleting for me:", error);
@@ -519,6 +522,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 audioUrl: null,
                 isDeletedForEveryone: true
             });
+            
+            setToast("Message deleted");
+            setTimeout(() => setToast(null), 3000);
+            
             setDeleteMenuMessageId(null);
         } catch (error) {
             console.error("Error deleting for both:", error);
@@ -873,47 +880,55 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 </div>
             )}
 
-            {/* Global Delete Action Sheet Overlay */}
+            {/* Global Delete Action Sheet Overlay - Absolute within locked viewport to stay above keyboard */}
             {deleteMenuMessageId && (
                 <div 
-                    className="fixed inset-0 z-[200] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+                    className="absolute inset-0 z-[250] bg-black/60 flex items-center justify-center p-6 animate-in fade-in duration-200"
                     onClick={() => setDeleteMenuMessageId(null)}
                 >
                     <div 
-                        className="w-full sm:max-w-sm bg-[#15181c] rounded-t-3xl sm:rounded-3xl border-t sm:border border-gray-800 overflow-hidden animate-in slide-in-from-bottom duration-300"
+                        className="w-full max-w-xs bg-[#15181c] rounded-3xl border border-gray-800 overflow-hidden animate-in zoom-in-95 duration-200"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="p-4 sm:p-6 text-center">
+                        <div className="p-6 text-center">
                             <h3 className="text-white font-bold text-lg mb-1">Delete message?</h3>
                             <p className="text-gray-500 text-sm">This action cannot be undone.</p>
                         </div>
                         
-                        <div className="flex flex-col border-t border-gray-800">
-                            <button 
-                                onClick={() => handleDeleteForMe(deleteMenuMessageId)}
-                                className="w-full py-4 text-white font-bold hover:bg-white/5 transition border-b border-gray-800"
-                            >
-                                Delete for me
-                            </button>
-                            
+                        <div className="flex flex-col border-t border-gray-800 font-bold">
                             {messages.find(m => m.id === deleteMenuMessageId)?.senderId === user?.uid && (
                                 <button 
                                     onClick={() => handleDeleteForBoth(deleteMenuMessageId)}
-                                    className="w-full py-4 text-red-500 font-bold hover:bg-red-500/10 transition border-b border-gray-800"
+                                    className="w-full py-4 text-red-500 hover:bg-black/40 transition border-b border-gray-800 active:bg-black"
                                 >
                                     Delete for everyone
                                 </button>
                             )}
                             
                             <button 
+                                onClick={() => handleDeleteForMe(deleteMenuMessageId)}
+                                className="w-full py-4 text-white hover:bg-black/40 transition border-b border-gray-800 active:bg-black"
+                            >
+                                Delete for me
+                            </button>
+                            
+                            <button 
                                 onClick={() => setDeleteMenuMessageId(null)}
-                                className="w-full py-4 text-gray-400 hover:bg-white/5 transition"
+                                className="w-full py-4 text-gray-400 hover:bg-black/40 transition active:bg-black"
                             >
                                 Cancel
                             </button>
                         </div>
-                        {/* Safe area for mobile */}
-                        <div className="h-[env(safe-area-inset-bottom)] sm:hidden" />
+                    </div>
+                </div>
+            )}
+
+            {/* Notification Toast */}
+            {toast && (
+                <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[300] animate-in slide-in-from-top-4 duration-300 pointer-events-none">
+                    <div className="bg-twitter-blue text-white px-4 py-2 rounded-full font-bold shadow-2xl flex items-center gap-2">
+                        <ShieldAlert className="w-4 h-4 fill-white text-twitter-blue" />
+                        {toast}
                     </div>
                 </div>
             )}
