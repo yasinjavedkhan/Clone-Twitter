@@ -650,9 +650,9 @@ export default function Home() {
         </div>
       )}
 
-      {/* Feed Area */}
+      {/* Feed Area - Sliding Page Transition */}
       <div 
-        className="flex flex-col pb-20"
+        className="relative w-full overflow-hidden pb-20"
         onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
         onTouchEnd={(e) => {
           const dx = e.changedTouches[0].clientX - touchStartX.current;
@@ -662,40 +662,58 @@ export default function Home() {
           else if (activeTab === 'following' && dx > 60) setActiveTab('foryou');
         }}
       >
-        {(() => {
-          const displayTweets = activeTab === 'following' 
-            ? tweets.filter(t => followingIds.includes(t.userId)) 
-            : tweets;
-
-          if (displayTweets.length === 0) {
-            return (
+        <div 
+          className={cn(
+            "flex w-[200%] transition-transform duration-500 ease-[cubic-bezier(0.18,0.89,0.32,1.28)]", 
+            activeTab === 'foryou' ? "translate-x-0" : "-translate-x-1/2"
+          )}
+        >
+          {/* For You Feed Page */}
+          <div className="w-1/2 flex flex-col min-h-screen border-r border-gray-800">
+            {tweets.length === 0 ? (
               <div className="p-12 text-center text-gray-500">
-                <p className="text-xl font-bold text-white mb-2">
-                  {activeTab === 'following' ? "Welcome to your timeline!" : "No tweets yet."}
-                </p>
-                <p className="text-[15px]">
-                  {activeTab === 'following' ? "When you follow people, you'll see the tweets they post here." : "Be the first to post!"}
-                </p>
+                <p className="text-xl font-bold text-white mb-2">No tweets yet.</p>
+                <p className="text-[15px]">Be the first to post!</p>
               </div>
-            );
-          }
+            ) : (
+              tweets.map((tweet) => (
+                <Tweet key={`foryou-${tweet.id}`} tweet={tweet} />
+              ))
+            )}
+            {!hasMore && tweets.length > 0 && (
+              <div className="p-12 text-center text-gray-500 border-b border-gray-800">
+                <p className="text-[15px]">You've reached the end of the timeline.</p>
+              </div>
+            )}
+          </div>
 
-          return (
-            <>
-              {displayTweets.map((tweet) => (
-                <Tweet key={tweet.id} tweet={tweet} />
-              ))}
-              
-
-              
-              {!hasMore && displayTweets.length > 0 && (
-                <div className="p-12 text-center text-gray-500 border-b border-gray-800">
-                  <p className="text-[15px]">You've reached the end of the timeline.</p>
-                </div>
-              )}
-            </>
-          );
-        })()}
+          {/* Following Feed Page */}
+          <div className="w-1/2 flex flex-col min-h-screen">
+            {(() => {
+              const followingTweets = tweets.filter(t => followingIds.includes(t.userId));
+              if (followingTweets.length === 0) {
+                return (
+                  <div className="p-12 text-center text-gray-500">
+                    <p className="text-xl font-bold text-white mb-2">Welcome to your timeline!</p>
+                    <p className="text-[15px]">When you follow people, you'll see their tweets here.</p>
+                  </div>
+                );
+              }
+              return (
+                <>
+                  {followingTweets.map((tweet) => (
+                    <Tweet key={`following-${tweet.id}`} tweet={tweet} />
+                  ))}
+                  {!hasMore && followingTweets.length > 0 && (
+                    <div className="p-12 text-center text-gray-500 border-b border-gray-800">
+                      <p className="text-[15px]">You've reached the end of the timeline.</p>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        </div>
       </div>
     </div>
   );
