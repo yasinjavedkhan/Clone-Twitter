@@ -130,10 +130,17 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
                 setMessages(sorted);
                 setLoadingMessages(false);
-                // Scroll to bottom
-                setTimeout(() => {
-                    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-                }, 100);
+
+                // Scroll to bottom logic
+                if (scrollRef.current) {
+                    const isFirstLoad = messages.length === 0 && sorted.length > 0;
+                    setTimeout(() => {
+                        scrollRef.current?.scrollIntoView({ 
+                            behavior: isFirstLoad ? "auto" : "smooth",
+                            block: "end"
+                        });
+                    }, 50);
+                }
             } catch (error) {
                 console.error("ChatBox messages error:", error);
             }
