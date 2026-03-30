@@ -254,8 +254,12 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                                             {conv.lastTimestamp?.toDate ? formatDistanceToNow(conv.lastTimestamp.toDate(), { addSuffix: false }) : 'now'}
                                         </span>
                                     </div>
-                                    <p className="text-gray-500 text-[14px] truncate leading-tight">
-                                        {conv.lastMessage || <span className="italic">No messages yet</span>}
+                                    <p className={`text-[14px] truncate leading-tight ${otherUser && conv.typing?.[otherUser.userId] ? 'text-[var(--color-twitter-blue)] font-medium animate-pulse' : 'text-gray-500'}`}>
+                                        {otherUser && conv.typing?.[otherUser.userId] ? (
+                                            "Typing..."
+                                        ) : (
+                                            conv.lastMessage || <span className="italic">No messages yet</span>
+                                        )}
                                     </p>
                                 </div>
                             </Link>
