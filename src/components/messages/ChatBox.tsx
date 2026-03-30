@@ -785,12 +785,12 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             </div>
 
             {/* Input Area - Fixed on mobile to ensure it stays above keyboard */}
-            <div className="fixed sm:relative bottom-0 left-0 right-0 z-[110] bg-black border-t border-gray-800 shrink-0">
+            <div className="fixed sm:relative bottom-0 left-0 right-0 z-[110] bg-black border-t border-gray-800 shrink-0 overflow-visible">
                 
                 {/* Floating Typing Indicator Bubble - specifically for mobile visibility */}
                 {otherUserIsTyping && (
-                    <div className="sm:hidden absolute -top-12 left-4 z-[150] animate-in slide-in-from-bottom-2 duration-300">
-                        <div className="bg-[#202327] border border-twitter-blue/30 rounded-full px-3 py-1.5 flex items-center gap-2 shadow-xl backdrop-blur-md">
+                    <div className="sm:hidden absolute -top-14 left-4 z-[150] animate-in slide-in-from-bottom-3 duration-300 pointer-events-none">
+                        <div className="bg-[#202327]/95 border border-twitter-blue/40 rounded-full px-3 py-1.5 flex items-center gap-2 shadow-2xl backdrop-blur-md">
                             <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white uppercase overflow-hidden shrink-0">
                                 {otherUser?.profileImage ? (
                                     <img src={otherUser.profileImage} className="w-full h-full object-cover" alt="" />
@@ -799,7 +799,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                 )}
                             </div>
                             <span className="text-twitter-blue text-xs font-bold whitespace-nowrap">
-                                {otherUser?.displayName || otherUser?.username} is typing...
+                                {otherUser?.displayName || otherUser?.username || "Someone"} is typing...
                             </span>
                         </div>
                     </div>
