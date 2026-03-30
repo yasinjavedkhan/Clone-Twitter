@@ -143,11 +143,13 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
                 // Scroll to bottom logic - check if we should jump or scroll
                 if (scrollRef.current) {
-                    const isFirstLoad = messages.length === 0;
+                    // Use sorted.length to check if this is the first time we got messages for this session
+                    // But we rely on setMessages state transition actually.
+                    // Better: check if we were currently loading.
+                    const container = document.getElementById('messages-container');
+                    
                     setTimeout(() => {
-                        const container = document.getElementById('messages-container');
-                        
-                        if (isFirstLoad && firstUnreadId) {
+                        if (firstUnreadId) {
                             // If we have unread messages on first load, scroll to the FIRST one
                             const unreadElement = document.getElementById(`msg-${firstUnreadId}`);
                             if (unreadElement) {
@@ -160,15 +162,17 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         }
 
                         // Default: Scroll to bottom
-                        if (isFirstLoad && container) {
-                            // Force absolute instant jump to bottom for WhatsApp experience
-                            container.scrollTop = container.scrollHeight;
-                        } else {
-                            // Smooth scroll for new incoming messages
-                            scrollRef.current?.scrollIntoView({ 
-                                behavior: "smooth",
-                                block: "end"
-                            });
+                        if (container && sorted.length > 0) {
+                            // Instant jump for first load, smooth for new ones
+                            // We can use a simpler check: if the scroll is already near the bottom, stay there
+                            const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+                            
+                            if (isNearBottom || sorted.length <= messages.length + 1) {
+                                scrollRef.current?.scrollIntoView({ 
+                                    behavior: messages.length === 0 ? "auto" : "smooth",
+                                    block: "end"
+                                });
+                            }
                         }
                     }, 50);
                 }
@@ -180,7 +184,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         });
 
         return () => unsubscribe();
-    }, [conversationId, user?.uid, messages.length === 0]);
+    }, [conversationId, user?.uid]);
 
     // Real-time listener for typing status
     useEffect(() => {
