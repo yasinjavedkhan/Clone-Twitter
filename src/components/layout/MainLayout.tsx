@@ -50,8 +50,8 @@ function MainLayoutContent({ children }: MainLayoutProps) {
       {!isMessagePage && !isHomePage && !isImmersiveVideo && <RightSidebar />}
       {!isImmersiveVideo && !isMessageConversation && <MobileNav />}
       
-      {/* Notification Banner for Mobile */}
-      {showNotificationNotice && user && (
+      {/* Notification Banner for Mobile - Hide on message conversations to prevent overlap */}
+      {showNotificationNotice && user && !isMessageConversation && (
         <div className="sm:hidden fixed top-0 left-0 right-0 z-[100] bg-zinc-900 border-b border-gray-800 p-3 shadow-2xl animate-in slide-in-from-top duration-500">
           <div className="flex items-start gap-3">
             <div className="bg-red-500/10 p-2 rounded-full">
