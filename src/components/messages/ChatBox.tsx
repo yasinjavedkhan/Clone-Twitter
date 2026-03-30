@@ -89,6 +89,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     [`unreadCount.${user.uid}`]: 0
                 }).catch(() => {});
 
+                // Heartbeat every 3 seconds for real-time presence
                 // Sort in memory to avoid missing index errors
                 const sorted = msgs.sort((a: any, b: any) => {
                     const timeA = a.createdAt?.seconds || 0;
@@ -170,7 +171,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             if (isNaN(date.getTime())) return "Active recently";
 
             const diffInSeconds = (Date.now() - date.getTime()) / 1000;
-            if (diffInSeconds < 5) return "Active now"; // Match 3s heartbeat
+            if (diffInSeconds < 30) return "Active now"; // Robust 30s threshold
             
             if (diffInSeconds < 60) return `Active ${Math.floor(diffInSeconds)}s ago`;
             
@@ -184,8 +185,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         if (!lastSeen || !hasMounted) return false;
         try {
             const date = lastSeen.toDate ? lastSeen.toDate() : new Date(lastSeen);
-            // Hyper-responsive: 5-second threshold for the 3-second heartbeat
-            return (Date.now() - date.getTime()) / 1000 < 5;
+            // Robust threshold: 30 seconds handles network lag and time drift
+            return (Date.now() - date.getTime()) / 1000 < 30;
         } catch {
             return false;
         }

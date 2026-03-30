@@ -123,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Initial update
         updateLastSeen();
 
-        // Heartbeat every 60 seconds
+        // Heartbeat every 3 seconds for real-time presence
         const interval = setInterval(() => {
             if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
                 updateLastSeen();
