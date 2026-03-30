@@ -42,10 +42,39 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const [hasMounted, setHasMounted] = useState(false);
     const [showOfflineOverlay, setShowOfflineOverlay] = useState(false);
     const [loadingMessages, setLoadingMessages] = useState(true);
+    const [viewportHeight, setViewportHeight] = useState('100dvh');
+    const [viewportTop, setViewportTop] = useState(0);
+
 
     useEffect(() => {
         setHasMounted(true);
+        
+        // WhatsApp-Style Visual Viewport Lock
+        const handleViewportResize = () => {
+            if (window.visualViewport) {
+                setViewportHeight(`${window.visualViewport.height}px`);
+                setViewportTop(window.visualViewport.offsetTop);
+                // Prevent browser "push-up" by scrolling to 0
+                if (window.visualViewport.offsetTop > 0) {
+                    window.scrollTo(0, 0);
+                }
+            }
+        };
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', handleViewportResize);
+            window.visualViewport.addEventListener('scroll', handleViewportResize);
+            handleViewportResize();
+        }
+
+        return () => {
+            if (window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', handleViewportResize);
+                window.visualViewport.removeEventListener('scroll', handleViewportResize);
+            }
+        };
     }, []);
+
 
     useEffect(() => {
         // Check for call in query params
@@ -512,7 +541,14 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     };
 
     return (
-        <div className="flex flex-col h-[100dvh] w-full max-h-[100dvh] border-r border-gray-800 bg-black overflow-hidden relative isolate">
+        <div 
+            className="flex flex-col w-full border-r border-gray-800 bg-black overflow-hidden fixed left-0 sm:relative z-[50]"
+            style={{ 
+                height: viewportHeight,
+                top: viewportTop,
+                maxHeight: viewportHeight
+            }}
+        >
             {/* Header - Pure Flex Item (stays at top naturally) */}
             <header className="flex-none w-full min-h-[64px] border-b border-gray-800 flex items-center px-4 gap-3 sm:gap-4 bg-black/95 backdrop-blur-md z-[20] pt-[env(safe-area-inset-top)]">
                 <Link 
