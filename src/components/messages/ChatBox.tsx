@@ -112,6 +112,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     ...doc.data()
                 }));
 
+                // Find the first unread message before marking them as read
+                const firstUnread = sorted.find((msg: any) => msg.senderId !== user.uid && !msg.read);
+                const firstUnreadId = firstUnread?.id;
+
                 // Mark unread messages as read
                 msgs.forEach((msg: any) => {
                     if (msg.senderId !== user.uid && !msg.read) {
@@ -139,14 +143,28 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
                 // Scroll to bottom logic - check if we should jump or scroll
                 if (scrollRef.current) {
-                    const shouldJump = messages.length === 0; // Instant jump on first render of messages
+                    const isFirstLoad = messages.length === 0;
                     setTimeout(() => {
+                        if (isFirstLoad && firstUnreadId) {
+                            // If we have unread messages on first load, scroll to the FIRST one
+                            const unreadElement = document.getElementById(`msg-${firstUnreadId}`);
+                            if (unreadElement) {
+                                unreadElement.scrollIntoView({ 
+                                    behavior: "auto",
+                                    block: "center"
+                                });
+                                return;
+                            }
+                        }
+
+                        // Default: Scroll to bottom
                         scrollRef.current?.scrollIntoView({ 
-                            behavior: shouldJump ? "auto" : "smooth",
+                            behavior: isFirstLoad ? "auto" : "smooth",
                             block: "end"
                         });
+                        
                         // Secondary check to ensure we are at the very bottom
-                        if (shouldJump && scrollRef.current?.parentElement) {
+                        if (isFirstLoad && scrollRef.current?.parentElement) {
                             scrollRef.current.parentElement.scrollTop = scrollRef.current.parentElement.scrollHeight;
                         }
                     }, 100);
@@ -738,6 +756,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         return (
                             <div 
                                 key={msg.id} 
+                                id={`msg-${msg.id}`} // Unique ID for smart scrolling
                                 className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
                             >
                                 <div 
