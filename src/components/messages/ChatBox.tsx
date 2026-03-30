@@ -45,6 +45,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const [viewportHeight, setViewportHeight] = useState('100dvh');
     const [viewportTop, setViewportTop] = useState(0);
     const [toast, setToast] = useState<string | null>(null);
+    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
 
 
     useEffect(() => {
@@ -435,12 +436,27 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
         const text = newMessage.trim();
         const currentMedia = [...mediaFiles];
+        const isEditing = !!editingMessageId;
+        const currentEditId = editingMessageId;
         
         setNewMessage("");
         setMediaFiles([]);
+        setEditingMessageId(null);
         setIsSending(true);
 
         try {
+            if (isEditing && currentEditId) {
+                await updateDoc(doc(db, "conversations", conversationId, "messages", currentEditId), {
+                    text,
+                    isEdited: true,
+                    updatedAt: serverTimestamp()
+                });
+                setToast("Message updated");
+                setTimeout(() => setToast(null), 3000);
+                setIsSending(false);
+                return;
+            }
+
             const convDoc = await getDoc(doc(db, "conversations", conversationId));
             const participants = convDoc.data()?.participants || [];
             const otherId = participants.find((p: string) => p !== user.uid);
@@ -534,7 +550,14 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
     const handleLongPress = (messageId: string) => {
         if (navigator.vibrate) navigator.vibrate(50);
+        setEditingMessageId(null); // Clear any pending edit when opening menu
         setDeleteMenuMessageId(messageId);
+    };
+
+    const handleStartEdit = (messageId: string, currentText: string) => {
+        setEditingMessageId(messageId);
+        setNewMessage(currentText);
+        setDeleteMenuMessageId(null);
     };
 
     const startPress = (messageId: string) => {
@@ -700,56 +723,50 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             <div 
                                 key={msg.id} 
                                 className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
-                                onTouchStart={() => startPress(msg.id)}
-                                onTouchEnd={endPress}
-                                onMouseDown={() => startPress(msg.id)}
-                                onMouseUp={endPress}
-                                onMouseLeave={endPress}
                             >
-                                <div className={`flex flex-col max-w-[85%] sm:max-w-[70%] ${isMine ? 'items-end' : 'items-start'}`}>
-                                    <div 
-                                        className={cn(
-                                            "px-4 py-2.5 text-[15px] leading-relaxed break-words shadow-sm",
-                                            isMine 
-                                                ? "bg-twitter-blue text-white rounded-2xl rounded-tr-none" 
-                                                : msg.isDeletedForEveryone 
-                                                    ? "bg-transparent border border-gray-800 text-gray-500 italic rounded-2xl rounded-tl-none"
-                                                    : "bg-[#202327] text-white rounded-2xl rounded-tl-none border border-white/5"
-                                        )}
-                                    >
-                                        {msg.mediaUrls && msg.mediaUrls.length > 0 && (
-                                            <div className="mb-2 space-y-2">
-                                                {msg.mediaUrls.map((url: string, i: number) => {
-                                                    const isVideo = url.includes('/video/upload/');
-                                                    return (
-                                                        <div key={i} className="rounded-xl overflow-hidden border border-white/5">
-                                                            {isVideo ? (
-                                                                <video src={url} controls className="max-w-full h-auto" />
-                                                            ) : (
-                                                                <img src={url} alt="" className="max-w-full h-auto" />
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-                                        {msg.audioUrl && (
-                                            <div className="mb-2 py-1">
-                                                <audio src={msg.audioUrl} controls className="max-w-full h-10 filter invert brightness-200" />
-                                            </div>
-                                        )}
+                                <div 
+                                    className={cn(
+                                        "max-w-[85%] sm:max-w-[75%] px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl select-none touch-none shadow-sm",
+                                        isMine 
+                                            ? "bg-twitter-blue text-white rounded-br-none" 
+                                            : msg.isDeletedForEveryone 
+                                                ? "bg-transparent border border-gray-800 text-gray-500 italic rounded-2xl rounded-tl-none"
+                                                : "bg-[#202327] text-white rounded-bl-none"
+                                    )}
+                                    onTouchStart={() => startPress(msg.id)}
+                                    onTouchEnd={endPress}
+                                    onMouseDown={() => startPress(msg.id)}
+                                    onMouseUp={endPress}
+                                    onMouseLeave={endPress}
+                                    onContextMenu={(e) => e.preventDefault()}
+                                >
+                                    {msg.mediaUrls && msg.mediaUrls.length > 0 && (
+                                        <div className="mb-2 space-y-2">
+                                            {msg.mediaUrls.map((url: string, i: number) => {
+                                                const isVideo = url.includes('/video/upload/');
+                                                return (
+                                                    <div key={i} className="rounded-xl overflow-hidden border border-white/5">
+                                                        {isVideo ? (
+                                                            <video src={url} controls className="max-w-full h-auto" />
+                                                        ) : (
+                                                            <img src={url} alt="" className="max-w-full h-auto" />
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    {msg.audioUrl && (
+                                        <div className="mb-2 py-1">
+                                            <audio src={msg.audioUrl} controls className="max-w-full h-10 filter invert brightness-200" />
+                                        </div>
+                                    )}
+                                    <p className="text-[14px] sm:text-[15px] whitespace-pre-wrap break-words leading-relaxed">
                                         {msg.text}
-                                    </div>
-                                    <div className="flex items-center gap-1.5 mt-1 px-1">
-                                        <span className="text-[11px] text-gray-500 font-medium">
-                                            {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), 'h:mm a') : '...'}
-                                        </span>
-                                        {isMine && (
-                                            <span className="text-[11px] text-twitter-blue/80 font-bold">
-                                                {msg.read ? '• Seen' : '• Sent'}
-                                            </span>
-                                        )}
-                                    </div>
+                                    </p>
+                                    {msg.isEdited && (
+                                        <span className="text-[10px] opacity-60 block mt-1">(edited)</span>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -804,6 +821,21 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                 )}
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {editingMessageId && (
+                    <div className="flex items-center justify-between px-4 py-2 bg-twitter-blue/10 border-b border-twitter-blue/20">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                            <ShieldAlert className="w-4 h-4 text-twitter-blue shrink-0" />
+                            <p className="text-xs text-twitter-blue font-bold truncate">Editing message...</p>
+                        </div>
+                        <button 
+                            onClick={() => { setEditingMessageId(null); setNewMessage(""); }}
+                            className="p-1 hover:bg-twitter-blue/20 rounded-full transition"
+                        >
+                            <X className="w-4 h-4 text-twitter-blue" />
+                        </button>
                     </div>
                 )}
 
@@ -897,12 +929,20 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         
                         <div className="flex flex-col border-t border-gray-800 font-bold">
                             {messages.find(m => m.id === deleteMenuMessageId)?.senderId === user?.uid && (
-                                <button 
-                                    onClick={() => handleDeleteForBoth(deleteMenuMessageId)}
-                                    className="w-full py-4 text-red-500 hover:bg-black/40 transition border-b border-gray-800 active:bg-black"
-                                >
-                                    Delete for everyone
-                                </button>
+                                <>
+                                    <button 
+                                        onClick={() => handleStartEdit(deleteMenuMessageId, messages.find(m => m.id === deleteMenuMessageId)?.text || "")}
+                                        className="w-full py-4 text-twitter-blue hover:bg-black/40 transition border-b border-gray-800 active:bg-black flex items-center justify-center gap-2"
+                                    >
+                                        Edit Message
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDeleteForBoth(deleteMenuMessageId)}
+                                        className="w-full py-4 text-red-500 hover:bg-black/40 transition border-b border-gray-800 active:bg-black"
+                                    >
+                                        Delete for everyone
+                                    </button>
+                                </>
                             )}
                             
                             <button 
