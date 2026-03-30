@@ -356,28 +356,47 @@ export default function Home() {
                 </button>
             </div>
         )}
-        <button
-          onClick={() => setActiveTab('foryou')}
-          className="flex-1 hover:bg-white/5 transition flex justify-center"
-        >
-          <div className="relative py-4">
-            <span className={cn("font-bold text-[15px]", activeTab === 'foryou' ? "text-white" : "text-gray-500")}>For you</span>
-            {activeTab === 'foryou' && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--color-twitter-blue)] rounded-full"></div>
+        {/* Tabs - Curved Sliding Indicator */}
+        <div className="flex flex-1 relative">
+          <button
+            onClick={() => setActiveTab('foryou')}
+            className="flex-1 hover:bg-white/5 transition flex justify-center z-10"
+          >
+            <div className="py-4">
+              <span className={cn("font-bold text-[15px] transition-colors duration-200", activeTab === 'foryou' ? "text-white" : "text-gray-500")}>For you</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('following')}
+            className="flex-1 hover:bg-white/5 transition flex justify-center z-10"
+          >
+            <div className="py-4">
+              <span className={cn("font-bold text-[15px] transition-colors duration-200", activeTab === 'following' ? "text-white" : "text-gray-500")}>Following</span>
+            </div>
+          </button>
+
+          {/* Gliding Curved Indicator */}
+          <div 
+            className={cn(
+              "absolute bottom-0 h-1 bg-[var(--color-twitter-blue)] rounded-full transition-all duration-300 ease-out",
+              activeTab === 'foryou' ? "left-0 w-1/2 translate-x-[25%] scale-x-[0.3]" : "left-1/2 w-1/2 translate-x-[25%] scale-x-[0.3]"
             )}
-          </div>
-        </button>
-        <button
-          onClick={() => setActiveTab('following')}
-          className="flex-1 hover:bg-white/5 transition flex justify-center"
-        >
-          <div className="relative py-4">
-            <span className={cn("font-bold text-[15px]", activeTab === 'following' ? "text-white" : "text-gray-500")}>Following</span>
-            {activeTab === 'following' && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--color-twitter-blue)] rounded-full"></div>
-            )}
-          </div>
-        </button>
+            style={{ 
+              width: '50%',
+              left: activeTab === 'foryou' ? '0%' : '50%',
+              // The logic here is to center the pill under the text
+            }}
+          />
+          {/* Refined Sliding Logic for a wider look if desired, but sticking to centered pill as per mobile standards */}
+          <div 
+            className="absolute bottom-0 h-1 bg-[var(--color-twitter-blue)] rounded-full transition-all duration-300 ease-[cubic-bezier(0.18,0.89,0.32,1.28)]"
+            style={{ 
+              width: '56px',
+              left: activeTab === 'foryou' ? '25%' : '75%',
+              transform: 'translateX(-50%)'
+            }}
+          />
+        </div>
       </div>
 
       {/* Tweet Input */}
