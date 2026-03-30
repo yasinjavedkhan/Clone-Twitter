@@ -112,19 +112,6 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     ...doc.data()
                 }));
 
-                // Find the first unread message before marking them as read
-                const firstUnread = sorted.find((msg: any) => msg.senderId !== user.uid && !msg.read);
-                const firstUnreadId = firstUnread?.id;
-
-                // Mark unread messages as read
-                msgs.forEach((msg: any) => {
-                    if (msg.senderId !== user.uid && !msg.read) {
-                        updateDoc(doc(db, "conversations", conversationId, "messages", msg.id), {
-                            read: true
-                        }).catch(console.error);
-                    }
-                });
-
                 // Clear my unread count for this conversation
                 updateDoc(doc(db, "conversations", conversationId), {
                     [`unreadCount.${user.uid}`]: 0
@@ -138,6 +125,19 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     return timeA - timeB;
                 });
 
+                // Find the first unread message after sorting
+                const firstUnread = sorted.find((msg: any) => msg.senderId !== user.uid && !msg.read);
+                const firstUnreadId = firstUnread?.id;
+
+                // Mark unread messages as read
+                msgs.forEach((msg: any) => {
+                    if (msg.senderId !== user.uid && !msg.read) {
+                        updateDoc(doc(db, "conversations", conversationId, "messages", msg.id), {
+                            read: true
+                        }).catch(console.error);
+                    }
+                });
+
                 setMessages(sorted);
                 setLoadingMessages(false);
 
@@ -145,6 +145,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 if (scrollRef.current) {
                     const isFirstLoad = messages.length === 0;
                     setTimeout(() => {
+                        const container = document.getElementById('messages-container');
+                        
                         if (isFirstLoad && firstUnreadId) {
                             // If we have unread messages on first load, scroll to the FIRST one
                             const unreadElement = document.getElementById(`msg-${firstUnreadId}`);
@@ -158,16 +160,17 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         }
 
                         // Default: Scroll to bottom
-                        scrollRef.current?.scrollIntoView({ 
-                            behavior: isFirstLoad ? "auto" : "smooth",
-                            block: "end"
-                        });
-                        
-                        // Secondary check to ensure we are at the very bottom
-                        if (isFirstLoad && scrollRef.current?.parentElement) {
-                            scrollRef.current.parentElement.scrollTop = scrollRef.current.parentElement.scrollHeight;
+                        if (isFirstLoad && container) {
+                            // Force absolute instant jump to bottom for WhatsApp experience
+                            container.scrollTop = container.scrollHeight;
+                        } else {
+                            // Smooth scroll for new incoming messages
+                            scrollRef.current?.scrollIntoView({ 
+                                behavior: "smooth",
+                                block: "end"
+                            });
                         }
-                    }, 100);
+                    }, 50);
                 }
             } catch (error) {
                 console.error("ChatBox messages error:", error);
@@ -723,10 +726,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 </div>
             )}
 
-            {/* Messages Area - FLEX-1 (Scrolls and shrinks with keyboard) */}
+            {/* Messages Container - Flex-1 (Grows to fill space) */}
             <div 
-                ref={scrollRef}
-                className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scroll-smooth"
+                id="messages-container"
+                className="flex-1 overflow-y-auto p-4 space-y-4 container scroll-smooth custom-scrollbar"
             >
                 {loadingMessages ? (
                     <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-500">
