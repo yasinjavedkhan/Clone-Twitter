@@ -17,6 +17,14 @@ import IncomingCallOverlay from "@/components/messages/IncomingCallOverlay";
 export const metadata: Metadata = {
   title: "Twitter Clone",
   description: "A production-ready generic social media platform",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: "cover",
+    interactiveWidget: "resizes-content",
+  },
 };
 
 export default function RootLayout({
@@ -32,6 +40,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#000000" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
       </head>
       <body className={`${outfit.className} bg-black text-white min-h-screen`}>
         <AuthProvider>

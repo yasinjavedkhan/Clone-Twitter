@@ -511,9 +511,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     };
 
     return (
-        <div className="flex flex-col h-[100dvh] w-full max-h-[100dvh] border-r border-gray-800 bg-black overflow-hidden relative">
+        <div className="flex flex-col h-[100dvh] w-full max-h-[100dvh] border-r border-gray-800 bg-black overflow-hidden relative isolate">
             {/* Header - Fixed with Flex */}
-            <div className="min-h-[calc(64px+env(safe-area-inset-top))] h-auto pt-[env(safe-area-inset-top)] border-b border-gray-800 flex items-center px-4 gap-3 sm:gap-4 bg-black/95 backdrop-blur-md z-[110] sticky top-0 shrink-0">
+            <div className="sticky top-0 left-0 right-0 z-[120] min-h-[calc(64px+env(safe-area-inset-top))] h-auto pt-[env(safe-area-inset-top)] border-b border-gray-800 flex items-center px-4 gap-3 sm:gap-4 bg-black/95 backdrop-blur-md shrink-0">
                 <Link 
                     href={otherUser?.userId ? `/profile/${otherUser.userId}` : "#"} 
                     className="flex items-center gap-4 flex-grow min-w-0 group hover:opacity-80 transition-opacity"
