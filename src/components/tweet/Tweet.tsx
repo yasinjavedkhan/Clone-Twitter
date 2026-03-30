@@ -222,18 +222,21 @@ const VideoItem = ({ url }: { url: string }) => {
     };
 
     return (
-        <div className="relative w-full h-full group/video bg-black" onClick={toggleMute}>
+        <div className="relative w-full h-full group/video bg-black">
             <video
                 ref={videoRef}
                 src={url}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain pointer-events-none"
                 playsInline
                 muted={true}
                 preload="auto"
                 onEnded={handleVideoEnd}
             />
-            {/* Mute/Unmute Indicator */}
-            <div className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-full text-white backdrop-blur-sm transition-all duration-300">
+            {/* Mute/Unmute Button (Dedicated) */}
+            <button 
+                onClick={toggleMute}
+                className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-full text-white backdrop-blur-sm transition-all duration-300 hover:scale-110 active:scale-95 z-20"
+            >
                 {isMuted ? (
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
@@ -245,7 +248,7 @@ const VideoItem = ({ url }: { url: string }) => {
                         <path d="M13.07 1.64v2.09c3.08.77 5.43 3.55 5.43 6.27s-2.35 5.5-5.43 6.27v2.09c4.23-.82 7.43-4.51 7.43-8.36s-3.2-7.54-7.43-8.36z" />
                     </svg>
                 )}
-            </div>
+            </button>
         </div>
     );
 };
