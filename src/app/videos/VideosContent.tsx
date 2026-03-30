@@ -32,7 +32,7 @@ export default function VideosContent() {
 
     const [videos, setVideos] = useState<VideoItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [muted, setMuted] = useState(false);
+    const [muted, setMuted] = useState(true); // Default to muted for reliable autoplay
     const [currentIndex, setCurrentIndex] = useState(0);
     const [likes, setLikes] = useState<Record<string, boolean>>({});
     const [bookmarks, setBookmarks] = useState<Record<string, boolean>>({});
@@ -56,8 +56,13 @@ export default function VideosContent() {
         const fetchVideos = async () => {
             setLoading(true);
             try {
-                // Limit scan to 50 latest tweets to find videos quickly
-                const snap = await getDocs(query(collection(db, "tweets"), orderBy("createdAt", "desc"), limit(50)));
+                // Increase limit to 200 latest tweets to find more videos for a better feed
+                const tweetsQuery = query(
+                    collection(db, "tweets"), 
+                    orderBy("createdAt", "desc"), 
+                    limit(200)
+                );
+                const snap = await getDocs(tweetsQuery);
                 const items: VideoItem[] = [];
 
                 for (const docSnap of snap.docs) {
@@ -91,7 +96,7 @@ export default function VideosContent() {
                 // ✅ Place the clicked video first
                 if (startUrl) {
                     const idx = withAuthors.findIndex(v => v.videoUrl === startUrl);
-                    if (idx > 0) {
+                    if (idx >= 0) {
                         const [clicked] = withAuthors.splice(idx, 1);
                         withAuthors.unshift(clicked);
                     }
