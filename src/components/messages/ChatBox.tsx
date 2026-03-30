@@ -95,6 +95,12 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     useEffect(() => {
         if (!conversationId || !user?.uid) return;
 
+        // Reset state for new conversation
+        setMessages([]);
+        setLoadingMessages(true);
+        setEditingMessageId(null);
+        setNewMessage("");
+
         const q = query(
             collection(db, "conversations", conversationId, "messages")
         );
@@ -131,15 +137,19 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 setMessages(sorted);
                 setLoadingMessages(false);
 
-                // Scroll to bottom logic
+                // Scroll to bottom logic - check if we should jump or scroll
                 if (scrollRef.current) {
-                    const isFirstLoad = messages.length === 0 && sorted.length > 0;
+                    const shouldJump = messages.length === 0; // Instant jump on first render of messages
                     setTimeout(() => {
                         scrollRef.current?.scrollIntoView({ 
-                            behavior: isFirstLoad ? "auto" : "smooth",
+                            behavior: shouldJump ? "auto" : "smooth",
                             block: "end"
                         });
-                    }, 50);
+                        // Secondary check to ensure we are at the very bottom
+                        if (shouldJump && scrollRef.current?.parentElement) {
+                            scrollRef.current.parentElement.scrollTop = scrollRef.current.parentElement.scrollHeight;
+                        }
+                    }, 100);
                 }
             } catch (error) {
                 console.error("ChatBox messages error:", error);
@@ -149,7 +159,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         });
 
         return () => unsubscribe();
-    }, [conversationId, user?.uid]);
+    }, [conversationId, user?.uid, messages.length === 0]);
 
     // Real-time listener for typing status
     useEffect(() => {
