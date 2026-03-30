@@ -26,6 +26,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const [roomName, setRoomName] = useState("");
     const [mediaFiles, setMediaFiles] = useState<{ file: File; type: 'image' | 'video'; preview: string }[]>([]);
     const [isSending, setIsSending] = useState(false);
+    const [otherUserIsTyping, setOtherUserIsTyping] = useState(false);
+    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Voice Message states
@@ -104,6 +106,26 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             }
         }, (error) => {
             console.error("ChatBox snapshot error:", error);
+        });
+
+        return () => unsubscribe();
+    }, [conversationId, user?.uid]);
+
+    // Real-time listener for typing status
+    useEffect(() => {
+        if (!conversationId || !user?.uid) return;
+
+        const unsubscribe = onSnapshot(doc(db, "conversations", conversationId), (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const typing = data.typing || {};
+                const participants = data.participants || [];
+                const otherId = participants.find((p: string) => p !== user.uid);
+                
+                if (otherId) {
+                    setOtherUserIsTyping(!!typing[otherId]);
+                }
+            }
         });
 
         return () => unsubscribe();
@@ -309,6 +331,12 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             alert("Failed to send voice message. Please try again.");
         } finally {
             setIsSending(false);
+            // Clear typing status immediately after sending
+            if (user?.uid && conversationId) {
+                updateDoc(doc(db, "conversations", conversationId), {
+                    [`typing.${user.uid}`]: false
+                }).catch(() => {});
+            }
         }
     };
 
@@ -429,6 +457,12 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             alert("Failed to send message/media. Please try again.");
         } finally {
             setIsSending(false);
+            // Clear typing status immediately after sending
+            if (user?.uid && conversationId) {
+                updateDoc(doc(db, "conversations", conversationId), {
+                    [`typing.${user.uid}`]: false
+                }).catch(() => {});
+            }
         }
     };
 
@@ -496,7 +530,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             {otherUser?.isSelf ? " (You)" : ""}
                         </h2>
                         <div className="flex items-center gap-1.5 truncate h-5">
-                            {hasMounted && otherUser?.lastSeen ? (
+                            {otherUserIsTyping ? (
+                                <p className="text-twitter-blue text-[12px] sm:text-[13px] animate-pulse font-medium">Typing...</p>
+                            ) : hasMounted && otherUser?.lastSeen ? (
                                 <div className="flex items-center gap-1">
                                     <div className={`w-2 h-2 rounded-full ${isUserActive(otherUser.lastSeen) ? 'bg-green-500' : 'bg-gray-500'}`} />
                                     <p className={`text-[12px] sm:text-[13px] ${isUserActive(otherUser.lastSeen) ? 'text-green-500 font-medium' : 'text-gray-500'}`}>
@@ -871,7 +907,29 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             <input
                                 type="text"
                                 value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
+                                onChange={(e) => {
+                                    setNewMessage(e.target.value);
+                                    
+                                    // Handle typing status
+                                    if (user?.uid && conversationId) {
+                                        // Set typing to true
+                                        updateDoc(doc(db, "conversations", conversationId), {
+                                            [`typing.${user.uid}`]: true
+                                        }).catch(() => {});
+
+                                        // Clear previous timeout
+                                        if (typingTimeoutRef.current) {
+                                            clearTimeout(typingTimeoutRef.current);
+                                        }
+
+                                        // Set timeout to clear typing status
+                                        typingTimeoutRef.current = setTimeout(() => {
+                                            updateDoc(doc(db, "conversations", conversationId), {
+                                                [`typing.${user.uid}`]: false
+                                            }).catch(() => {});
+                                        }, 4000); // 4 seconds after last keypress
+                                    }
+                                }}
                                 placeholder="Start a new message"
                                 className="flex-grow bg-[#202327] rounded-2xl py-2 px-4 outline-none focus:ring-1 focus:ring-twitter-blue transition text-[15px] min-w-0"
                             />
