@@ -41,6 +41,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const manuallyInitiated = useRef(false);
     const [hasMounted, setHasMounted] = useState(false);
     const [showOfflineOverlay, setShowOfflineOverlay] = useState(false);
+    const [loadingMessages, setLoadingMessages] = useState(true);
 
     useEffect(() => {
         setHasMounted(true);
@@ -98,6 +99,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 });
 
                 setMessages(sorted);
+                setLoadingMessages(false);
                 // Scroll to bottom
                 setTimeout(() => {
                     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -502,7 +504,6 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const startPress = (messageId: string) => {
         longPressTimerRef.current = setTimeout(() => handleLongPress(messageId), 500);
     };
-
     const endPress = () => {
         if (longPressTimerRef.current) {
             clearTimeout(longPressTimerRef.current);
@@ -512,8 +513,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
     return (
         <div className="flex flex-col h-[100dvh] w-full max-h-[100dvh] border-r border-gray-800 bg-black overflow-hidden relative isolate">
-            {/* Header - Fixed with Flex */}
-            <div className="sticky top-0 left-0 right-0 z-[120] min-h-[calc(64px+env(safe-area-inset-top))] h-auto pt-[env(safe-area-inset-top)] border-b border-gray-800 flex items-center px-4 gap-3 sm:gap-4 bg-black/95 backdrop-blur-md shrink-0">
+            {/* Header - Fixed on mobile to prevent disappearing when keyboard opens */}
+            <div className="fixed sm:sticky top-0 left-0 right-0 z-[120] min-h-[calc(64px+env(safe-area-inset-top))] h-auto pt-[env(safe-area-inset-top)] border-b border-gray-800 flex items-center px-4 gap-3 sm:gap-4 bg-black/95 backdrop-blur-md shrink-0">
                 <Link 
                     href={otherUser?.userId ? `/profile/${otherUser.userId}` : "#"} 
                     className="flex items-center gap-4 flex-grow min-w-0 group hover:opacity-80 transition-opacity"
@@ -609,7 +610,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                         setShowOfflineOverlay(true);
                                         return;
                                     }
-                                    const generatedRoom = `DirectCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
+                                    const generatedRoom = `DirectVideoCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
                                     
                                     // 1. Record in chat history
                                     await recordCallEvent('video');
@@ -634,7 +635,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                         await sendPushNotification({
                                             toUserId: otherUser.userId,
                                             title: "Incoming Video Call",
-                                            body: `${user.displayName || 'Someone'} is video calling...`,
+                                            body: `${user.displayName || 'Someone'} is calling...`,
                                             data: {
                                                 type: 'call',
                                                 callType: 'video',
@@ -646,207 +647,184 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                         });
                                     }
 
-                                    // 4. Update UI
+                                    // 4. Update UI - Now safe because document exists
                                     manuallyInitiated.current = true;
-                                    setCallType('video'); 
+                                    setCallType('video');
                                     setRoomName(generatedRoom);
                                     setIsCalling(true);
                                 }}
                                 className={`p-2.5 hover:bg-white/10 rounded-full text-twitter-blue transition-all duration-200 ${!isUserActive(otherUser.lastSeen) ? 'opacity-20 grayscale cursor-pointer' : ''}`}
                                 title={isUserActive(otherUser.lastSeen) ? "Video Call" : "User Offline"}
                             >
-                                <Video className="w-6 h-6" />
+                                <Video className="w-5 h-5" />
                             </button>
                         </>
                     )}
                 </div>
             </div>
 
-            {/* Offline Call Attempt Overlay */}
+            {/* Offline/Presence Overlay for Calls */}
             {showOfflineOverlay && (
-                <div className="fixed inset-0 z-[110] bg-black/95 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in zoom-in duration-300">
-                    <div className="max-w-md w-full bg-gray-900 border border-gray-800 rounded-3xl p-8 flex flex-col items-center text-center shadow-2xl">
-                        <div className="relative mb-6">
-                            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-800 shadow-xl">
-                                {otherUser?.profileImage ? (
-                                    <img src={otherUser.profileImage} alt={otherUser.displayName} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-                                        <User className="w-10 h-10 text-gray-600" />
-                                    </div>
-                                )}
+                <div className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-[#15181c] border border-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="flex flex-col items-center text-center gap-4">
+                            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center">
+                                <Phone className="w-8 h-8 text-red-500" />
                             </div>
-                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gray-500 border-4 border-gray-900 rounded-full" />
+                            <div>
+                                <h3 className="text-xl font-bold text-white mb-2">User is Offline</h3>
+                                <p className="text-gray-400 text-[15px]">
+                                    {otherUser?.displayName || "The user"} is not currently active. You can only start calls when both participants are online.
+                                </p>
+                            </div>
+                            <button 
+                                onClick={() => setShowOfflineOverlay(false)}
+                                className="w-full mt-2 py-3 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition active:scale-95"
+                            >
+                                Got it
+                            </button>
                         </div>
-                        
-                        <h3 className="text-2xl font-bold text-white mb-2">{otherUser?.displayName || "User"} is offline</h3>
-                        <p className="text-gray-400 mb-8 leading-relaxed">
-                            You cannot start a call right now because this person is offline. 
-                            You can only call users who are currently <span className="text-green-500 font-bold">Active now</span>.
-                        </p>
-                        
-                        <button 
-                            onClick={() => setShowOfflineOverlay(false)}
-                            className="w-full bg-white text-black hover:bg-gray-200 py-3 rounded-full font-bold transition-all active:scale-95 shadow-lg"
-                        >
-                            Got it
-                        </button>
                     </div>
                 </div>
             )}
-            {isCalling && (
-                <div className="fixed inset-0 z-[100] bg-black flex flex-col">
-                    <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black">
-                        <h3 className="text-white font-bold">Call with {otherUser?.displayName || "User"}</h3>
-                        <button 
-                            onClick={async () => {
-                                setIsCalling(false);
-                                manuallyInitiated.current = false;
-                                await deleteDoc(doc(db, "calls", roomName)).catch(() => {});
-                            }}
-                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full font-bold transition flex items-center gap-2"
-                        >
-                            <X className="w-5 h-5" /> End Call
-                        </button>
+
+            {/* Messages Area - Added padding for fixed header/footer on mobile */}
+            <div 
+                ref={scrollRef}
+                className="flex-grow overflow-y-auto px-4 py-4 pt-[calc(80px+env(safe-area-inset-top))] pb-[calc(110px+env(safe-area-inset-bottom))] sm:pt-4 sm:pb-4 space-y-4 scroll-smooth"
+            >
+                {loadingMessages ? (
+                    <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-500">
+                        <div className="w-8 h-8 border-2 border-twitter-blue border-t-transparent animate-spin rounded-full" />
+                        <p className="text-sm font-medium">Loading messages...</p>
                     </div>
-                    <AgoraCall 
-                        roomName={roomName} 
-                        callType={callType} 
-                        otherUser={otherUser}
-                        onEndCall={async () => {
-                            setIsCalling(false);
-                            manuallyInitiated.current = false;
-                            await deleteDoc(doc(db, "calls", roomName)).catch(() => {});
-                        }} 
-                    />
-                </div>
-            )}
-
-            {/* Messages Area - Standard Scroll */}
-            <div className="flex-grow overflow-y-auto px-4 py-4 flex flex-col gap-3 scroll-smooth" onClick={() => setDeleteMenuMessageId(null)}>
-                {messages.filter(msg => !msg.deletedBy?.includes(user?.uid)).map((msg) => {
-                    const isMe = msg.senderId === user?.uid;
-                    const isSystemMessage = msg.isDeletedForEveryone;
-
-                    return (
-                        <div
-                            key={msg.id}
-                            className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group relative select-none`}
-                            onContextMenu={(e) => !isSystemMessage && e.preventDefault()}
-                            onTouchStart={() => !isSystemMessage && startPress(msg.id)}
-                            onTouchEnd={endPress}
-                            onMouseDown={() => !isSystemMessage && startPress(msg.id)}
-                            onMouseUp={endPress}
-                            onMouseLeave={endPress}
-                        >
-                            <div className="relative flex items-center group/bubble">
-                                {isMe && !isSystemMessage && (
-                                    <div className={cn(
-                                        "transition-opacity mr-2 hidden sm:block",
-                                        deleteMenuMessageId === msg.id ? "opacity-100" : "opacity-0 group-hover/bubble:opacity-100"
-                                    )}>
-                                        <button 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setDeleteMenuMessageId(msg.id === deleteMenuMessageId ? null : msg.id);
-                                            }}
-                                            className="p-1 hover:bg-white/10 rounded-full text-gray-500"
-                                        >
-                                            <MoreHorizontal className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                )}
-
-                                <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-[15px] ${isMe
-                                    ? 'bg-twitter-blue text-black rounded-br-none'
-                                    : 'bg-[#2f3336] text-white rounded-bl-none'
-                                    } ${isSystemMessage ? 'opacity-50 italic border border-gray-800 bg-transparent text-gray-500' : ''}`}>
-                                    
-                                    {!isSystemMessage && msg.mediaUrls && msg.mediaUrls.length > 0 && (
-                                        <div className={cn(
-                                            "grid gap-1 mb-2",
-                                            msg.mediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"
-                                        )}>
-                                            {msg.mediaUrls.map((url: string, idx: number) => (
-                                                <div key={idx} className="rounded-lg overflow-hidden border border-gray-800 bg-gray-950">
-                                                    {url.includes('.mp4') || url.includes('.mov') ? (
-                                                        <video src={url} className="max-h-60 w-full object-contain" controls />
-                                                    ) : (
-                                                        <img src={url} alt="Shared" className="max-h-60 w-full object-contain" onClick={() => window.open(url, '_blank')} />
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    {!isSystemMessage && msg.audioUrl && (
-                                        <div className="flex flex-col gap-2 min-w-[200px] py-1">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center">
-                                                    <Mic className="w-4 h-4 text-inherit" />
-                                                </div>
-                                                <audio 
-                                                    src={msg.audioUrl} 
-                                                    controls 
-                                                    className="h-8 max-w-[180px] custom-audio-player"
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-                                    {msg.text && <div>{msg.text}</div>}
-                                </div>
-
-                                {!isMe && !isSystemMessage && (
-                                    <div className={cn(
-                                        "transition-opacity ml-2 hidden sm:block",
-                                        deleteMenuMessageId === msg.id ? "opacity-100" : "opacity-0 group-hover/bubble:opacity-100"
-                                    )}>
-                                        <button 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setDeleteMenuMessageId(msg.id === deleteMenuMessageId ? null : msg.id);
-                                            }}
-                                            className="p-1 hover:bg-white/10 rounded-full text-gray-500"
-                                        >
-                                            <MoreHorizontal className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                            
-                            {!isSystemMessage && (
-                                <span className="text-gray-500 text-[11px] mt-1 px-1 flex items-center">
-                                    {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), 'p') : '...'}
-                                    {isMe && (
-                                        <span className={`font-bold ml-1.5 flex items-center gap-0.5 ${msg.read ? 'text-twitter-blue' : 'text-gray-500'}`}>
-                                            <div className={`w-1 h-1 rounded-full ${msg.read ? 'bg-twitter-blue' : 'bg-gray-500'}`}></div>
-                                            {msg.read ? 'Seen' : 'Sent'}
-                                        </span>
-                                    )}
-                                </span>
+                ) : messages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-12 text-center h-full pt-20">
+                        <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-3xl font-bold text-white uppercase overflow-hidden mb-4">
+                            {otherUser?.profileImage ? (
+                                <img src={otherUser.profileImage} className="w-full h-full object-cover" alt="" />
+                            ) : (
+                                (otherUser?.displayName || otherUser?.username || "?")[0]
                             )}
                         </div>
-                    );
-                })}
-                <div ref={scrollRef} />
+                        <h3 className="text-xl font-bold text-white">{otherUser?.displayName || otherUser?.username}</h3>
+                        <p className="text-gray-500 text-sm mt-1 mb-6">@{otherUser?.username}</p>
+                        <p className="text-gray-500 text-[15px] max-w-[280px]">
+                            This is the beginning of your conversation with {otherUser?.displayName || otherUser?.username}.
+                        </p>
+                    </div>
+                ) : (
+                    messages.map((msg, index) => {
+                        const isMine = msg.senderId === user?.uid;
+                        
+                        // Check if this message was deleted by the user
+                        if (msg.deletedBy && msg.deletedBy.includes(user?.uid)) return null;
+
+                        return (
+                            <div 
+                                key={msg.id} 
+                                className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
+                                onTouchStart={() => startPress(msg.id)}
+                                onTouchEnd={endPress}
+                                onMouseDown={() => startPress(msg.id)} // Desktop support
+                                onMouseUp={endPress}
+                                onMouseLeave={endPress}
+                            >
+                                <div className={`flex flex-col max-w-[85%] sm:max-w-[70%] ${isMine ? 'items-end' : 'items-start'}`}>
+                                    <div 
+                                        className={cn(
+                                            "px-4 py-2.5 text-[15px] leading-relaxed break-words shadow-sm",
+                                            isMine 
+                                                ? "bg-twitter-blue text-white rounded-2xl rounded-tr-none" 
+                                                : msg.isDeletedForEveryone 
+                                                    ? "bg-transparent border border-gray-800 text-gray-500 italic rounded-2xl rounded-tl-none"
+                                                    : "bg-[#202327] text-white rounded-2xl rounded-tl-none"
+                                        )}
+                                    >
+                                        {msg.mediaUrls && msg.mediaUrls.length > 0 && (
+                                            <div className="mb-2 space-y-2">
+                                                {msg.mediaUrls.map((url: string, i: number) => {
+                                                    const isVideo = url.includes('/video/upload/');
+                                                    return (
+                                                        <div key={i} className="rounded-xl overflow-hidden border border-white/5">
+                                                            {isVideo ? (
+                                                                <video src={url} controls className="max-w-full h-auto" />
+                                                            ) : (
+                                                                <img src={url} alt="" className="max-w-full h-auto" />
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                        {msg.audioUrl && (
+                                            <div className="mb-2 py-1">
+                                                <audio src={msg.audioUrl} controls className="max-w-full h-10 filter invert brightness-200" />
+                                            </div>
+                                        )}
+                                        {msg.text}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 mt-1 px-1">
+                                        <span className="text-[11px] text-gray-500 font-medium">
+                                            {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), 'h:mm a') : '...'}
+                                        </span>
+                                        {isMine && (
+                                            <span className="text-[11px] text-twitter-blue/80 font-bold">
+                                                {msg.read ? '• Seen' : '• Sent'}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+                {/* Visual anchor for scrolling */}
+                <div className="h-6 w-full" />
+                <div ref={scrollRef} className="h-2" />
             </div>
 
-            {/* Input Area - Fixed with Flex at bottom */}
-            <div className="flex flex-col border-t border-gray-800 bg-black">
-                {/* Media Preview Area */}
-                {mediaFiles.length > 0 && (
-                    <div className="flex gap-2 p-3 overflow-x-auto bg-black/50">
-                        {mediaFiles.map((media, idx) => (
-                            <div key={idx} className="relative shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-gray-800">
-                                <button
-                                    onClick={() => removeMedia(idx)}
-                                    className="absolute top-1 right-1 z-10 bg-black/50 hover:bg-black/80 p-0.5 rounded-full text-white"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                                {media.type === 'image' ? (
-                                    <img src={media.preview} className="w-full h-full object-cover" alt="Preview" />
+            {/* Input Area - Fixed on mobile to ensure it stays above keyboard */}
+            <div className="fixed sm:relative bottom-0 left-0 right-0 z-[110] bg-black border-t border-gray-800 shrink-0">
+                
+                {/* Floating Typing Indicator Bubble - specifically for mobile visibility */}
+                {otherUserIsTyping && (
+                    <div className="sm:hidden absolute -top-12 left-4 z-[150] animate-in slide-in-from-bottom-2 duration-300">
+                        <div className="bg-[#202327] border border-twitter-blue/30 rounded-full px-3 py-1.5 flex items-center gap-2 shadow-xl backdrop-blur-md">
+                            <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white uppercase overflow-hidden shrink-0">
+                                {otherUser?.profileImage ? (
+                                    <img src={otherUser.profileImage} className="w-full h-full object-cover" alt="" />
                                 ) : (
-                                    <video src={media.preview} className="w-full h-full object-cover" muted />
+                                    (otherUser?.displayName || otherUser?.username || "?")[0]
+                                )}
+                            </div>
+                            <span className="text-twitter-blue text-xs font-bold whitespace-nowrap">
+                                {otherUser?.displayName || otherUser?.username} is typing...
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Media Previews (shown above the main input) */}
+                {mediaFiles.length > 0 && (
+                    <div className="p-3 flex gap-2 overflow-x-auto bg-black border-b border-gray-800 scrollbar-hide">
+                        {mediaFiles.map((m, i) => (
+                            <div key={i} className="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden border border-white/10 group">
+                                {m.type === 'image' ? (
+                                    <img src={m.preview} className="w-full h-full object-cover" alt="" />
+                                ) : (
+                                    <video src={m.preview} className="w-full h-full object-cover" />
+                                )}
+                                <button 
+                                    onClick={() => setMediaFiles(prev => prev.filter((_, idx) => idx !== i))}
+                                    className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white hover:bg-black transition"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                                {isSending && (
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                        <div className="w-5 h-5 border-2 border-white border-t-transparent animate-spin rounded-full" />
+                                    </div>
                                 )}
                             </div>
                         ))}
