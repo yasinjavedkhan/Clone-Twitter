@@ -98,6 +98,7 @@ export default function Notifications() {
                         >
                             <div className="shrink-0 mt-1">
                                 {notif.type === 'system' && <Info className="w-5 h-5 text-twitter-blue" />}
+                                {notif.type === 'announcement' && <Bell className="w-5 h-5 text-yellow-500 fill-yellow-500/20" />}
                                 {notif.type === 'security' && <Shield className="w-5 h-5 text-yellow-500" />}
                                 {notif.type === 'success' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
                                 {notif.type === 'follow' && <User className="w-5 h-5 text-twitter-blue" />}
