@@ -12,7 +12,8 @@ import {
     Settings,
     LogOut,
     Hash,
-    X
+    X,
+    Sparkles
 } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
     { label: "Explore", href: "/explore", icon: Search, activeIcon: Search },
     { label: "Notifications", href: "/notifications", icon: Bell, activeIcon: Bell, hasBadge: true, badgeType: "notifications" },
     { label: "Messages", href: "/messages", icon: Mail, activeIcon: Mail, hasBadge: true, badgeType: "messages" },
+    { label: "Grok", href: "/grok", icon: Sparkles, activeIcon: Sparkles },
     { label: "Bookmarks", href: "/bookmarks", icon: Bookmark, activeIcon: Bookmark },
     { label: "Profile", href: "/profile", icon: User, activeIcon: User },
     { label: "Settings", href: "/settings", icon: Settings, activeIcon: Settings },

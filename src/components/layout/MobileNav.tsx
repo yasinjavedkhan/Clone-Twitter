@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Bell, Mail, Bookmark } from "lucide-react";
+import { Home, Search, Bell, Mail, Bookmark, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
@@ -82,9 +82,9 @@ export default function MobileNav() {
     const items = [
         { icon: Home, href: "/", label: "Home" },
         { icon: Search, href: "/explore", label: "Explore" },
+        { icon: Sparkles, href: "/grok", label: "Grok" },
         { icon: Bell, href: "/notifications", label: "Notifications", hasBadge: true, badgeType: 'notifications' },
         { icon: Mail, href: "/messages", label: "Messages", hasBadge: true, badgeType: 'messages' },
-        { icon: Bookmark, href: "/bookmarks", label: "Bookmarks" },
     ];
 
 
