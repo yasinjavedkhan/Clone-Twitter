@@ -63,9 +63,15 @@ export default function GrokPage() {
       setMessages((prev) => [...prev, { role: "model", content: data.text }]);
     } catch (error: any) {
       console.error("Grok Error:", error);
+      const isQuota = error?.message?.includes("429") || error?.message?.includes("quota");
       setMessages((prev) => [
         ...prev,
-        { role: "model", content: `Error: ${error.message || "Failed to get response. Please check your API key."}` },
+        { 
+          role: "model", 
+          content: isQuota 
+            ? "⚠️ I'm getting a lot of requests right now. Please try again in a few seconds!" 
+            : "Sorry, I ran into a problem. Please try again." 
+        },
       ]);
     } finally {
       setIsLoading(false);
