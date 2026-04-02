@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View, FlatList, TouchableOpacity, RefreshControl, Image, ScrollView, Dimensions, PanResponder, TouchableWithoutFeedback } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { auth, db } from '../../src/lib/firebase';
 import { doc, getDoc, collection, query, orderBy, limit, onSnapshot, getDocs, where, setDoc, deleteDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
@@ -386,7 +387,14 @@ export default function HomeScreen() {
               )}
             </View>
           </TouchableOpacity>
-          <Text style={styles.logoText}>JD</Text>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <Svg viewBox="0 0 24 24" width={28} height={28}>
+              <Path 
+                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.045 4.126H5.078z" 
+                fill="white" 
+              />
+            </Svg>
+          </View>
           <View style={{ width: 32 }} />
         </View>
         {renderTabBar()}

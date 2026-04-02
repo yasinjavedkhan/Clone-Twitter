@@ -366,6 +366,13 @@ export default function Home() {
               <span className={cn("font-bold text-[15px] transition-colors duration-200", activeTab === 'foryou' ? "text-white" : "text-gray-500")}>For you</span>
             </div>
           </button>
+          
+          <div className="sm:hidden flex items-center justify-center px-1 z-10">
+            <svg viewBox="0 0 24 24" className="w-5 h-5 text-white fill-current">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.045 4.126H5.078z"></path>
+            </svg>
+          </div>
+
           <button
             onClick={() => setActiveTab('following')}
             className="flex-1 hover:bg-white/5 transition flex justify-center z-10"
@@ -389,10 +396,18 @@ export default function Home() {
           />
           {/* Refined Sliding Logic for a wider look if desired, but sticking to centered pill as per mobile standards */}
           <div 
-            className="absolute bottom-0 h-1 bg-[var(--color-twitter-blue)] rounded-full transition-all duration-300 ease-[cubic-bezier(0.18,0.89,0.32,1.28)]"
+            className="absolute bottom-0 h-1 bg-[var(--color-twitter-blue)] rounded-full transition-all duration-300 ease-[cubic-bezier(0.18,0.89,0.32,1.28)] sm:block hidden"
             style={{ 
               width: '56px',
               left: activeTab === 'foryou' ? '25%' : '75%',
+              transform: 'translateX(-50%)'
+            }}
+          />
+          <div 
+            className="absolute bottom-0 h-1 bg-[var(--color-twitter-blue)] rounded-full transition-all duration-300 ease-[cubic-bezier(0.18,0.89,0.32,1.28)] block sm:hidden"
+            style={{ 
+              width: '56px',
+              left: activeTab === 'foryou' ? '20%' : '80%',
               transform: 'translateX(-50%)'
             }}
           />
