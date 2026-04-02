@@ -15,18 +15,17 @@ const outfit = Outfit({ subsets: ["latin"] });
 import CallOverlayWrapper from "@/components/messages/CallOverlayWrapper";
 import { CallProvider } from "@/contexts/CallContext";
 
-export const viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  viewportFit: "cover",
-  interactiveWidget: "resizes-content",
-};
-
 export const metadata: Metadata = {
   title: "Twitter Clone",
   description: "A production-ready generic social media platform",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: "cover",
+    interactiveWidget: "resizes-content",
+  },
 };
 
 export default function RootLayout({
@@ -36,7 +35,7 @@ export default function RootLayout({
 }>) {
 
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang="en">
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#000000" />
