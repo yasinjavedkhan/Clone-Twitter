@@ -32,7 +32,9 @@ export async function POST(req: NextRequest) {
       return data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
     };
 
-    const modelsToTry = ["gemini-1.5-flash", "gemini-pro"];
+    // Verified models for this API Key (Gemini 2.5 and 2.0)
+    //gemini-2.5-flash is stable and incredibly powerful (June 2025 release)
+    const modelsToTry = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"];
     let lastError = null;
 
     for (const modelId of modelsToTry) {
