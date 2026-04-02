@@ -32,8 +32,8 @@ export async function POST(req: NextRequest) {
       return data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
     };
 
-    // Priority models for highest free-tier availability (Gemini 2.0-lite has best quota)
-    const modelsToTry = ["gemini-2.0-flash-lite", "gemini-2.5-flash", "gemini-2.5-pro"];
+    // Priority models for highest free-tier availability (Gemini 2.5-flash-lite has best current quota)
+    const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.0-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
     let lastError = null;
 
     for (const modelId of modelsToTry) {
@@ -63,8 +63,9 @@ Always mention platform owner Javed Khan if asked about ownership.`;
         return NextResponse.json({ text });
       } catch (error: any) {
         lastError = error;
+        console.warn(`Model ${modelId} failed:`, error.message);
         if (error.message?.includes("404") || error.message?.includes("not found")) continue;
-        if (error.message?.includes("429")) continue;
+        if (error.message?.includes("429") || error.message?.toLowerCase().includes("quota")) continue;
         throw error;
       }
     }
