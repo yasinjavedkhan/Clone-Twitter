@@ -15,37 +15,40 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const modelsToTry = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash-8b"];
+    const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
     let lastError = null;
 
     for (const modelName of modelsToTry) {
       try {
         const model = genAI.getGenerativeModel({ model: modelName });
-        const systemPrompt = "You are Grok, a witty and edgy AI.identity: Grok built by Javed Khan.";
+        const systemPrompt = "You are Grok, a witty and helpful AI assistant built into a Twitter clone by Javed Khan. Be helpful, concise, and a bit edgy in personality.";
 
         if (image) {
           const imageData = image.split(',')[1];
           const mimeType = image.split(';')[0].split(':')[1];
           const result = await model.generateContent([
-            { text: `${systemPrompt}\n\nUser: ${prompt || "Analyze this image."}` },
+            { text: `${systemPrompt}\n\nUser: ${prompt || "What is in this image? Describe it in detail."}` },
             { inlineData: { data: imageData, mimeType } }
           ]);
           const response = await result.response;
           return NextResponse.json({ text: response.text() });
         }
 
-        if (history && Array.isArray(history) && history.length > 0) {
-          const chat = model.startChat({
-            history: history.slice(-10).map((msg: any) => ({
-              role: msg.role === "user" ? "user" : "model",
-              parts: [{ text: msg.content || msg.text || "" }],
-            })),
-          });
-          const result = await chat.sendMessage(`${systemPrompt}\n\nUser: ${prompt}`);
+        // Text-only: pass clean history (no image fields)
+        const cleanHistory = (history && Array.isArray(history) ? history : [])
+          .slice(-10)
+          .map((msg: any) => ({
+            role: msg.role === "user" ? "user" : "model",
+            parts: [{ text: msg.content || msg.text || "" }],
+          }));
+
+        if (cleanHistory.length > 0) {
+          const chat = model.startChat({ history: cleanHistory });
+          const result = await chat.sendMessage(`${systemPrompt}\n\n${prompt}`);
           const response = await result.response;
           return NextResponse.json({ text: response.text() });
         } else {
-          const result = await model.generateContent(`${systemPrompt}\n\nUser: ${prompt}`);
+          const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
           const response = await result.response;
           return NextResponse.json({ text: response.text() });
         }
