@@ -620,6 +620,23 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 maxHeight: viewportHeight
             }}
         >
+            {isCalling && roomName && (
+                <div className="absolute inset-0 z-[100] bg-black">
+                    <AgoraCall 
+                        roomName={roomName}
+                        callType={callType}
+                        otherUser={otherUser}
+                        onEndCall={async () => {
+                            setIsCalling(false);
+                            manuallyInitiated.current = false;
+                            if (roomName) {
+                                await deleteDoc(doc(db, "calls", roomName)).catch(() => {});
+                                setRoomName("");
+                            }
+                        }}
+                    />
+                </div>
+            )}
             {/* Header - Pure Flex Item (stays at top naturally) */}
             <header className="flex-none w-full min-h-[64px] border-b border-gray-800 flex items-center px-4 gap-3 sm:gap-4 bg-black/95 backdrop-blur-md z-[20] pt-[env(safe-area-inset-top)]">
                 <Link 
@@ -668,6 +685,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                     const generatedRoom = `DirectCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
                                     await recordCallEvent('voice');
                                     if (user && otherUser?.userId) {
+                                        setRoomName(generatedRoom);
+                                        setCallType('voice');
+                                        setIsCalling(true);
+                                        manuallyInitiated.current = true;
                                         await setDoc(doc(db, "calls", generatedRoom), {
                                             toUserId: otherUser.userId,
                                             fromUserId: user.uid,
@@ -695,6 +716,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                     const generatedRoom = `DirectCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
                                     await recordCallEvent('video');
                                     if (user && otherUser?.userId) {
+                                        setRoomName(generatedRoom);
+                                        setCallType('video');
+                                        setIsCalling(true);
+                                        manuallyInitiated.current = true;
                                         await setDoc(doc(db, "calls", generatedRoom), {
                                             toUserId: otherUser.userId,
                                             fromUserId: user.uid,
