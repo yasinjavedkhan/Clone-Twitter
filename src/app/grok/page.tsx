@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Send, Trash2, Image, X } from "lucide-react";
+import { Sparkles, Send, Trash2, Image, Camera, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Avatar from "@/components/ui/Avatar";
 
@@ -26,6 +26,7 @@ export default function GrokPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -232,12 +233,31 @@ export default function GrokPage() {
                 className="hidden" 
             />
             
-            <button
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute left-3 bottom-3 p-2 text-gray-500 hover:text-twitter-blue hover:bg-twitter-blue/10 rounded-full transition-all z-10"
-            >
-                <Image className="w-5 h-5" />
-            </button>
+            <input 
+                type="file" 
+                ref={cameraInputRef} 
+                onChange={handleImageSelect} 
+                accept="image/*" 
+                capture="environment" 
+                className="hidden" 
+            />
+            
+            <div className="absolute left-1.5 bottom-1.5 flex items-center gap-1 z-10">
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2.5 text-gray-500 hover:text-twitter-blue hover:bg-twitter-blue/10 rounded-full transition-all"
+                    title="Upload Image"
+                >
+                    <Image className="w-5 h-5" />
+                </button>
+                <button
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="p-2.5 text-gray-400 hover:text-twitter-blue hover:bg-twitter-blue/10 rounded-full transition-all"
+                    title="Take Photo"
+                >
+                    <Camera className="w-5 h-5" />
+                </button>
+            </div>
 
             <textarea
                 value={input}
@@ -249,7 +269,7 @@ export default function GrokPage() {
                 }
                 }}
                 placeholder="Ask Grok..."
-                className="w-full bg-[#202327] rounded-3xl py-4 pl-12 pr-14 resize-none outline-none focus:ring-2 focus:ring-twitter-blue/30 border border-transparent focus:border-twitter-blue/50 transition min-h-[56px] max-h-32 text-[15px] shadow-inner"
+                className="w-full bg-[#202327] rounded-3xl py-4 pl-24 pr-14 resize-none outline-none focus:ring-2 focus:ring-twitter-blue/30 border border-transparent focus:border-twitter-blue/50 transition min-h-[56px] max-h-32 text-[15px] shadow-inner"
                 rows={1}
             />
             
