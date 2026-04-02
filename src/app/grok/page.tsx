@@ -75,7 +75,13 @@ export default function GrokPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-black text-white border-r border-gray-800 overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-56px)] sm:h-screen bg-black text-white border-r border-gray-800 overflow-hidden">
+        {/* Force hide mobile FAB on this page */}
+        <style jsx global>{`
+          .sm\\:hidden.fixed.bottom-20.right-4 {
+            display: none !important;
+          }
+        `}</style>
       {/* Header */}
       <div className="p-4 border-b border-gray-800 flex items-center justify-between sticky top-0 bg-black/80 backdrop-blur-md z-10 shrink-0">
         <div className="flex items-center gap-3">

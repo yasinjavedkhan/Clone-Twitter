@@ -29,9 +29,10 @@ function MainLayoutContent({ children }: MainLayoutProps) {
   }, [user]);
 
   const isHomePage = pathname === "/";
-  const isMessagePage = pathname?.startsWith("/messages");
-  const isImmersiveVideo = pathname?.includes("/videos") && searchParams?.get('url');
-  const isMessageConversation = pathname?.startsWith("/messages/") && pathname !== "/messages";
+  const isGrokPage = pathname !== null && pathname.toLowerCase().includes("grok");
+  const isMessagePage = (pathname !== null && pathname.startsWith("/messages")) || isGrokPage;
+  const isImmersiveVideo = pathname !== null && pathname.includes("/videos") && searchParams?.get('url');
+  const isMessageConversation = (pathname !== null && pathname.startsWith("/messages/") && pathname !== "/messages") || isGrokPage;
 
   return (
     <div className="max-w-[1300px] mx-auto flex w-full justify-center sm:justify-start bg-black min-h-screen">
@@ -80,7 +81,7 @@ function MainLayoutContent({ children }: MainLayoutProps) {
         </div>
       )}
 
-      {user && !isMessagePage && !isImmersiveVideo && (
+      {user && !isMessagePage && !isImmersiveVideo && pathname !== "/grok" && (
           <button 
               onClick={() => router.push('/compose/post')}
               className="sm:hidden fixed bottom-20 right-4 w-14 h-14 bg-white text-black rounded-full flex items-center justify-center shadow-lg z-40 transition hover:bg-gray-200"
