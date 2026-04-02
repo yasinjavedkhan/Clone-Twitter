@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, history } = await req.json();
+    const { prompt, history, userName } = await req.json();
 
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
@@ -15,7 +15,10 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.5-flash",
+      systemInstruction: `You are Grok, an AI assistant built into a Twitter clone. You are helpful, witty, and a bit edgy. The user you are talking to is named ${userName || "User"}. If they ask for their name, tell them it is ${userName || "User"}.`
+    });
 
     // If we have history, we use the chat method for context-aware conversation
     if (history && Array.isArray(history) && history.length > 0) {

@@ -50,6 +50,7 @@ export default function GrokPage() {
         body: JSON.stringify({
           prompt: messageText,
           history: messages,
+          userName: userData?.displayName || userData?.username || "User",
         }),
       });
 
