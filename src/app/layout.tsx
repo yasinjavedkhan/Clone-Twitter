@@ -13,6 +13,25 @@ export const dynamic = 'force-dynamic';
 const outfit = Outfit({ subsets: ["latin"] });
 
 import IncomingCallOverlay from "@/components/messages/IncomingCallOverlay";
+import { CallProvider, useCall } from "@/contexts/CallContext";
+import AgoraCall from "@/components/messages/AgoraCall";
+
+function GlobalCallOverlay() {
+  const { isCalling, roomName, callType, activeOtherUser, endCall } = useCall();
+
+  if (!isCalling || !roomName) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9999] bg-black">
+      <AgoraCall 
+        roomName={roomName}
+        callType={callType}
+        otherUser={activeOtherUser}
+        onEndCall={endCall}
+      />
+    </div>
+  );
+}
 
 export const metadata: Metadata = {
   title: "Twitter Clone",
@@ -44,10 +63,13 @@ export default function RootLayout({
       </head>
       <body className={`${outfit.className} bg-black text-white min-h-screen`}>
         <AuthProvider>
-          <MainLayout>
-            {children}
-          </MainLayout>
-          <IncomingCallOverlay />
+          <CallProvider>
+            <MainLayout>
+              {children}
+            </MainLayout>
+            <IncomingCallOverlay />
+            <GlobalCallOverlay />
+          </CallProvider>
         </AuthProvider>
       </body>
     </html>

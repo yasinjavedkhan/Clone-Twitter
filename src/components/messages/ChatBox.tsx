@@ -12,6 +12,7 @@ import AgoraCall from "./AgoraCall";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
+import { useCall } from "@/contexts/CallContext";
 
 export default function ChatBox({ conversationId }: { conversationId: string }) {
     const searchParams = useSearchParams();
@@ -20,31 +21,23 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const [newMessage, setNewMessage] = useState("");
     const [otherUser, setOtherUser] = useState<any>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
-    const [callType, setCallType] = useState<'voice' | 'video'>('voice');
-    const [isCalling, setIsCalling] = useState(false);
-    const [roomName, setRoomName] = useState("");
+    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+    const { startCall } = useCall();
+    
+    // Core states restored after accidental deletion
     const [mediaFiles, setMediaFiles] = useState<{ file: File; type: 'image' | 'video'; preview: string }[]>([]);
     const [isSending, setIsSending] = useState(false);
     const [otherUserIsTyping, setOtherUserIsTyping] = useState(false);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // Voice Message states
-    const [isRecording, setIsRecording] = useState(false);
-    const [recordingDuration, setRecordingDuration] = useState(0);
-    const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-    const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
     const [deleteMenuMessageId, setDeleteMenuMessageId] = useState<string | null>(null);
-    const manuallyInitiated = useRef(false);
+    const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
     const [hasMounted, setHasMounted] = useState(false);
     const [showOfflineOverlay, setShowOfflineOverlay] = useState(false);
     const [loadingMessages, setLoadingMessages] = useState(true);
     const [viewportHeight, setViewportHeight] = useState('100dvh');
     const [viewportTop, setViewportTop] = useState(0);
     const [toast, setToast] = useState<string | null>(null);
-    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
 
 
     useEffect(() => {
@@ -78,19 +71,9 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
 
     useEffect(() => {
-        // Check for call in query params
-        const callTrigger = searchParams.get('call');
-        if (callTrigger === 'true') {
-            const type = searchParams.get('type') as any;
-            const rName = searchParams.get('room');
-            if (type) setCallType(type);
-            if (rName && rName !== roomName) {
-                console.log("Call pickup from URL:", rName);
-                setRoomName(rName);
-                setIsCalling(true);
-            }
-        }
-    }, [searchParams, conversationId, roomName]);
+        // Global Calling: ChatBox no longer handles call triggers from URL
+        // RootLayout/IncomingCallOverlay now manages this
+    }, [searchParams, conversationId]);
 
     useEffect(() => {
         if (!conversationId || !user?.uid) return;
@@ -274,44 +257,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         return () => clearInterval(timer);
     }, [hasMounted]);
 
-    useEffect(() => {
-        if (!isCalling || !roomName) return;
-
-        // Auto-cancel call after 60 seconds if not answered (only for the caller)
-        const timeout = setTimeout(async () => {
-            if (manuallyInitiated.current) {
-                console.log("Call timed out after 60s");
-                setIsCalling(false);
-                manuallyInitiated.current = false;
-                await deleteDoc(doc(db, "calls", roomName)).catch(() => {});
-            }
-        }, 60000);
-
-        console.log("Listening to call status for room:", roomName);
-        let initialLoad = true;
-        
-        const unsub = onSnapshot(doc(db, "calls", roomName), (docSnap) => {
-            if (!docSnap.exists()) {
-                 // For the initiator, ignore the very first snapshot because it might be a sync delay
-                 if (initialLoad && manuallyInitiated.current) {
-                     initialLoad = false;
-                     return;
-                 }
-                 console.log("Call document deleted (ended by other party)");
-                 setIsCalling(false);
-                 manuallyInitiated.current = false;
-                 clearTimeout(timeout);
-            }
-            initialLoad = false;
-        }, (error) => {
-            console.error("Call status listener error:", error);
-        });
-
-        return () => {
-            unsub();
-            clearTimeout(timeout);
-        };
-    }, [isCalling, roomName]);
+    // Local call listener removed - managed by Global CallContext
 
     const recordCallEvent = async (type: 'voice' | 'video') => {
         if (!user || !conversationId) return;
@@ -368,111 +314,6 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
     const removeMedia = (index: number) => {
         setMediaFiles(prev => prev.filter((_, i) => i !== index));
-    };
-
-    const sendVoiceMessage = async (file: File) => {
-        if (!user) return;
-        setIsSending(true);
-        try {
-            const convDoc = await getDoc(doc(db, "conversations", conversationId));
-            const participants = convDoc.data()?.participants || [];
-            const otherId = participants.find((p: string) => p !== user.uid);
-            
-            const audioUrl = await uploadToCloudinary(file);
-            
-            await addDoc(collection(db, "conversations", conversationId, "messages"), {
-                senderId: user.uid,
-                audioUrl,
-                type: 'voice',
-                read: otherId ? false : true,
-                createdAt: serverTimestamp(),
-            });
-
-            const senderName = userData?.displayName || userData?.username || 'Someone';
-
-            // Update conversation last message for everyone
-            await updateDoc(doc(db, "conversations", conversationId), {
-                lastMessage: "🎤 Sent a voice message",
-                lastTimestamp: serverTimestamp(),
-                ...(otherId ? { [`unreadCount.${otherId}`]: increment(1) } : {})
-            });
-
-            // Signal via push only if not self
-            if (otherId && otherId !== user.uid) {
-                await sendPushNotification({
-                    toUserId: otherId,
-                    title: `💬 ${senderName}`,
-                    body: "🎤 Sent you a voice message",
-                    data: {
-                        type: 'message',
-                        conversationId,
-                        fromUserId: user.uid,
-                        url: `/messages/${conversationId}`,
-                    },
-                });
-            }
-        } catch (err) {
-            console.error("Error sending voice message:", err);
-            alert("Failed to send voice message. Please try again.");
-        } finally {
-            setIsSending(false);
-            // Clear typing status immediately after sending
-            if (user?.uid && conversationId) {
-                updateDoc(doc(db, "conversations", conversationId), {
-                    [`typing.${user.uid}`]: false
-                }).catch(() => {});
-            }
-        }
-    };
-
-    const startRecording = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const recorder = new MediaRecorder(stream);
-            const chunks: Blob[] = [];
-
-            recorder.ondataavailable = (e) => {
-                if (e.data.size > 0) chunks.push(e.data);
-            };
-
-            recorder.onstop = async () => {
-                const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-                const audioFile = new File([audioBlob], `voice-message-${Date.now()}.webm`, { type: 'audio/webm' });
-                await sendVoiceMessage(audioFile);
-                stream.getTracks().forEach(track => track.stop());
-            };
-
-            setAudioChunks(chunks);
-            setMediaRecorder(recorder);
-            recorder.start();
-            setIsRecording(true);
-            setRecordingDuration(0);
-
-            timerRef.current = setInterval(() => {
-                setRecordingDuration(prev => prev + 1);
-            }, 1000);
-        } catch (error) {
-            console.error("Error starting recording:", error);
-            alert("Microphone access is required for voice messages.");
-        }
-    };
-
-    const stopRecording = () => {
-        if (mediaRecorder && isRecording) {
-            mediaRecorder.stop();
-            setIsRecording(false);
-            if (timerRef.current) clearInterval(timerRef.current);
-        }
-    };
-
-    const cancelRecording = () => {
-        if (mediaRecorder && isRecording) {
-            mediaRecorder.onstop = null;
-            mediaRecorder.stop();
-            setIsRecording(false);
-            if (timerRef.current) clearInterval(timerRef.current);
-            mediaRecorder.stream.getTracks().forEach(track => track.stop());
-        }
     };
 
     const formatDuration = (seconds: number) => {
@@ -630,23 +471,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 maxHeight: viewportHeight
             }}
         >
-            {isCalling && roomName && (
-                <div className="absolute inset-0 z-[100] bg-black">
-                    <AgoraCall 
-                        roomName={roomName}
-                        callType={callType}
-                        otherUser={otherUser}
-                        onEndCall={async () => {
-                            setIsCalling(false);
-                            manuallyInitiated.current = false;
-                            if (roomName) {
-                                await deleteDoc(doc(db, "calls", roomName)).catch(() => {});
-                                setRoomName("");
-                            }
-                        }}
-                    />
-                </div>
-            )}
+            {/* Local AgoraCall rendering removed - now handled by RootLayout/CallContext */}
             {/* Header - Pure Flex Item (stays at top naturally) */}
             <header className="flex-none w-full min-h-[64px] border-b border-gray-800 flex items-center px-4 gap-3 sm:gap-4 bg-black/95 backdrop-blur-md z-[20] pt-[env(safe-area-inset-top)]">
                 <Link 
@@ -686,31 +511,15 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                     {otherUser && otherUser.userId !== user?.uid && (
                         <>
+                        <>
                             <button 
-                                onClick={async () => {
+                                onClick={() => {
                                     if (!isUserActive(otherUser.lastSeen)) {
                                         setShowOfflineOverlay(true);
                                         return;
                                     }
-                                    const generatedRoom = `DirectCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
-                                    await recordCallEvent('voice');
-                                    if (user && otherUser?.userId) {
-                                        setRoomName(generatedRoom);
-                                        setCallType('voice');
-                                        setIsCalling(true);
-                                        manuallyInitiated.current = true;
-                                        await setDoc(doc(db, "calls", generatedRoom), {
-                                            toUserId: otherUser.userId,
-                                            fromUserId: user.uid,
-                                            fromUserName: user.displayName || userData?.username || "Someone",
-                                            fromUserAvatar: (user as any).profileImage || '',
-                                            callType: 'voice',
-                                            roomName: generatedRoom,
-                                            conversationId,
-                                            status: 'ringing',
-                                            createdAt: serverTimestamp()
-                                        }).catch(console.error);
-                                    }
+                                    recordCallEvent('voice');
+                                    startCall(otherUser, 'voice', conversationId);
                                 }}
                                 className="p-2 hover:bg-white/10 rounded-full text-white transition-colors"
                                 title="Voice Call"
@@ -718,36 +527,20 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                 <Phone className="w-5 h-5" />
                             </button>
                             <button 
-                                onClick={async () => {
+                                onClick={() => {
                                     if (!isUserActive(otherUser.lastSeen)) {
                                         setShowOfflineOverlay(true);
                                         return;
                                     }
-                                    const generatedRoom = `DirectCall_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`;
-                                    await recordCallEvent('video');
-                                    if (user && otherUser?.userId) {
-                                        setRoomName(generatedRoom);
-                                        setCallType('video');
-                                        setIsCalling(true);
-                                        manuallyInitiated.current = true;
-                                        await setDoc(doc(db, "calls", generatedRoom), {
-                                            toUserId: otherUser.userId,
-                                            fromUserId: user.uid,
-                                            fromUserName: user.displayName || userData?.username || "Someone",
-                                            fromUserAvatar: (user as any).profileImage || '',
-                                            callType: 'video',
-                                            roomName: generatedRoom,
-                                            conversationId,
-                                            status: 'ringing',
-                                            createdAt: serverTimestamp()
-                                        }).catch(console.error);
-                                    }
+                                    recordCallEvent('video');
+                                    startCall(otherUser, 'video', conversationId);
                                 }}
                                 className="p-2 hover:bg-white/10 rounded-full text-white transition-colors"
                                 title="Video Call"
                             >
                                 <Video className="w-5 h-5" />
                             </button>
+                        </>
                         </>
                     )}
                     <button className="p-2 hover:bg-white/10 rounded-full text-white transition-colors hidden sm:block">
@@ -917,26 +710,11 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 )}
 
                 <form onSubmit={handleSendMessage} className="p-3 flex items-center gap-2">
-                    {isRecording ? (
-                        <div className="flex-grow flex items-center bg-[#202327] rounded-2xl py-2 px-4 gap-4 animate-in fade-in duration-300">
-                            <div className="flex items-center gap-2 flex-grow">
-                                <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
-                                <span className="font-mono text-white text-[15px]">{formatDuration(recordingDuration)}</span>
-                                <div className="flex gap-0.5 h-4 items-center flex-grow justify-center opacity-50">
-                                    {[1, 2, 3, 4, 5, 6, 7].map(i => (
-                                        <div key={i} className="w-1 bg-white rounded-full animate-bounce" style={{ height: `${20 + Math.random() * 80}%`, animationDelay: `${i * 0.1}s` }} />
-                                    ))}
-                                </div>
-                            </div>
-                            <button type="button" onClick={cancelRecording} className="text-gray-500 hover:text-white font-bold text-sm transition text-nowrap">Cancel</button>
-                            <button type="button" onClick={stopRecording} className="bg-twitter-blue hover:brightness-110 text-black p-1.5 rounded-full"><Send className="w-4 h-4 fill-current" /></button>
-                        </div>
-                    ) : (
-                        <>
-                            <input id="chat-file-input" type="file" accept="image/*,video/*" multiple className="hidden" ref={fileInputRef} onChange={handleMediaSelect} />
-                            <label htmlFor="chat-file-input" className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition cursor-pointer shrink-0"><Image className="w-5 h-5" /></label>
-                            <button type="button" onClick={startRecording} className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition shrink-0"><Mic className="w-5 h-5" /></button>
-                            <input
+                    <>
+                        <input id="chat-file-input" type="file" accept="image/*,video/*" multiple className="hidden" ref={fileInputRef} onChange={handleMediaSelect} />
+                        <label htmlFor="chat-file-input" className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition cursor-pointer shrink-0"><Image className="w-5 h-5" /></label>
+                        {/* Microphone (Voice Message) button REMOVED as per request */}
+                        <input
                                 type="text"
                                 value={newMessage}
                                 onChange={(e) => {
@@ -964,7 +742,6 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                 )}
                             </button>
                         </>
-                    )}
                 </form>
             </div>
 

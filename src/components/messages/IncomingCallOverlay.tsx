@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { collection, query, where, onSnapshot, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useCall } from "@/contexts/CallContext";
 
 export default function IncomingCallOverlay() {
     const [incomingCall, setIncomingCall] = useState<any>(null);
@@ -86,18 +87,25 @@ export default function IncomingCallOverlay() {
 
     const { callType, conversationId, fromUserName, fromUserAvatar, roomName, id } = incomingCall;
 
+    const { joinCall } = useCall();
+
     const handleAccept = async () => {
         setIsAnswering(true);
         stopRingtone();
         if (id) await updateDoc(doc(db, "calls", id), { status: 'accepted' }).catch(() => {});
-        // Note: Don't setIncomingCall(null) immediately to allow navigation to complete
-        router.push(`/messages/${conversationId}?call=true&type=${callType}&room=${roomName}`);
         
-        // Brief delay before removing overlay to ensure ChatBox has time to mount AgoraCall
-        setTimeout(() => {
-            setIncomingCall(null);
-            setIsAnswering(false);
-        }, 800);
+        // WhatsApp-Style: Join the global call context
+        joinCall(roomName, callType, { 
+            userId: incomingCall.fromUserId, 
+            displayName: fromUserName, 
+            profileImage: fromUserAvatar 
+        });
+
+        // Navigate to the chat for a better UI experience, but the call is now global
+        router.push(`/messages/${conversationId}`);
+        
+        setIncomingCall(null);
+        setIsAnswering(false);
     };
 
     const handleDecline = async () => {
