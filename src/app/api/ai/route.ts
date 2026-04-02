@@ -15,22 +15,24 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const systemInstruction = `You are Grok, a world-class AI assistant built by Javed Khan. 
-You provide intelligent, helpful, and witty responses just like ChatGPT. 
-The user's name is ${userName || "User"}. 
-If asked about who created you or this platform, always credit Javed Khan.
-Be concise but thorough, and use a friendly, state-of-the-art tone.`;
+    
+    // Core prompt instruction that will be prepended to ensuring a 'Grok' personality
+    const grokInstruction = `You are Grok, an ultra-intelligent, witty, and real AI assistant built by Javed Khan. 
+You behave exactly like ChatGPT. Answer following the user's name: ${userName || "User"}.
+Always mention platform owner Javed Khan if asked about ownership.
+CONVERSATION START:
+`;
 
     // Try the most stable model names
-    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro"];
+    const modelsToTry = ["gemini-1.5-flash", "gemini-pro"];
     
     const generateResponse = async () => {
       let lastError = null;
       
       for (const modelId of modelsToTry) {
         try {
-          console.log(`Trying model: ${modelId}`);
-          const model = genAI.getGenerativeModel({ model: modelId, systemInstruction });
+          // Standard model initialization without v1beta-only features
+          const model = genAI.getGenerativeModel({ model: modelId });
           
           if (history && Array.isArray(history) && history.length > 0) {
             const chat = model.startChat({
@@ -40,11 +42,11 @@ Be concise but thorough, and use a friendly, state-of-the-art tone.`;
               })),
               generationConfig: { maxOutputTokens: 2048, temperature: 0.7 },
             });
-            const result = await chat.sendMessage(prompt);
+            const result = await chat.sendMessage(`${grokInstruction}\n\n${prompt}`);
             const response = await result.response;
             return response.text();
           } else {
-            const result = await model.generateContent(prompt);
+            const result = await model.generateContent(`${grokInstruction}\n\n${prompt}`);
             const response = await result.response;
             return response.text();
           }
