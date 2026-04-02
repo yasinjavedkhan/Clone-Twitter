@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, history, userName } = await req.json();
+    const { prompt, history, userName, image } = await req.json();
 
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
@@ -16,16 +16,30 @@ export async function POST(req: NextRequest) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
-      systemInstruction: `You are Grok, an AI assistant built into a Twitter clone created and owned by Javed Khan. You are helpful, witty, and a bit edgy. The user you are talking to is named ${userName || "User"}. If they ask for their name, tell them it is ${userName || "User"}. If they ask who created or owns this platform, tell them it is Javed Khan.`
+      model: "gemini-1.5-flash",
+      systemInstruction: `You are Grok, an AI assistant built into a Twitter clone created and owned by Javed Khan. You are helpful, witty, and a bit edgy. The user you are talking to is named ${userName || "User"}. If they ask for their name, tell them it is ${userName || "User"}. If they ask who created or owns this platform, tell them it is Javed Khan. If you see an image, describe it or answer questions about it based on the user's prompt.`
     });
 
-    // If we have history, we use the chat method for context-aware conversation
+    // If there's an image, we use vision mode (multimodal)
+    if (image) {
+      // image is expected as base64 string including data:image/... prefix
+      const imageData = image.split(',')[1];
+      const mimeType = image.split(';')[0].split(':')[1];
+
+      const result = await model.generateContent([
+        { text: prompt || "What is in this image?" },
+        { inlineData: { data: imageData, mimeType } }
+      ]);
+      const response = await result.response;
+      return NextResponse.json({ text: response.text() });
+    }
+
+    // Standard text-only chat with history
     if (history && Array.isArray(history) && history.length > 0) {
       const chat = model.startChat({
         history: history.map((msg: any) => ({
           role: msg.role === "user" ? "user" : "model",
-          parts: [{ text: msg.content || msg.text }],
+          parts: [{ text: msg.content || msg.text || "" }],
         })),
         generationConfig: {
           maxOutputTokens: 1000,
@@ -34,16 +48,12 @@ export async function POST(req: NextRequest) {
 
       const result = await chat.sendMessage(prompt);
       const response = await result.response;
-      const text = response.text();
-
-      return NextResponse.json({ text });
+      return NextResponse.json({ text: response.text() });
     } else {
-      // Single prompt mode
+      // Single prompt mode (no history, no image)
       const result = await model.generateContent(prompt);
       const response = await result.response;
-      const text = response.text();
-
-      return NextResponse.json({ text });
+      return NextResponse.json({ text: response.text() });
     }
   } catch (error: any) {
     console.error("Gemini AI Error:", error);

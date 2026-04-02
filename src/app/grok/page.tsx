@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Send, Trash2 } from "lucide-react";
+import { Sparkles, Send, Trash2, Image, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Avatar from "@/components/ui/Avatar";
 
 interface Message {
   role: "user" | "model";
   content: string;
+  image?: string;
 }
 
 const SUGGESTED_PROMPTS = [
@@ -22,7 +23,9 @@ export default function GrokPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -30,17 +33,35 @@ export default function GrokPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isLoading]);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSend = async (text: string = input) => {
     if ((typeof text === 'string' && !text.trim()) || isLoading) return;
     
     const messageText = typeof text === 'string' ? text : input;
-    if (!messageText.trim()) return;
+    if (!messageText.trim() && !selectedImage) return;
 
-    const newMessage: Message = { role: "user", content: messageText };
+    const newMessage: Message = { 
+        role: "user", 
+        content: messageText,
+        image: selectedImage || undefined
+    };
+    
+    const currentImage = selectedImage;
     setMessages((prev) => [...prev, newMessage]);
     setInput("");
+    setSelectedImage(null);
     setIsLoading(true);
 
     try {
@@ -51,6 +72,7 @@ export default function GrokPage() {
           prompt: messageText,
           history: messages,
           userName: userData?.displayName || userData?.username || "User",
+          image: currentImage
         }),
       });
 
@@ -154,6 +176,11 @@ export default function GrokPage() {
                     : "bg-[#16181c] text-gray-100 rounded-tl-none border border-gray-800"
                 }`}
               >
+                {msg.image && (
+                  <div className="mb-3 rounded-2xl overflow-hidden border border-white/10 shadow-xl max-w-sm">
+                    <img src={msg.image} className="w-full h-auto object-cover" alt="Uploaded" />
+                  </div>
+                )}
                 <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
               </div>
             </div>
@@ -175,31 +202,69 @@ export default function GrokPage() {
 
       {/* Input Area */}
       <div className="p-4 border-t border-gray-800 bg-black shrink-0">
-        <div className="max-w-4xl mx-auto relative group">
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            placeholder="Ask Grok..."
-            className="w-full bg-[#202327] rounded-3xl py-4 pl-6 pr-14 resize-none outline-none focus:ring-2 focus:ring-twitter-blue/30 border border-transparent focus:border-twitter-blue/50 transition min-h-[56px] max-h-32 text-[15px] shadow-inner"
-            rows={1}
-          />
-          <button
-            onClick={() => handleSend()}
-            disabled={!input.trim() || isLoading}
-            className={`absolute right-2 bottom-2 p-2.5 rounded-full transition-all duration-300 ${
-              input.trim() && !isLoading 
-                ? "bg-white text-black scale-100 shadow-lg hover:bg-gray-200" 
-                : "bg-gray-800 text-gray-500 scale-90 opacity-50 cursor-not-allowed"
-            }`}
-          >
-            <Send className="w-5 h-5 fill-current" />
-          </button>
+        <div className="max-w-4xl mx-auto space-y-3">
+          
+          {/* Image Preview */}
+          {selectedImage && (
+              <div className="flex animate-in slide-in-from-bottom-2 duration-300">
+                  <div className="relative group/preview">
+                      <img 
+                        src={selectedImage} 
+                        className="w-24 h-24 object-cover rounded-2xl border border-gray-800" 
+                        alt="Preview" 
+                      />
+                      <button 
+                        onClick={() => setSelectedImage(null)}
+                        className="absolute -top-2 -right-2 bg-black border border-gray-800 p-1 rounded-full text-white hover:bg-zinc-800 shadow-xl"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                  </div>
+              </div>
+          )}
+
+          <div className="relative group">
+            <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleImageSelect} 
+                accept="image/*" 
+                className="hidden" 
+            />
+            
+            <button
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute left-3 bottom-3 p-2 text-gray-500 hover:text-twitter-blue hover:bg-twitter-blue/10 rounded-full transition-all z-10"
+            >
+                <Image className="w-5 h-5" />
+            </button>
+
+            <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                }
+                }}
+                placeholder="Ask Grok..."
+                className="w-full bg-[#202327] rounded-3xl py-4 pl-12 pr-14 resize-none outline-none focus:ring-2 focus:ring-twitter-blue/30 border border-transparent focus:border-twitter-blue/50 transition min-h-[56px] max-h-32 text-[15px] shadow-inner"
+                rows={1}
+            />
+            
+            <button
+                onClick={() => handleSend()}
+                disabled={(!input.trim() && !selectedImage) || isLoading}
+                className={`absolute right-2 bottom-2 p-2.5 rounded-full transition-all duration-300 ${
+                (input.trim() || selectedImage) && !isLoading 
+                    ? "bg-white text-black scale-100 shadow-lg hover:bg-gray-200" 
+                    : "bg-gray-800 text-gray-500 scale-90 opacity-50 cursor-not-allowed"
+                }`}
+            >
+                <Send className="w-5 h-5 fill-current" />
+            </button>
+          </div>
         </div>
         <p className="text-[10px] text-gray-600 text-center mt-3 tracking-wide">
           Grok is an AI and sometimes provides incorrect information.
