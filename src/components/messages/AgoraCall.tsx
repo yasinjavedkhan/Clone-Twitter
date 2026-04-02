@@ -40,12 +40,12 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
                 agoraClient.on("user-published", async (user, mediaType) => {
                     console.log("Agora: Remote user published:", user.uid, mediaType);
                     await agoraClient.subscribe(user, mediaType);
-                    if (mediaType === "video") {
-                        setRemoteUsers((prev) => {
-                            if (prev.find(u => u.uid === user.uid)) return prev;
-                            return [...prev, user];
-                        });
-                    }
+                    
+                    setRemoteUsers((prev) => {
+                        if (prev.find(u => u.uid === user.uid)) return prev;
+                        return [...prev, user];
+                    });
+
                     if (mediaType === "audio") {
                         user.audioTrack?.play();
                     }
@@ -225,38 +225,36 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
             )}
 
             {/* Premium Controls */}
-            <div className="absolute bottom-12 left-0 right-0 flex justify-center items-center gap-6 z-40">
+            <div className="absolute bottom-16 left-0 right-0 flex justify-center items-end gap-10 z-40 pb-[env(safe-area-inset-bottom)]">
                 <button 
                     onClick={toggleMute}
-                    className={`group flex flex-col items-center gap-2`}
+                    className="group flex flex-col items-center gap-3 transition-transform active:scale-95"
                 >
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${isMuted ? 'bg-red-500' : 'bg-white/10 hover:bg-white/20'}`}>
-                        {isMuted ? <MicOff className="w-6 h-6 text-white" /> : <Mic className="w-6 h-6 text-white" />}
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${isMuted ? 'bg-red-500 shadow-red-900/20' : 'bg-white/10 hover:bg-white/20 shadow-black/40'}`}>
+                        {isMuted ? <MicOff className="w-7 h-7 text-white" /> : <Mic className="w-7 h-7 text-white" />}
                     </div>
-                    <span className="text-[10px] text-gray-400 font-bold uppercase">{isMuted ? "Unmute" : "Mute"}</span>
+                    <span className="text-[11px] text-gray-500 font-bold uppercase tracking-widest">{isMuted ? "Unmute" : "Mute"}</span>
                 </button>
 
                 <button 
                     onClick={onEndCall}
-                    className="group flex flex-col items-center gap-2"
+                    className="group flex flex-col items-center gap-3 transition-transform active:scale-90"
                 >
-                    <div className="w-20 h-20 bg-red-600 rounded-full hover:bg-red-700 transition-all duration-300 flex items-center justify-center shadow-2xl shadow-red-900/40 transform hover:scale-105 active:scale-95">
-                        <PhoneOff className="w-9 h-9 text-white" />
+                    <div className="w-20 h-20 bg-red-600 rounded-full hover:bg-red-700 transition-all duration-300 flex items-center justify-center shadow-2xl shadow-red-900/40 transform hover:scale-110">
+                        <PhoneOff className="w-10 h-10 text-white" />
                     </div>
-                    <span className="text-[10px] text-red-500 font-bold uppercase">End Call</span>
+                    <span className="text-[11px] text-red-500 font-bold uppercase tracking-widest">End Call</span>
                 </button>
 
-                {callType === 'video' && (
-                    <button 
-                        onClick={toggleVideo}
-                        className="group flex flex-col items-center gap-2"
-                    >
-                        <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${isVideoOff ? 'bg-red-500' : 'bg-white/10 hover:bg-white/20'}`}>
-                            {isVideoOff ? <VideoOff className="w-6 h-6 text-white" /> : <Video className="w-6 h-6 text-white" />}
-                        </div>
-                        <span className="text-[10px] text-gray-400 font-bold uppercase">{isVideoOff ? "Video On" : "Video Off"}</span>
-                    </button>
-                )}
+                <button 
+                    onClick={callType === 'video' ? toggleVideo : onEndCall} // Secondary end call if voice, video toggle if video
+                    className={`group flex flex-col items-center gap-3 transition-transform active:scale-95 ${callType === 'voice' ? 'opacity-0 pointer-events-none' : ''}`}
+                >
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${isVideoOff ? 'bg-red-500 shadow-red-900/20' : 'bg-white/10 hover:bg-white/20 shadow-black/40'}`}>
+                        {isVideoOff ? <VideoOff className="w-7 h-7 text-white" /> : <Video className="w-7 h-7 text-white" />}
+                    </div>
+                    <span className="text-[11px] text-gray-500 font-bold uppercase tracking-widest">{isVideoOff ? "Video On" : "Video Off"}</span>
+                </button>
             </div>
         </div>
     );
