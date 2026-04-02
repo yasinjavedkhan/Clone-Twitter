@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Model fallback chain: try each model in order if quota exceeded
-const MODELS = ["gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-1.0-pro"];
+// Model fallback chain: try each model in order if quota/404 error
+const MODELS = ["gemini-pro", "gemini-1.5-flash", "gemini-1.5-flash-latest"];
 
 export async function POST(req: NextRequest) {
   try {
@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ text });
       } catch (err: any) {
         lastError = err;
-        // Only fall through to next model on quota/rate limit errors
-        if (err?.message?.includes("429") || err?.message?.includes("quota")) {
+        // Only fall through to next model on quota/rate limit or not-found errors
+        if (err?.message?.includes("429") || err?.message?.includes("quota") || err?.message?.includes("404") || err?.message?.includes("not found")) {
           console.warn(`Model ${modelName} quota exceeded, trying next model...`);
           continue;
         }
