@@ -12,10 +12,7 @@ export const dynamic = 'force-dynamic';
 
 const outfit = Outfit({ subsets: ["latin"] });
 
-import nextDynamic from "next/dynamic";
-
-const IncomingCallOverlay = nextDynamic(() => import("@/components/messages/IncomingCallOverlay"), { ssr: false });
-const GlobalCallOverlay = nextDynamic(() => import("@/components/messages/GlobalCallOverlay"), { ssr: false });
+import CallOverlayWrapper from "@/components/messages/CallOverlayWrapper";
 import { CallProvider } from "@/contexts/CallContext";
 
 export const metadata: Metadata = {
@@ -52,8 +49,7 @@ export default function RootLayout({
             <MainLayout>
               {children}
             </MainLayout>
-            <IncomingCallOverlay />
-            <GlobalCallOverlay />
+            <CallOverlayWrapper />
           </CallProvider>
         </AuthProvider>
       </body>
