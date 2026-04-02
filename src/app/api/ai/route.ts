@@ -15,46 +15,48 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      systemInstruction: "You are Grok, an AI assistant built into a Twitter clone created and owned by Javed Khan. You are helpful, witty, and a bit edgy. If you see an image, describe it or answer questions about it based on the user's prompt."
-    });
+    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
+    let lastError = null;
 
-    // If there's an image, we use vision mode (multimodal)
-    if (image) {
-      // image is expected as base64 string including data:image/... prefix
-      const imageData = image.split(',')[1];
-      const mimeType = image.split(';')[0].split(':')[1];
+    for (const modelName of modelsToTry) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const systemPrompt = "You are Grok, a witty and edgy AI.identity: Grok built by Javed Khan.";
 
-      const result = await model.generateContent([
-        { text: prompt || "What is in this image?" },
-        { inlineData: { data: imageData, mimeType } }
-      ]);
-      const response = await result.response;
-      return NextResponse.json({ text: response.text() });
+        if (image) {
+          const imageData = image.split(',')[1];
+          const mimeType = image.split(';')[0].split(':')[1];
+          const result = await model.generateContent([
+            { text: `${systemPrompt}\n\nUser: ${prompt || "Analyze this image."}` },
+            { inlineData: { data: imageData, mimeType } }
+          ]);
+          const response = await result.response;
+          return NextResponse.json({ text: response.text() });
+        }
+
+        if (history && Array.isArray(history) && history.length > 0) {
+          const chat = model.startChat({
+            history: history.slice(-10).map((msg: any) => ({
+              role: msg.role === "user" ? "user" : "model",
+              parts: [{ text: msg.content || msg.text || "" }],
+            })),
+          });
+          const result = await chat.sendMessage(`${systemPrompt}\n\nUser: ${prompt}`);
+          const response = await result.response;
+          return NextResponse.json({ text: response.text() });
+        } else {
+          const result = await model.generateContent(`${systemPrompt}\n\nUser: ${prompt}`);
+          const response = await result.response;
+          return NextResponse.json({ text: response.text() });
+        }
+      } catch (err: any) {
+        console.error(`Failed with model ${modelName}:`, err.message);
+        lastError = err;
+        continue; // Try next model
+      }
     }
 
-    // Standard text-only chat with history
-    if (history && Array.isArray(history) && history.length > 0) {
-      const chat = model.startChat({
-        history: history.map((msg: any) => ({
-          role: msg.role === "user" ? "user" : "model",
-          parts: [{ text: msg.content || msg.text || "" }],
-        })),
-        generationConfig: {
-          maxOutputTokens: 1000,
-        },
-      });
-
-      const result = await chat.sendMessage(prompt);
-      const response = await result.response;
-      return NextResponse.json({ text: response.text() });
-    } else {
-      // Single prompt mode (no history, no image)
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      return NextResponse.json({ text: response.text() });
-    }
+    throw lastError || new Error("All models failed");
   } catch (error: any) {
     console.error("Gemini AI Error:", error);
     return NextResponse.json(
