@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     for (const modelName of modelsToTry) {
       try {
         const model = genAI.getGenerativeModel({ model: modelName });
-        const systemPrompt = "You are Grok, a witty and helpful AI assistant built into a Twitter clone by Javed Khan. Be helpful, concise, and a bit edgy in personality.";
+        const systemPrompt = `You are Grok, a witty and helpful AI assistant built into a Twitter clone by Javed Khan. The user you are talking to is named "${userName || "User"}". If they ask your name say Grok. If they ask their name, say "${userName || "User"}". Be helpful, concise, and a bit edgy in personality.`;
 
         if (image) {
           const imageData = image.split(',')[1];
