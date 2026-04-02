@@ -22,6 +22,7 @@ export default function GrokPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [typingMessageId, setTypingMessageId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -49,7 +50,8 @@ export default function GrokPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: messageText,
-          history: messages,
+          // Filter history: only send messages that are NOT error messages
+          history: messages.filter(m => !m.content.includes("Sorry, I ran into a problem") && !m.content.includes("⚠️ I'm getting a lot of requests")),
           userName: userData?.displayName || userData?.username || "User",
         }),
       });
@@ -60,7 +62,9 @@ export default function GrokPage() {
         throw new Error(data.error);
       }
 
-      setMessages((prev) => [...prev, { role: "model", content: data.text }]);
+      const newModelMessage: Message = { role: "model", content: data.text };
+      setMessages((prev) => [...prev, newModelMessage]);
+      setTypingMessageId(messages.length + 1); // Mark this message as currently "typing"
     } catch (error: any) {
       console.error("Grok Error:", error);
       const isQuota = error?.message?.includes("429") || error?.message?.includes("quota");
@@ -156,11 +160,18 @@ export default function GrokPage() {
               <div 
                 className={`max-w-[85%] p-4 rounded-3xl ${
                   msg.role === "user" 
-                    ? "bg-twitter-blue text-white rounded-tr-none shadow-[0_0_20px_rgba(29,155,240,0.15)]" 
-                    : "bg-[#16181c] text-gray-100 rounded-tl-none border border-gray-800"
+                    ? "bg-gradient-to-br from-twitter-blue to-blue-600 text-white rounded-tr-none shadow-[0_10px_30px_rgba(29,155,240,0.2)]" 
+                    : "bg-white/5 backdrop-blur-xl text-gray-100 rounded-tl-none border border-white/10 shadow-xl"
                 }`}
               >
-                <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                {msg.role === "model" && typingMessageId === idx ? (
+                  <TypingEffect 
+                    text={msg.content} 
+                    onComplete={() => setTypingMessageId(null)} 
+                  />
+                ) : (
+                  <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                )}
               </div>
             </div>
           ))
@@ -212,5 +223,34 @@ export default function GrokPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+function TypingEffect({ text, onComplete }: { text: string; onComplete: () => void }) {
+  const [displayedText, setDisplayedText] = useState("");
+  const words = text.split(" ");
+  const indexRef = useRef(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (indexRef.current < words.length) {
+        setDisplayedText((prev) => (prev ? prev + " " + words[indexRef.current] : words[indexRef.current]));
+        indexRef.current += 1;
+      } else {
+        clearInterval(timer);
+        onComplete();
+      }
+    }, 40); // 40ms per word is a good typing speed
+
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
+      {displayedText}
+      {indexRef.current < words.length && (
+        <span className="inline-block w-2 h-4 ml-1 bg-white animate-pulse align-middle" />
+      )}
+    </p>
   );
 }

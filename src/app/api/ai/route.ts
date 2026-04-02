@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Model fallback chain: try each model in order if quota/404 error
-const MODELS = ["gemini-3-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-exp", "gemini-1.5-flash"];
+// Model fallback chain: try each model in order if any error occurs
+const MODELS = [
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-8b",
+  "gemini-3-flash", 
+  "gemini-2.5-flash",
+  "gemini-2.0-flash", 
+  "gemini-2.0-flash-exp", 
+  "gemini-1.5-pro",
+  "gemini-pro"
+];
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,34 +38,29 @@ export async function POST(req: NextRequest) {
         console.log(`[AI Diagnosis] Attempting model: ${modelName}`);
         const model = genAI.getGenerativeModel({ model: modelName, systemInstruction });
 
-        let text: string;
-
-        if (history && Array.isArray(history) && history.length > 0) {
+        if (history && (history.length > 0)) {
           const chat = model.startChat({
             history: history.map((msg: any) => ({
               role: msg.role === "user" ? "user" : "model",
               parts: [{ text: msg.content || msg.text }],
             })),
-            generationConfig: { maxOutputTokens: 1000 },
+            generationConfig: { maxOutputTokens: 2000 },
           });
           const result = await chat.sendMessage(prompt);
-          text = result.response.text();
+          const text = result.response.text();
+          console.log(`[AI Success] Used ${modelName}`);
+          return NextResponse.json({ text });
         } else {
           const result = await model.generateContent(prompt);
-          text = result.response.text();
+          const text = result.response.text();
+          console.log(`[AI Success] Used ${modelName}`);
+          return NextResponse.json({ text });
         }
-
-        console.log(`[AI Success] Successfully used model: ${modelName}`);
-        return NextResponse.json({ text });
       } catch (err: any) {
+        console.warn(`[AI Fallback] Model ${modelName} failed: ${err.message}`);
         lastError = err;
-        // Only fall through to next model on quota/rate limit or not-found errors
-        if (err?.message?.includes("429") || err?.message?.includes("quota") || err?.message?.includes("404") || err?.message?.includes("not found")) {
-          console.warn(`Model ${modelName} quota exceeded, trying next model...`);
-          continue;
-        }
-        // For other errors, fail immediately
-        throw err;
+        // Try the next model for ANY error to be extremely resilient
+        continue;
       }
     }
 
