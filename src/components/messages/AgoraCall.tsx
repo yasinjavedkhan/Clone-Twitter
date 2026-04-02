@@ -12,6 +12,7 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(callType === 'voice');
     const [initError, setInitError] = useState<string | null>(null);
+    const [callDuration, setCallDuration] = useState(0);
     const localVideoRef = useRef<HTMLDivElement>(null);
     const joinInProgress = useRef(false);
 
@@ -110,6 +111,24 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
             }
         };
     }, [roomName, callType]);
+    // Call Duration Timer
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (remoteUsers.length > 0) {
+            timer = setInterval(() => {
+                setCallDuration(prev => prev + 1);
+            }, 1000);
+        }
+        return () => {
+            if (timer) clearInterval(timer);
+        };
+    }, [remoteUsers.length]);
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
 
     const toggleMute = () => {
         const audioTrack = localTracks.find(t => t.trackMediaType === 'audio') as IMicrophoneAudioTrack;
@@ -161,7 +180,7 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
                 ) : (
                     /* Real Call Visualizer */
                     <div className="flex flex-col items-center animate-in fade-in duration-500">
-                        <div className="relative mb-8">
+                        <div className="relative mb-6">
                             {/* Pulse Rings */}
                             <div className="absolute inset-0 bg-twitter-blue/20 rounded-full animate-ping" />
                             <div className="absolute inset-0 bg-twitter-blue/10 rounded-full animate-pulse scale-110" />
@@ -177,10 +196,22 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
                             </div>
                         </div>
                         
-                        <h2 className="text-3xl font-black text-white">{otherUser?.displayName || "Connecting..."}</h2>
-                        <p className="text-twitter-blue font-medium mt-3 tracking-[0.2em] uppercase text-xs animate-pulse">
-                            {remoteUsers.length > 0 ? "Voice Call Active" : "Ringing..."}
-                        </p>
+                        <h2 className="text-3xl font-black text-white drop-shadow-lg">{otherUser?.displayName || "Connecting..."}</h2>
+                        
+                        <div className="flex flex-col items-center mt-4">
+                            {remoteUsers.length > 0 ? (
+                                <>
+                                    <span className="text-green-500 font-mono text-2xl font-black tracking-widest animate-in fade-in duration-500">
+                                        {formatTime(callDuration)}
+                                    </span>
+                                    <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-bold mt-1">In Call</p>
+                                </>
+                            ) : (
+                                <p className="text-twitter-blue font-medium tracking-[0.2em] uppercase text-xs animate-pulse">
+                                    Ringing...
+                                </p>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
