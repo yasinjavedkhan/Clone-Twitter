@@ -382,18 +382,6 @@ export default function Home() {
             </div>
           </button>
 
-          {/* Gliding Curved Indicator */}
-          <div 
-            className={cn(
-              "absolute bottom-0 h-1 bg-[var(--color-twitter-blue)] rounded-full transition-all duration-300 ease-out",
-              activeTab === 'foryou' ? "left-0 w-1/2 translate-x-[25%] scale-x-[0.3]" : "left-1/2 w-1/2 translate-x-[25%] scale-x-[0.3]"
-            )}
-            style={{ 
-              width: '50%',
-              left: activeTab === 'foryou' ? '0%' : '50%',
-              // The logic here is to center the pill under the text
-            }}
-          />
           {/* Refined Sliding Logic for a wider look if desired, but sticking to centered pill as per mobile standards */}
           <div 
             className="absolute bottom-0 h-1 bg-[var(--color-twitter-blue)] rounded-full transition-all duration-300 ease-[cubic-bezier(0.18,0.89,0.32,1.28)] sm:block hidden"
