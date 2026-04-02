@@ -9,6 +9,7 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
     const [client, setClient] = useState<IAgoraRTCClient | null>(null);
     const [localTracks, setLocalTracks] = useState<(ICameraVideoTrack | IMicrophoneAudioTrack)[]>([]);
     const [remoteUsers, setRemoteUsers] = useState<any[]>([]);
+    const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(callType === 'voice');
     const [initError, setInitError] = useState<string | null>(null);
     const [callDuration, setCallDuration] = useState(0);
@@ -129,6 +130,14 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
+    const toggleMute = () => {
+        const audioTrack = localTracks.find(t => t.trackMediaType === 'audio') as IMicrophoneAudioTrack;
+        if (audioTrack) {
+            audioTrack.setEnabled(isMuted);
+            setIsMuted(!isMuted);
+        }
+    };
+
     const toggleVideo = () => {
         if (callType === 'voice') return;
         const videoTrack = localTracks.find(t => t.trackMediaType === 'video') as ICameraVideoTrack;
@@ -189,21 +198,18 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
                         
                         <h2 className="text-3xl font-black text-white drop-shadow-lg">{otherUser?.displayName || "Connecting..."}</h2>
                         
-                        <div className="flex flex-col items-center mt-6 h-32">
+                        <div className="flex flex-col items-center mt-4">
                             {remoteUsers.length > 0 ? (
-                                <div className="flex flex-col items-center animate-in fade-in duration-500">
-                                    <span className="text-green-500 font-mono text-3xl font-black tracking-widest drop-shadow-[0_0_10px_rgba(34,197,94,0.3)]">
+                                <>
+                                    <span className="text-green-500 font-mono text-2xl font-black tracking-widest animate-in fade-in duration-500">
                                         {formatTime(callDuration)}
                                     </span>
-                                    <p className="text-gray-500 text-[11px] uppercase tracking-[0.4em] font-black mt-2">In Call</p>
-                                </div>
+                                    <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-bold mt-1">In Call</p>
+                                </>
                             ) : (
-                                <div className="flex flex-col items-center gap-2">
-                                    <p className="text-twitter-blue font-bold tracking-[0.3em] uppercase text-sm animate-pulse">
-                                        Ringing...
-                                    </p>
-                                    <p className="text-gray-500 text-[10px] uppercase tracking-widest font-medium">Wait for connection</p>
-                                </div>
+                                <p className="text-twitter-blue font-medium tracking-[0.2em] uppercase text-xs animate-pulse">
+                                    Ringing...
+                                </p>
                             )}
                         </div>
                     </div>
@@ -218,32 +224,37 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
                 />
             )}
 
-            {/* Final WhatsApp-Style Primary Controls */}
-            <div className="absolute bottom-16 left-0 right-0 flex justify-center items-center gap-16 z-40 pb-[env(safe-area-inset-bottom)]">
-                
-                {/* Cancel / End Call (Always Red and Prominent) */}
+            {/* Premium Controls */}
+            <div className="absolute bottom-16 left-0 right-0 flex justify-center items-end gap-10 z-40 pb-[env(safe-area-inset-bottom)]">
+                <button 
+                    onClick={toggleMute}
+                    className="group flex flex-col items-center gap-3 transition-transform active:scale-95"
+                >
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${isMuted ? 'bg-red-500 shadow-red-900/20' : 'bg-white/10 hover:bg-white/20 shadow-black/40'}`}>
+                        {isMuted ? <MicOff className="w-7 h-7 text-white" /> : <Mic className="w-7 h-7 text-white" />}
+                    </div>
+                    <span className="text-[11px] text-gray-500 font-bold uppercase tracking-widest">{isMuted ? "Unmute" : "Mute"}</span>
+                </button>
+
                 <button 
                     onClick={onEndCall}
                     className="group flex flex-col items-center gap-3 transition-transform active:scale-90"
                 >
-                    <div className="w-20 h-20 bg-red-600 rounded-full hover:bg-red-700 transition-all duration-300 flex items-center justify-center shadow-2xl shadow-red-900/60 ring-4 ring-red-600/20 transform hover:scale-110 active:scale-95">
-                        <PhoneOff className="w-10 h-10 text-white fill-white" />
+                    <div className="w-20 h-20 bg-red-600 rounded-full hover:bg-red-700 transition-all duration-300 flex items-center justify-center shadow-2xl shadow-red-900/40 transform hover:scale-110">
+                        <PhoneOff className="w-10 h-10 text-white" />
                     </div>
-                    <span className="text-[12px] text-red-500 font-black uppercase tracking-[0.2em]">End Call</span>
+                    <span className="text-[11px] text-red-500 font-bold uppercase tracking-widest">End Call</span>
                 </button>
 
-                {/* Video Toggle (Only for Video Calls) */}
-                {callType === 'video' && (
-                    <button 
-                        onClick={toggleVideo}
-                        className="group flex flex-col items-center gap-3 transition-transform active:scale-95"
-                    >
-                        <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl ${isVideoOff ? 'bg-red-500/80' : 'bg-white/10 hover:bg-white/20'}`}>
-                            {isVideoOff ? <VideoOff className="w-7 h-7 text-white" /> : <Video className="w-7 h-7 text-white" />}
-                        </div>
-                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{isVideoOff ? "Video On" : "Video Off"}</span>
-                    </button>
-                )}
+                <button 
+                    onClick={callType === 'video' ? toggleVideo : onEndCall} // Secondary end call if voice, video toggle if video
+                    className={`group flex flex-col items-center gap-3 transition-transform active:scale-95 ${callType === 'voice' ? 'opacity-0 pointer-events-none' : ''}`}
+                >
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${isVideoOff ? 'bg-red-500 shadow-red-900/20' : 'bg-white/10 hover:bg-white/20 shadow-black/40'}`}>
+                        {isVideoOff ? <VideoOff className="w-7 h-7 text-white" /> : <Video className="w-7 h-7 text-white" />}
+                    </div>
+                    <span className="text-[11px] text-gray-500 font-bold uppercase tracking-widest">{isVideoOff ? "Video On" : "Video Off"}</span>
+                </button>
             </div>
         </div>
     );

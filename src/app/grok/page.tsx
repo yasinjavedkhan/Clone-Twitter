@@ -22,7 +22,6 @@ export default function GrokPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [typingMessageId, setTypingMessageId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -50,8 +49,7 @@ export default function GrokPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: messageText,
-          // Filter history: only send messages that are NOT error messages
-          history: messages.filter(m => !m.content.includes("Sorry, I ran into a problem") && !m.content.includes("⚠️ I'm getting a lot of requests")),
+          history: messages,
           userName: userData?.displayName || userData?.username || "User",
         }),
       });
@@ -59,22 +57,30 @@ export default function GrokPage() {
       const data = await response.json();
 
       if (data.error) {
+        // Handle specific quota/rate limit errors with a Grok-style message
+        if (data.error.toLowerCase().includes("quota") || data.error.toLowerCase().includes("429") || data.error.toLowerCase().includes("limit")) {
+          setMessages((prev) => [...prev, { 
+            role: "model", 
+            content: "Whoa there, space traveler! 🚀 I'm processing too many requests right now. Give me about 15-30 seconds to catch my breath and then ask me again!" 
+          }]);
+          setIsLoading(false);
+          return;
+        }
         throw new Error(data.error);
       }
 
-      const newModelMessage: Message = { role: "model", content: data.text };
-      setMessages((prev) => [...prev, newModelMessage]);
-      setTypingMessageId(messages.length + 1); // Mark this message as currently "typing"
+      setMessages((prev) => [...prev, { role: "model", content: data.text }]);
     } catch (error: any) {
       console.error("Grok Error:", error);
-      const isQuota = error?.message?.includes("429") || error?.message?.includes("quota");
+      const isQuotaError = error.message?.toLowerCase().includes("quota") || error.message?.toLowerCase().includes("429");
+      
       setMessages((prev) => [
         ...prev,
         { 
           role: "model", 
-          content: isQuota 
-            ? "⚠️ I'm getting a lot of requests right now. Please try again in a few seconds!" 
-            : "Sorry, I ran into a problem. Please try again." 
+          content: isQuotaError 
+            ? "I'm a bit overwhelmed with requests right now! 😅 Please wait a few seconds and try again." 
+            : `Error: ${error.message || "Something went wrong with the AI connection."}` 
         },
       ]);
     } finally {
@@ -160,18 +166,11 @@ export default function GrokPage() {
               <div 
                 className={`max-w-[85%] p-4 rounded-3xl ${
                   msg.role === "user" 
-                    ? "bg-gradient-to-br from-twitter-blue to-blue-600 text-white rounded-tr-none shadow-[0_10px_30px_rgba(29,155,240,0.2)]" 
-                    : "bg-white/5 backdrop-blur-xl text-gray-100 rounded-tl-none border border-white/10 shadow-xl"
+                    ? "bg-twitter-blue text-white rounded-tr-none shadow-[0_0_20px_rgba(29,155,240,0.15)]" 
+                    : "bg-[#16181c] text-gray-100 rounded-tl-none border border-gray-800"
                 }`}
               >
-                {msg.role === "model" && typingMessageId === idx ? (
-                  <TypingEffect 
-                    text={msg.content} 
-                    onComplete={() => setTypingMessageId(null)} 
-                  />
-                ) : (
-                  <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                )}
+                <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
               </div>
             </div>
           ))
@@ -223,34 +222,5 @@ export default function GrokPage() {
         </p>
       </div>
     </div>
-  );
-}
-
-function TypingEffect({ text, onComplete }: { text: string; onComplete: () => void }) {
-  const [displayedText, setDisplayedText] = useState("");
-  const words = text.split(" ");
-  const indexRef = useRef(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (indexRef.current < words.length) {
-        setDisplayedText((prev) => (prev ? prev + " " + words[indexRef.current] : words[indexRef.current]));
-        indexRef.current += 1;
-      } else {
-        clearInterval(timer);
-        onComplete();
-      }
-    }, 40); // 40ms per word is a good typing speed
-
-    return () => clearInterval(timer);
-  }, []);
-
-  return (
-    <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
-      {displayedText}
-      {indexRef.current < words.length && (
-        <span className="inline-block w-2 h-4 ml-1 bg-white animate-pulse align-middle" />
-      )}
-    </p>
   );
 }

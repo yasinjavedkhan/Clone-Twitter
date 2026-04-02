@@ -1,71 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Model fallback chain: try each model in order if any error occurs
-const MODELS = [
-  "gemini-1.5-flash",
-  "gemini-1.5-flash-8b",
-  "gemini-3-flash", 
-  "gemini-2.5-flash",
-  "gemini-2.0-flash", 
-  "gemini-2.0-flash-exp", 
-  "gemini-1.5-pro",
-  "gemini-pro"
-];
-
 export async function POST(req: NextRequest) {
   try {
     const { prompt, history, userName } = await req.json();
 
-    // Check both private and public key (private is preferred for server routes)
-    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json(
-        { error: "Gemini API Key is not configured." },
+        { error: "Gemini API Key is not configured. Please add NEXT_PUBLIC_GEMINI_API_KEY to your .env.local file." },
         { status: 500 }
       );
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const systemInstruction = `You are Grok, an AI assistant built into a Twitter clone created and owned by Javed Khan. You are helpful, witty, and a bit edgy. The user you are talking to is named ${userName || "User"}. If they ask for their name, tell them it is ${userName || "User"}. If they ask who created or owns this platform, tell them it is Javed Khan.`;
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      systemInstruction: `You are Grok, an AI assistant built into a Twitter clone created and owned by Javed Khan. You are helpful, witty, and a bit edgy. The user you are talking to is named ${userName || "User"}. If they ask for their name, tell them it is ${userName || "User"}. If they ask who created or owns this platform, tell them it is Javed Khan.`
+    });
 
-    let lastError: any = null;
+    // If we have history, we use the chat method for context-aware conversation
+    if (history && Array.isArray(history) && history.length > 0) {
+      const chat = model.startChat({
+        history: history.map((msg: any) => ({
+          role: msg.role === "user" ? "user" : "model",
+          parts: [{ text: msg.content || msg.text }],
+        })),
+        generationConfig: {
+          maxOutputTokens: 1000,
+        },
+      });
 
-    // Try each model in the fallback chain
-    for (const modelName of MODELS) {
-      try {
-        console.log(`[AI Diagnosis] Attempting model: ${modelName}`);
-        const model = genAI.getGenerativeModel({ model: modelName, systemInstruction });
+      const result = await chat.sendMessage(prompt);
+      const response = await result.response;
+      const text = response.text();
 
-        if (history && (history.length > 0)) {
-          const chat = model.startChat({
-            history: history.map((msg: any) => ({
-              role: msg.role === "user" ? "user" : "model",
-              parts: [{ text: msg.content || msg.text }],
-            })),
-            generationConfig: { maxOutputTokens: 2000 },
-          });
-          const result = await chat.sendMessage(prompt);
-          const text = result.response.text();
-          console.log(`[AI Success] Used ${modelName}`);
-          return NextResponse.json({ text });
-        } else {
-          const result = await model.generateContent(prompt);
-          const text = result.response.text();
-          console.log(`[AI Success] Used ${modelName}`);
-          return NextResponse.json({ text });
-        }
-      } catch (err: any) {
-        console.warn(`[AI Fallback] Model ${modelName} failed: ${err.message}`);
-        lastError = err;
-        // Try the next model for ANY error to be extremely resilient
-        continue;
-      }
+      return NextResponse.json({ text });
+    } else {
+      // Single prompt mode
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      return NextResponse.json({ text });
     }
-
-    // All models exhausted
-    throw lastError;
   } catch (error: any) {
     console.error("Gemini AI Error:", error);
     return NextResponse.json(
