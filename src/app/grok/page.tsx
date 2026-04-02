@@ -17,19 +17,6 @@ const SUGGESTED_PROMPTS = [
   "Summarize the latest trends on Twitter."
 ];
 
-export const metadata = {
-  title: "Grok / Twitter",
-  description: "Grok is an AI assistant built into the Twitter clone.",
-};
-
-export const viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  viewportFit: "cover",
-};
-
 export default function GrokPage() {
   const { user, userData } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
