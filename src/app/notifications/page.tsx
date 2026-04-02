@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Bell, Info, Shield, CheckCircle2, MoreHorizontal, User, FileText } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import NotificationDiagnostic from "@/components/settings/NotificationDiagnostic";
+import Avatar from "@/components/ui/Avatar";
 
 interface Notification {
     id: string;
@@ -18,7 +19,7 @@ interface Notification {
 }
 
 export default function Notifications() {
-    const { user } = useAuth();
+    const { user, userData } = useAuth();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -71,7 +72,19 @@ export default function Notifications() {
 
     return (
         <div className="flex flex-col min-h-screen border-r border-gray-800 text-white">
-            <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-gray-800 p-4">
+            <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-gray-800 p-4 flex items-center gap-4">
+                {user && (
+                    <button 
+                        onClick={() => window.dispatchEvent(new CustomEvent("toggleMobileDrawer"))}
+                        className="sm:hidden p-0.5 rounded-full active:bg-white/10 transition cursor-pointer shrink-0"
+                    >
+                        <Avatar
+                            src={userData?.profileImage}
+                            fallbackText={userData?.displayName || userData?.username}
+                            size="md"
+                        />
+                    </button>
+                )}
                 <h1 className="text-xl font-bold">Notifications</h1>
             </div>
 

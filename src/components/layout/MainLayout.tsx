@@ -4,9 +4,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import RightSidebar from "@/components/layout/RightSidebar";
 import MobileNav from "@/components/layout/MobileNav";
+import MobileDrawer from "@/components/layout/MobileDrawer";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus, BellOff, X } from "lucide-react";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { cn } from "@/lib/utils";
 
 interface MainLayoutProps {
@@ -19,6 +20,8 @@ function MainLayoutContent({ children }: MainLayoutProps) {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const [showNotificationNotice, setShowNotificationNotice] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
@@ -27,6 +30,49 @@ function MainLayoutContent({ children }: MainLayoutProps) {
       }
     }
   }, [user]);
+
+  // Swipe gesture handling
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      // Only track if swipe starts from the left edge (0-40px)
+      if (e.touches[0].clientX < 40) {
+        touchStartRef.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+        };
+      } else {
+        touchStartRef.current = null;
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!touchStartRef.current) return;
+
+      const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+      const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+
+      // Detect right swipe (dx > 70) and ensure it's more horizontal than vertical
+      if (dx > 70 && Math.abs(dx) > Math.abs(dy)) {
+        setIsDrawerOpen(true);
+      }
+
+      touchStartRef.current = null;
+    };
+
+    window.addEventListener("touchstart", handleTouchStart);
+    window.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleToggle = () => setIsDrawerOpen(prev => !prev);
+    window.addEventListener("toggleMobileDrawer", handleToggle);
+    return () => window.removeEventListener("toggleMobileDrawer", handleToggle);
+  }, []);
 
   const isHomePage = pathname === "/";
   const isGrokPage = pathname !== null && pathname.toLowerCase().includes("grok");
@@ -89,6 +135,11 @@ function MainLayoutContent({ children }: MainLayoutProps) {
             <Plus className="w-6 h-6 text-black" />
           </button>
       )}
+
+      <MobileDrawer 
+        isOpen={isDrawerOpen} 
+        onClose={() => setIsDrawerOpen(false)} 
+      />
     </div>
   );
 }

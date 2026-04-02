@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import Avatar from "@/components/ui/Avatar";
 
 interface Message {
   role: "user" | "model";
@@ -17,7 +18,7 @@ const SUGGESTED_PROMPTS = [
 ];
 
 export default function GrokPage() {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -85,12 +86,24 @@ export default function GrokPage() {
       {/* Header */}
       <div className="p-4 border-b border-gray-800 flex items-center justify-between sticky top-0 bg-black/80 backdrop-blur-md z-10 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="bg-gradient-to-br from-purple-500 to-twitter-blue p-2 rounded-xl">
+          {user && (
+            <button 
+                onClick={() => window.dispatchEvent(new CustomEvent("toggleMobileDrawer"))}
+                className="sm:hidden p-0.5 rounded-full active:bg-white/10 transition cursor-pointer shrink-0"
+            >
+                <Avatar
+                    src={userData?.profileImage}
+                    fallbackText={userData?.displayName || userData?.username}
+                    size="md"
+                />
+            </button>
+          )}
+          <div className="bg-gradient-to-br from-purple-500 to-twitter-blue p-2 rounded-xl shrink-0">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
             <h1 className="text-xl font-bold leading-none">Grok</h1>
-            <p className="text-[11px] text-gray-500 mt-1 uppercase tracking-wider font-semibold">Beta</p>
+            <p className="text-[11px] text-gray-500 mt-1 uppercase tracking-wider font-semibold leading-none">Beta</p>
           </div>
         </div>
         <button 

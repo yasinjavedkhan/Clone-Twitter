@@ -11,7 +11,7 @@ import { userCache } from "@/lib/cache";
 import Avatar from "@/components/ui/Avatar";
 
 export default function ConversationList({ activeId }: { activeId?: string }) {
-    const { user } = useAuth();
+    const { user, userData } = useAuth();
     const [conversations, setConversations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -144,7 +144,21 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                     </div>
                 ) : (
                     <div className="flex items-center justify-between px-4 py-3 h-[53px]">
-                        <h1 className="text-xl font-extrabold text-white">Messages</h1>
+                        <div className="flex items-center gap-4">
+                            {user && (
+                                <button 
+                                    onClick={() => window.dispatchEvent(new CustomEvent("toggleMobileDrawer"))}
+                                    className="sm:hidden p-0.5 rounded-full active:bg-white/10 transition cursor-pointer shrink-0"
+                                >
+                                    <Avatar
+                                        src={userData?.profileImage}
+                                        fallbackText={userData?.displayName || userData?.username}
+                                        size="md"
+                                    />
+                                </button>
+                            )}
+                            <h1 className="text-xl font-extrabold text-white">Messages</h1>
+                        </div>
                         <button
                             onClick={() => setShowSearch(true)}
                             className="p-2 hover:bg-white/10 rounded-full transition text-[var(--color-twitter-blue)]"

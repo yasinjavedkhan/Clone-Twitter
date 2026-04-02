@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { collection, query, orderBy, getDocs, limit, where } from "firebase/firestore";
 import { Search } from "lucide-react";
 import Link from "next/link";
+import Avatar from "@/components/ui/Avatar";
 
 interface UserData {
     id: string;
@@ -16,7 +17,7 @@ interface UserData {
 }
 
 export default function Explore() {
-    const { user } = useAuth();
+    const { user, userData } = useAuth();
     const [users, setUsers] = useState<UserData[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -71,15 +72,27 @@ export default function Explore() {
 
     return (
         <div className="flex flex-col min-h-screen border-r border-gray-800 text-white">
-            <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-gray-800 p-4">
-                <div className="relative">
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-4.5 h-4.5" />
+            <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-gray-800 p-3 flex items-center gap-3">
+                {user && (
+                    <button 
+                        onClick={() => window.dispatchEvent(new CustomEvent("toggleMobileDrawer"))}
+                        className="sm:hidden p-0.5 rounded-full active:bg-white/10 transition cursor-pointer shrink-0"
+                    >
+                        <Avatar
+                            src={userData?.profileImage}
+                            fallbackText={userData?.displayName || userData?.username}
+                            size="md"
+                        />
+                    </button>
+                )}
+                <div className="relative flex-grow">
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
                     <input
                         type="text"
                         placeholder="Search People"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="bg-[#202327] text-white rounded-full py-2.5 pl-12 pr-4 w-full focus:bg-black focus:border-twitter-blue border border-transparent outline-none transition text-[15px] placeholder:text-gray-500"
+                        className="bg-[#202327] text-white rounded-full py-2 pl-12 pr-4 w-full focus:bg-black focus:border-twitter-blue border border-transparent outline-none transition text-[15px] placeholder:text-gray-500"
                     />
                 </div>
             </div>

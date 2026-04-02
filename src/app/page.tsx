@@ -345,7 +345,7 @@ export default function Home() {
         {user && (
             <div className="shrink-0 sm:hidden pr-2 z-50">
                 <button 
-                  onClick={() => router.push(`/profile/${user.uid}`)}
+                  onClick={() => window.dispatchEvent(new CustomEvent("toggleMobileDrawer"))}
                   className="flex items-center justify-center p-1 rounded-full active:bg-white/10 transition cursor-pointer"
                 >
                     <Avatar

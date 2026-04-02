@@ -7,9 +7,10 @@ import { collection, query, where, getDocs, doc, getDoc, orderBy } from "firebas
 import Tweet from "@/components/tweet/Tweet";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import Avatar from "@/components/ui/Avatar";
 
 export default function Bookmarks() {
-    const { user } = useAuth();
+    const { user, userData } = useAuth();
     const [bookmarks, setBookmarks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -76,9 +77,23 @@ export default function Bookmarks() {
     return (
         <div className="flex flex-col min-h-screen border-r border-gray-800">
             {/* Header */}
-            <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-gray-800 p-4 flex flex-col">
-                <h1 className="text-xl font-bold">Bookmarks</h1>
-                <p className="text-sm text-gray-500">@{user.email?.split("@")[0]}</p>
+            <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-gray-800 p-4 flex items-center gap-4">
+                {user && (
+                    <button 
+                        onClick={() => window.dispatchEvent(new CustomEvent("toggleMobileDrawer"))}
+                        className="sm:hidden p-0.5 rounded-full active:bg-white/10 transition cursor-pointer shrink-0"
+                    >
+                        <Avatar
+                            src={userData?.profileImage}
+                            fallbackText={userData?.displayName || userData?.username}
+                            size="md"
+                        />
+                    </button>
+                )}
+                <div className="flex flex-col">
+                    <h1 className="text-xl font-bold leading-tight">Bookmarks</h1>
+                    <p className="text-sm text-gray-500 leading-tight">@{userData?.username || user.email?.split("@")[0]}</p>
+                </div>
             </div>
 
             {/* Feed */}
