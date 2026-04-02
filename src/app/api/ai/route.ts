@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Model fallback chain: try each model in order if quota/404 error
-const MODELS = ["gemini-pro", "gemini-1.5-flash", "gemini-1.5-flash-latest"];
+const MODELS = ["gemini-3-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-exp", "gemini-1.5-flash"];
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
     // Try each model in the fallback chain
     for (const modelName of MODELS) {
       try {
+        console.log(`[AI Diagnosis] Attempting model: ${modelName}`);
         const model = genAI.getGenerativeModel({ model: modelName, systemInstruction });
 
         let text: string;
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
           text = result.response.text();
         }
 
+        console.log(`[AI Success] Successfully used model: ${modelName}`);
         return NextResponse.json({ text });
       } catch (err: any) {
         lastError = err;
