@@ -275,24 +275,34 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     }, [hasMounted]);
 
     useEffect(() => {
-        if (!isCalling || !roomName || !manuallyInitiated.current) return;
+        if (!isCalling || !roomName) return;
 
-        // Auto-cancel call after 60 seconds if not answered
+        // Auto-cancel call after 60 seconds if not answered (only for the caller)
         const timeout = setTimeout(async () => {
-            console.log("Call timed out after 60s");
-            setIsCalling(false);
-            manuallyInitiated.current = false;
-            await deleteDoc(doc(db, "calls", roomName)).catch(() => {});
+            if (manuallyInitiated.current) {
+                console.log("Call timed out after 60s");
+                setIsCalling(false);
+                manuallyInitiated.current = false;
+                await deleteDoc(doc(db, "calls", roomName)).catch(() => {});
+            }
         }, 60000);
 
         console.log("Listening to call status for room:", roomName);
+        let initialLoad = true;
+        
         const unsub = onSnapshot(doc(db, "calls", roomName), (docSnap) => {
             if (!docSnap.exists()) {
+                 // For the initiator, ignore the very first snapshot because it might be a sync delay
+                 if (initialLoad && manuallyInitiated.current) {
+                     initialLoad = false;
+                     return;
+                 }
                  console.log("Call document deleted (ended by other party)");
                  setIsCalling(false);
                  manuallyInitiated.current = false;
                  clearTimeout(timeout);
             }
+            initialLoad = false;
         }, (error) => {
             console.error("Call status listener error:", error);
         });
