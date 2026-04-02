@@ -12,26 +12,11 @@ export const dynamic = 'force-dynamic';
 
 const outfit = Outfit({ subsets: ["latin"] });
 
-import IncomingCallOverlay from "@/components/messages/IncomingCallOverlay";
-import { CallProvider, useCall } from "@/contexts/CallContext";
-import AgoraCall from "@/components/messages/AgoraCall";
+import nextDynamic from "next/dynamic";
 
-function GlobalCallOverlay() {
-  const { isCalling, roomName, callType, activeOtherUser, endCall } = useCall();
-
-  if (!isCalling || !roomName) return null;
-
-  return (
-    <div className="fixed inset-0 z-[9999] bg-black">
-      <AgoraCall 
-        roomName={roomName}
-        callType={callType}
-        otherUser={activeOtherUser}
-        onEndCall={endCall}
-      />
-    </div>
-  );
-}
+const IncomingCallOverlay = nextDynamic(() => import("@/components/messages/IncomingCallOverlay"), { ssr: false });
+const GlobalCallOverlay = nextDynamic(() => import("@/components/messages/GlobalCallOverlay"), { ssr: false });
+import { CallProvider } from "@/contexts/CallContext";
 
 export const metadata: Metadata = {
   title: "Twitter Clone",
