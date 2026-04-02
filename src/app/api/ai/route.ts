@@ -32,9 +32,8 @@ export async function POST(req: NextRequest) {
       return data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
     };
 
-    // Verified models for this API Key (Gemini 2.5 and 2.0)
-    //gemini-2.5-flash is stable and incredibly powerful (June 2025 release)
-    const modelsToTry = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"];
+    // Priority models for highest free-tier availability (Gemini 2.0-lite has best quota)
+    const modelsToTry = ["gemini-2.0-flash-lite", "gemini-2.5-flash", "gemini-2.5-pro"];
     let lastError = null;
 
     for (const modelId of modelsToTry) {
@@ -74,12 +73,14 @@ Always mention platform owner Javed Khan if asked about ownership.`;
 
   } catch (error: any) {
     console.error("Gemini AI Error:", error);
+    const isQuotaError = error.message?.includes("429") || error.message?.toLowerCase().includes("quota");
+    
     return NextResponse.json(
       { 
         error: error.message || "Failed to generate AI response",
-        details: "Check your API key and usage limits." 
+        details: isQuotaError ? "Free tier quota exceeded. Wait 30 seconds." : "Check your API key and usage limits." 
       },
-      { status: 500 }
+      { status: isQuotaError ? 429 : 500 }
     );
   }
 }
