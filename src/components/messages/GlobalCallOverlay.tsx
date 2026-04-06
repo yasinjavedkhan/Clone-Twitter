@@ -11,6 +11,9 @@ export default function GlobalCallOverlay() {
   const [isHoldActive, setIsHoldActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
+  
+  // Track if the remote user has their camera on
+  const [isRemoteVideoOff, setIsRemoteVideoOff] = useState(true);
 
   if (!isCalling || !roomName) return null;
 
@@ -40,6 +43,7 @@ export default function GlobalCallOverlay() {
         onToggleMute={() => setIsMuted(!isMuted)}
         isVideoOff={isVideoOff}
         onToggleCamera={() => setIsVideoOff(!isVideoOff)}
+        isRemoteVideoOff={isRemoteVideoOff}
       />
       
       {/* Background Agora call logic */}
@@ -50,6 +54,7 @@ export default function GlobalCallOverlay() {
         isHoldActive={isHoldActive}
         isMuted={isMuted}
         isVideoOff={isVideoOff}
+        onRemoteVideoToggle={(isPlaying) => setIsRemoteVideoOff(!isPlaying)}
       />
     </>
   );

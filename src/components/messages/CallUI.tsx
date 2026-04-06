@@ -20,12 +20,13 @@ interface CallUIProps {
     onToggleMute?: () => void;
     isVideoOff?: boolean;
     onToggleCamera?: () => void;
+    isRemoteVideoOff?: boolean;
 }
 
 export default function CallUI({ 
     status, type, otherUser, connectedAt, onEnd, onAccept, onReject,
     isSpeakerActive, onToggleSpeaker, isHoldActive, onToggleHold, isMuted, onToggleMute,
-    isVideoOff, onToggleCamera
+    isVideoOff, onToggleCamera, isRemoteVideoOff
 }: CallUIProps) {
     const { user: currentUser } = useAuth();
     const [duration, setDuration] = useState(0);
@@ -62,7 +63,25 @@ export default function CallUI({
         <div className="fixed inset-0 z-[9999] bg-[#050505] flex flex-col items-center justify-between py-20 px-6 animate-in fade-in duration-500 overflow-hidden">
             {/* Background Video (Remote) */}
             {type === 'video' && status === 'connected' && (
-                <div id="remote-video-container" className="absolute inset-0 z-0 bg-black animate-in fade-in duration-1000 overflow-hidden" />
+                <div className="absolute inset-0 z-0 bg-black animate-in fade-in duration-1000 overflow-hidden">
+                    <div id="remote-video-container" className={`w-full h-full transition-opacity duration-500 ${isRemoteVideoOff ? 'opacity-0' : 'opacity-100'}`} />
+                    
+                    {/* Remote Avatar Fallback (when camera is off) */}
+                    {isRemoteVideoOff && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
+                            <div className="w-56 h-56 rounded-full border-4 border-white/5 overflow-hidden shadow-2xl mb-8">
+                                {otherUser?.profileImage ? (
+                                    <img src={otherUser.profileImage} className="w-full h-full object-cover" alt="Remote" />
+                                ) : (
+                                    <div className="w-full h-full bg-twitter-blue flex items-center justify-center text-8xl font-black text-white">
+                                        {otherUser?.displayName?.[0] || "?"}
+                                    </div>
+                                )}
+                            </div>
+                            <span className="text-white/40 text-sm font-black uppercase tracking-[0.4em]">Camera Off</span>
+                        </div>
+                    )}
+                </div>
             )}
 
             {/* Background Blur Effect (Voice or Non-Connected) */}
@@ -224,7 +243,24 @@ export default function CallUI({
                 <div className="relative w-28 h-40 rounded-2xl border border-white/20 overflow-hidden shadow-2xl backdrop-blur-md bg-white/5">
                     {/* Local Video Stream Container */}
                     {type === 'video' && status === 'connected' ? (
-                        <div id="local-video-container" className="w-full h-full bg-black transform scale-x-[-1]" />
+                        <div className="w-full h-full relative">
+                            <div id="local-video-container" className={`w-full h-full bg-black transform scale-x-[-1] transition-opacity duration-300 ${isVideoOff ? 'opacity-0' : 'opacity-100'}`} />
+                            
+                            {/* Local Avatar Fallback (when camera is off) */}
+                            {isVideoOff && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-gray-900 animate-in fade-in duration-300">
+                                    {currentUser?.photoURL || (currentUser as any)?.profileImage ? (
+                                        <img 
+                                            src={currentUser?.photoURL || (currentUser as any)?.profileImage} 
+                                            className="w-8 h-8 rounded-full object-cover grayscale opacity-50" 
+                                            alt="Me" 
+                                        />
+                                    ) : (
+                                        <User className="w-6 h-6 text-white/20" />
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     ) : (
                         <>
                             {currentUser?.photoURL || (currentUser as any)?.profileImage ? (

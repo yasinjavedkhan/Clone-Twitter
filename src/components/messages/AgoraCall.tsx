@@ -10,7 +10,8 @@ import AgoraRTC, { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack, IR
 export default function AgoraCall({ 
     roomName, 
     callType, 
-    onRemoteJoined, 
+    onRemoteJoined,
+    onRemoteVideoToggle,
     isMuted, 
     isSpeakerActive, 
     isHoldActive,
@@ -19,6 +20,7 @@ export default function AgoraCall({
     roomName: string, 
     callType: 'voice' | 'video', 
     onRemoteJoined?: () => void,
+    onRemoteVideoToggle?: (isPlaying: boolean) => void,
     isMuted?: boolean,
     isSpeakerActive?: boolean,
     isHoldActive?: boolean,
@@ -60,6 +62,7 @@ export default function AgoraCall({
                         const track = user.videoTrack;
                         if (track) {
                             remoteVideoTracksRef.current.set(user.uid.toString(), track);
+                            if (onRemoteVideoToggle) onRemoteVideoToggle(true);
                             // Wait for DOM to be ready
                             setTimeout(() => {
                                 track.play("remote-video-container");
@@ -74,6 +77,7 @@ export default function AgoraCall({
                     }
                     if (mediaType === "video") {
                         remoteVideoTracksRef.current.delete(user.uid.toString());
+                        if (onRemoteVideoToggle) onRemoteVideoToggle(false);
                     }
                 });
 
@@ -135,6 +139,7 @@ export default function AgoraCall({
         if (videoTrackRef.current) {
             videoTrackRef.current.setEnabled(!isHoldActive && !isVideoOff);
         }
+
         remoteVideoTracksRef.current.forEach((track) => {
             if (isHoldActive) {
                 track.stop();
