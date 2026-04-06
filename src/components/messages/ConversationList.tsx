@@ -261,7 +261,9 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                                                 {conv.participants.every((p: string) => p === user?.uid) ? " (You)" : ""}
                                             </span>
                                             {user && conv.unreadCount && conv.unreadCount[user.uid] > 0 && (
-                                                <div className="w-2 h-2 rounded-full bg-[var(--color-twitter-blue)] shrink-0"></div>
+                                                <div className="bg-[var(--color-twitter-blue)] text-white text-[10px] font-black min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1 animate-in zoom-in duration-300">
+                                                    {conv.unreadCount[user.uid]}
+                                                </div>
                                             )}
                                         </div>
                                         <span className="text-gray-500 text-[13px] shrink-0">
@@ -279,7 +281,7 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                                                 Typing...
                                             </p>
                                         ) : (
-                                            <p className="text-gray-500 text-[14px] truncate leading-tight">
+                                            <p className={`${user && conv.unreadCount && conv.unreadCount[user.uid] > 0 ? 'text-white font-black' : 'text-gray-500'} text-[14px] truncate leading-tight`}>
                                                 {conv.lastMessage || <span className="italic">No messages yet</span>}
                                             </p>
                                         )}
