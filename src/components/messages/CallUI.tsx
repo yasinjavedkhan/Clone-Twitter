@@ -57,18 +57,25 @@ export default function CallUI({
 
     return (
         <div className="fixed inset-0 z-[9999] bg-[#050505] flex flex-col items-center justify-between py-20 px-6 animate-in fade-in duration-500 overflow-hidden">
-            {/* Background Blur Effect */}
-            <div className="absolute inset-0 z-0">
-                {otherUser?.profileImage ? (
-                    <img 
-                        src={otherUser.profileImage} 
-                        className="w-full h-full object-cover opacity-20 blur-3xl scale-150" 
-                        alt="Background" 
-                    />
-                ) : (
-                    <div className="w-full h-full bg-twitter-blue/10 blur-3xl" />
-                )}
-            </div>
+            {/* Background Video (Remote) */}
+            {type === 'video' && status === 'connected' && (
+                <div id="remote-video-container" className="absolute inset-0 z-0 bg-black animate-in fade-in duration-1000 overflow-hidden" />
+            )}
+
+            {/* Background Blur Effect (Voice or Non-Connected) */}
+            {!(type === 'video' && status === 'connected') && (
+                <div className="absolute inset-0 z-0">
+                    {otherUser?.profileImage ? (
+                        <img 
+                            src={otherUser.profileImage} 
+                            className="w-full h-full object-cover opacity-20 blur-3xl scale-150" 
+                            alt="Background" 
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-twitter-blue/10 blur-3xl" />
+                    )}
+                </div>
+            )}
 
             {/* Top Section: Status & User Info */}
             <div className="relative z-10 flex flex-col items-center gap-8 w-full">
@@ -199,17 +206,24 @@ export default function CallUI({
 
             {/* Current User Small Profile (WhatsApp style PiP) */}
             <div className="absolute top-20 right-6 z-20 animate-in slide-in-from-right duration-700">
-                <div className="relative w-20 h-28 rounded-2xl border border-white/20 overflow-hidden shadow-2xl backdrop-blur-md bg-white/5">
-                    {currentUser?.photoURL || (currentUser as any)?.profileImage ? (
-                        <img 
-                            src={currentUser?.photoURL || (currentUser as any)?.profileImage} 
-                            className="w-full h-full object-cover" 
-                            alt="Me" 
-                        />
+                <div className="relative w-28 h-40 rounded-2xl border border-white/20 overflow-hidden shadow-2xl backdrop-blur-md bg-white/5">
+                    {/* Local Video Stream Container */}
+                    {type === 'video' && status === 'connected' ? (
+                        <div id="local-video-container" className="w-full h-full bg-black mirror" />
                     ) : (
-                        <div className="w-full h-full bg-gray-800 flex items-center justify-center text-xl font-bold text-white uppercase">
-                            {currentUser?.displayName?.[0] || "?"}
-                        </div>
+                        <>
+                            {currentUser?.photoURL || (currentUser as any)?.profileImage ? (
+                                <img 
+                                    src={currentUser?.photoURL || (currentUser as any)?.profileImage} 
+                                    className="w-full h-full object-cover" 
+                                    alt="Me" 
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-gray-800 flex items-center justify-center text-xl font-bold text-white uppercase">
+                                    {currentUser?.displayName?.[0] || "?"}
+                                </div>
+                            )}
+                        </>
                     )}
                     <div className="absolute bottom-1 right-1">
                          <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.8)]" />
