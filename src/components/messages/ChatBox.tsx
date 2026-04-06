@@ -774,7 +774,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                             
                                             <div className={cn(
                                                 "flex items-center justify-end gap-1 mt-0.5 self-end select-none",
-                                                isMine ? "text-white/90" : "text-gray-400"
+                                                isMine ? "text-white" : "text-zinc-300"
                                             )}>
                                                 {msg.isEdited && (
                                                     <span className="text-[8px] italic mr-0.5">edited</span>
