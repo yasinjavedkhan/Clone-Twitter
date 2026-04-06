@@ -562,6 +562,13 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     };
 
     const handleStartEdit = (messageId: string, currentText: string) => {
+        const msg = messages.find(m => m.id === messageId);
+        if (msg?.type === 'call' || msg?.isSystem) {
+            setToast("System messages cannot be edited");
+            setTimeout(() => setToast(null), 3000);
+            setDeleteMenuMessageId(null);
+            return;
+        }
         setEditingMessageId(messageId);
         setNewMessage(currentText);
         setDeleteMenuMessageId(null);
@@ -969,13 +976,17 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         <div className="flex flex-col border-t border-gray-800 font-bold">
                             {messages.find(m => m.id === deleteMenuMessageId)?.senderId === user?.uid && (
                                 <>
-                                    <button 
-                                        onClick={() => handleStartEdit(deleteMenuMessageId, messages.find(m => m.id === deleteMenuMessageId)?.text || "")}
-                                        className="w-full py-4 text-[var(--color-twitter-blue)] hover:bg-black/40 transition border-b border-gray-800 active:bg-black flex items-center justify-center gap-2"
-                                    >
-                                        <Edit className="w-4 h-4" />
-                                        Edit Message
-                                    </button>
+                                    {/* Only show Edit if NOT a call/system message */}
+                                    {!(messages.find(m => m.id === deleteMenuMessageId)?.type === 'call' || 
+                                       messages.find(m => m.id === deleteMenuMessageId)?.isSystem) && (
+                                        <button 
+                                            onClick={() => handleStartEdit(deleteMenuMessageId, messages.find(m => m.id === deleteMenuMessageId)?.text || "")}
+                                            className="w-full py-4 text-[var(--color-twitter-blue)] hover:bg-black/40 transition border-b border-gray-800 active:bg-black flex items-center justify-center gap-2"
+                                        >
+                                            <Edit className="w-4 h-4" />
+                                            Edit Message
+                                        </button>
+                                    )}
                                     <button 
                                         onClick={() => handleDeleteForBoth(deleteMenuMessageId)}
                                         className="w-full py-4 text-red-500 hover:bg-black/40 transition border-b border-gray-800 active:bg-black"
