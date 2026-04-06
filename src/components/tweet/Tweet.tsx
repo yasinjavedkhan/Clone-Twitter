@@ -710,7 +710,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                                     className={cn(
                                         "relative overflow-hidden bg-gray-900 cursor-pointer group",
                                         tweet.mediaUrls!.length === 1 
-                                            ? "min-h-[250px] max-h-[512px] w-full" 
+                                            ? "min-h-[200px] max-h-[400px] w-full" 
                                             : tweet.mediaUrls!.length === 3 && index === 0 
                                                 ? "row-span-2" 
                                                 : "aspect-video"
@@ -732,7 +732,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                                             alt="Tweet media"
                                             className={cn(
                                                 "w-full h-full transition duration-200 group-hover:opacity-95",
-                                                tweet.mediaUrls!.length === 1 ? "object-contain bg-black/40" : "object-cover"
+                                                tweet.mediaUrls!.length === 1 ? "object-cover" : "object-cover"
                                             )}
                                         />
                                     )}
