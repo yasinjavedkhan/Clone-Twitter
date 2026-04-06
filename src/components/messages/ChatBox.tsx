@@ -107,6 +107,12 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         return () => window.removeEventListener('focus', clearUnreadCount);
     }, [clearUnreadCount]);
 
+
+    useEffect(() => {
+        // Global Calling: ChatBox no longer handles call triggers from URL
+        // RootLayout/IncomingCallOverlay now manages this
+    }, [searchParams, conversationId]);
+
     useEffect(() => {
         if (!conversationId || !user?.uid) return;
 
@@ -126,6 +132,11 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     id: doc.id,
                     ...doc.data()
                 }));
+
+                // Clear my unread count for this conversation when active
+                if (user?.uid) {
+                    clearUnreadCount();
+                }
 
                 // Heartbeat every 3 seconds for real-time presence
                 // Sort in memory to avoid missing index errors
@@ -153,10 +164,14 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
                 // Scroll to bottom logic - check if we should jump or scroll
                 if (scrollRef.current) {
+                    // Use sorted.length to check if this is the first time we got messages for this session
+                    // But we rely on setMessages state transition actually.
+                    // Better: check if we were currently loading.
                     const container = document.getElementById('messages-container');
                     
                     setTimeout(() => {
                         if (firstUnreadId) {
+                            // If we have unread messages on first load, scroll to the FIRST one
                             const unreadElement = document.getElementById(`msg-${firstUnreadId}`);
                             if (unreadElement) {
                                 unreadElement.scrollIntoView({ 
@@ -167,7 +182,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             }
                         }
 
+                        // Default: Scroll to bottom
                         if (container && sorted.length > 0) {
+                            // Instant jump for first load, smooth for new ones
+                            // We can use a simpler check: if the scroll is already near the bottom, stay there
                             const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
                             
                             if (isNearBottom || sorted.length <= messages.length + 1) {
@@ -202,13 +220,6 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 
                 if (otherId) {
                     setOtherUserIsTyping(!!typing[otherId]);
-                }
-                
-                // Also clear unread count if we see it's > 0 in real-time
-                if (data.unreadCount?.[user.uid] > 0) {
-                    updateDoc(doc(db, "conversations", conversationId), {
-                        [`unreadCount.${user.uid}`]: 0
-                    }).catch(() => {});
                 }
             }
         });
@@ -269,12 +280,14 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         if (!lastSeen || !hasMounted) return false;
         try {
             const date = lastSeen.toDate ? lastSeen.toDate() : new Date(lastSeen);
+            // Robust threshold: 30 seconds handles network lag and time drift
             return (Date.now() - date.getTime()) / 1000 < 30;
         } catch {
             return false;
         }
     };
 
+    // Force re-render frequently (3s) to keep up with the hyper-responsive heartbeats
     const [, setTick] = useState(0);
     useEffect(() => {
         if (!hasMounted) return;
@@ -282,10 +295,11 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         return () => clearInterval(timer);
     }, [hasMounted]);
 
+    // Local call listener removed - managed by Global CallContext
 
     const recordCallEvent = async (type: 'voice' | 'video') => {
         if (!user || !conversationId) return;
-        const text = type === 'voice' ? "📞 Started a voice call" : "📹 Started a video call";
+        const text = type === 'voice' ? "≡ƒô₧ Started a voice call" : "≡ƒô╣ Started a video call";
         try {
             await addDoc(collection(db, "conversations", conversationId, "messages"), {
                 senderId: user.uid,
@@ -315,6 +329,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
 
+        // Limit to 4 items
         const newFiles = files.slice(0, 4 - mediaFiles.length);
         
         newFiles.forEach(file => {
@@ -358,6 +373,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
             mediaRecorder.onstop = async () => {
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                // Automatically send after stopping if not cancelled
                 if (audioChunksRef.current.length > 0) {
                     await sendVoiceMessage(audioBlob);
                 }
@@ -418,7 +434,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             });
 
             await updateDoc(doc(db, "conversations", conversationId), {
-                lastMessage: "🎤 Voice message",
+                lastMessage: "≡ƒÄñ Voice message",
                 lastTimestamp: serverTimestamp(),
                 ...(otherId ? { [`unreadCount.${otherId}`]: increment(1) } : {})
             });
@@ -427,8 +443,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 const senderName = userData?.displayName || userData?.username || 'Someone';
                 await sendPushNotification({
                     toUserId: otherUser.userId,
-                    title: `💬 ${senderName}`,
-                    body: "🎤 Sent a voice message",
+                    title: `≡ƒÆ¼ ${senderName}`,
+                    body: "≡ƒÄñ Sent a voice message",
                     data: {
                         type: 'message',
                         conversationId,
@@ -475,12 +491,14 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             const participants = convDoc.data()?.participants || [];
             const otherId = participants.find((p: string) => p !== user.uid);
 
+            // 1. Upload media if any
             let mediaUrls: string[] = [];
             if (currentMedia.length > 0) {
                 const uploadPromises = currentMedia.map(m => uploadToCloudinary(m.file));
                 mediaUrls = await Promise.all(uploadPromises);
             }
 
+            // 2. Add message to Firestore
             await addDoc(collection(db, "conversations", conversationId, "messages"), {
                 senderId: user.uid,
                 text,
@@ -489,17 +507,21 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 createdAt: serverTimestamp(),
             });
 
+            // 3. Update conversation last message values
+
+            // Update conversation last message for everyone
             await updateDoc(doc(db, "conversations", conversationId), {
                 lastMessage: text || (mediaUrls.length > 0 ? (mediaUrls.length > 1 ? "Sent multiple media" : "Sent a photo") : ""),
                 lastTimestamp: serverTimestamp(),
                 ...(otherId ? { [`unreadCount.${otherId}`]: increment(1) } : {})
             });
 
+            // 4. Send push notification to the other user
             if (otherUser?.userId && otherUser.userId !== user.uid) {
                 const senderName = userData?.displayName || userData?.username || 'Someone';
                 await sendPushNotification({
                     toUserId: otherUser.userId,
-                    title: `💬 ${senderName}`,
+                    title: `≡ƒÆ¼ ${senderName}`,
                     body: text ? (text.length > 80 ? text.substring(0, 80) + '...' : text) : 'Sent you a photo',
                     data: {
                         type: 'message',
@@ -514,6 +536,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             alert("Failed to send message/media. Please try again.");
         } finally {
             setIsSending(false);
+            // Clear typing status immediately after sending
             if (user?.uid && conversationId) {
                 updateDoc(doc(db, "conversations", conversationId), {
                     [`typing.${user.uid}`]: false
@@ -540,7 +563,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         if (!user || !conversationId) return;
         try {
             await updateDoc(doc(db, "conversations", conversationId, "messages", messageId), {
-                text: "🚫 This message was deleted",
+                text: "≡ƒÜ½ This message was deleted",
                 mediaUrls: [],
                 audioUrl: null,
                 isDeletedForEveryone: true
@@ -557,7 +580,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
     const handleLongPress = (messageId: string) => {
         if (navigator.vibrate) navigator.vibrate(50);
-        setEditingMessageId(null);
+        setEditingMessageId(null); // Clear any pending edit when opening menu
         setDeleteMenuMessageId(messageId);
     };
 
@@ -586,6 +609,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 maxHeight: viewportHeight
             }}
         >
+            {/* Local AgoraCall rendering removed - now handled by RootLayout/CallContext */}
+            {/* Header - Pure Flex Item (stays at top naturally) */}
             <header className="flex-none w-full min-h-[64px] border-b border-gray-800 flex items-center px-4 gap-3 sm:gap-4 bg-black/95 backdrop-blur-md z-[20] pt-[env(safe-area-inset-top)]">
                 <Link 
                     href={otherUser?.userId ? `/profile/${otherUser.userId}` : "#"} 
@@ -622,18 +647,47 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     </div>
                 </Link>
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                    <button className="p-2 hover:bg-white/10 rounded-full text-white transition-colors" title="Voice Call" onClick={() => startCall(otherUser, 'voice', conversationId)}>
-                        <Phone className="w-5 h-5" />
-                    </button>
-                    <button className="p-2 hover:bg-white/10 rounded-full text-white transition-colors" title="Video Call" onClick={() => startCall(otherUser, 'video', conversationId)}>
-                        <Video className="w-5 h-5" />
-                    </button>
+                    {otherUser && otherUser.userId !== user?.uid && (
+                        <>
+                        <>
+                            <button 
+                                onClick={() => {
+                                    if (!isUserActive(otherUser.lastSeen)) {
+                                        setShowOfflineOverlay(true);
+                                        return;
+                                    }
+                                    recordCallEvent('voice');
+                                    startCall(otherUser, 'voice', conversationId);
+                                }}
+                                className="p-2 hover:bg-white/10 rounded-full text-white transition-colors"
+                                title="Voice Call"
+                            >
+                                <Phone className="w-5 h-5" />
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    if (!isUserActive(otherUser.lastSeen)) {
+                                        setShowOfflineOverlay(true);
+                                        return;
+                                    }
+                                    recordCallEvent('video');
+                                    startCall(otherUser, 'video', conversationId);
+                                }}
+                                className="p-2 hover:bg-white/10 rounded-full text-white transition-colors"
+                                title="Video Call"
+                            >
+                                <Video className="w-5 h-5" />
+                            </button>
+                        </>
+                        </>
+                    )}
                     <button className="p-2 hover:bg-white/10 rounded-full text-white transition-colors hidden sm:block">
                         <Info className="w-5 h-5" />
                     </button>
                 </div>
             </header>
 
+            {/* Offline Message Indicator */}
             {otherUser && !isUserActive(otherUser.lastSeen) && (hasMounted) && (
                 <div className="flex-none bg-zinc-900 border-b border-gray-800 px-4 py-2 text-center">
                     <p className="text-[11px] text-gray-400 font-medium tracking-tight">
@@ -642,6 +696,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 </div>
             )}
 
+            {/* Messages Container - Flex-1 (Grows to fill space) */}
             <div 
                 id="messages-container"
                 className="flex-1 overflow-y-auto p-4 space-y-4 container scroll-smooth custom-scrollbar"
@@ -687,7 +742,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                     </div>
                                 )}
                                 <div 
-                                    id={`msg-${msg.id}`}
+                                    id={`msg-${msg.id}`} // Unique ID for smart scrolling
                                     className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
                                 >
                                     <div 
@@ -760,12 +815,226 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         );
                     })
                 )}
+                {/* Visual anchor for scrolling */}
                 <div className="h-2 w-full" />
                 <div ref={scrollRef} className="h-1" />
             </div>
 
-            {/* Rest of the file: Input Area, etc. (skipped for brevity) */}
-            {/* ... */}
+            {/* Input Area - FLEX-NONE (Stays at bottom) */}
+            <div className="flex-none bg-black border-t border-gray-800 pb-[env(safe-area-inset-bottom)] z-[30] relative overflow-visible">
+                
+                {/* Floating Typing Indicator Bubble - specifically for mobile keyboard visibility */}
+                {otherUserIsTyping && (
+                    <div className="sm:hidden absolute -top-12 left-4 z-[40] animate-in slide-in-from-bottom-2 duration-300 pointer-events-none">
+                        <div className="bg-[#202327]/95 border border-twitter-blue/40 rounded-full px-3 py-1.5 flex items-center gap-2 shadow-2xl backdrop-blur-md">
+                            <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white uppercase overflow-hidden shrink-0">
+                                {otherUser?.profileImage ? (
+                                    <img src={otherUser.profileImage} className="w-full h-full object-cover" alt="" />
+                                ) : (
+                                    (otherUser?.displayName || otherUser?.username || "?")[0]
+                                )}
+                            </div>
+                            <span className="text-twitter-blue text-xs font-bold whitespace-nowrap">
+                                {otherUser?.displayName || otherUser?.username || "Someone"} is typing...
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Media Previews */}
+                {mediaFiles.length > 0 && (
+                    <div className="p-3 flex gap-2 overflow-x-auto bg-black border-b border-gray-800 scrollbar-hide">
+                        {mediaFiles.map((m, i) => (
+                            <div key={i} className="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden border border-white/10 group">
+                                {m.type === 'image' ? (
+                                    <img src={m.preview} className="w-full h-full object-cover" alt="" />
+                                ) : (
+                                    <video src={m.preview} className="w-full h-full object-cover" />
+                                )}
+                                <button 
+                                    onClick={() => setMediaFiles(prev => prev.filter((_, idx) => idx !== i))}
+                                    className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white hover:bg-black transition"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                                {isSending && (
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                        <div className="w-5 h-5 border-2 border-white border-t-transparent animate-spin rounded-full" />
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {editingMessageId && (
+                    <div className="flex items-center justify-between px-4 py-2 bg-twitter-blue/10 border-b border-twitter-blue/20">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                            <ShieldAlert className="w-4 h-4 text-twitter-blue shrink-0" />
+                            <p className="text-xs text-twitter-blue font-bold truncate">Editing message...</p>
+                        </div>
+                        <button 
+                            onClick={() => { setEditingMessageId(null); setNewMessage(""); }}
+                            className="p-1 hover:bg-twitter-blue/20 rounded-full transition"
+                        >
+                            <X className="w-4 h-4 text-twitter-blue" />
+                        </button>
+                    </div>
+                )}
+
+                <form onSubmit={handleSendMessage} className="p-3 flex items-center gap-2">
+                    {isRecording ? (
+                        <div className="flex-grow flex items-center justify-between bg-[#202327] rounded-3xl px-4 py-2 animate-in slide-in-from-bottom-2 duration-300">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                <span className="text-white font-medium tabular-nums">{formatDuration(recordingDuration)}</span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <button 
+                                    type="button"
+                                    onClick={cancelRecording}
+                                    className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={stopRecording}
+                                    className="bg-twitter-blue hover:bg-blue-600 text-white rounded-full p-2 transition-all active:scale-90"
+                                >
+                                    <Send className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <input id="chat-file-input" type="file" accept="image/*,video/*" multiple className="hidden" ref={fileInputRef} onChange={handleMediaSelect} />
+                            <label htmlFor="chat-file-input" className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition cursor-pointer shrink-0"><Image className="w-5 h-5" /></label>
+                            
+                            <input
+                                    type="text"
+                                    value={newMessage}
+                                    onChange={(e) => {
+                                        setNewMessage(e.target.value);
+                                        if (user?.uid && conversationId) {
+                                            updateDoc(doc(db, "conversations", conversationId), { [`typing.${user.uid}`]: true }).catch(() => {});
+                                            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                                            typingTimeoutRef.current = setTimeout(() => {
+                                                updateDoc(doc(db, "conversations", conversationId), { [`typing.${user.uid}`]: false }).catch(() => {});
+                                            }, 4000);
+                                        }
+                                    }}
+                                    placeholder="Start a new message"
+                                    className="flex-grow bg-[#202327] rounded-2xl py-2 px-4 outline-none focus:ring-1 focus:ring-twitter-blue transition text-[15px] min-w-0"
+                                />
+                                {(!newMessage.trim() && mediaFiles.length === 0) ? (
+                                    <button
+                                        type="button"
+                                        onClick={startRecording}
+                                        className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition shrink-0"
+                                    >
+                                        <Mic className="w-5 h-5" />
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="submit"
+                                        disabled={isSending}
+                                        className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition disabled:opacity-50 shrink-0"
+                                    >
+                                        {isSending ? (
+                                            <div className="w-5 h-5 border-2 border-twitter-blue border-t-transparent animate-spin rounded-full" />
+                                        ) : (
+                                            <Send className="w-5 h-5" />
+                                        )}
+                                    </button>
+                                )}
+                            </>
+                    )}
+                </form>
+            </div>
+
+            {/* Offline Calls Overlay */}
+            {showOfflineOverlay && (
+                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div className="bg-zinc-900 border border-gray-800 rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl animate-in zoom-in-95 duration-300">
+                        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Phone className="w-8 h-8 text-red-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">User Offline</h3>
+                        <p className="text-gray-400 text-sm mb-6">
+                            You can only call {otherUser?.displayName || otherUser?.username} when they are "Active now".
+                        </p>
+                        <button 
+                            onClick={() => setShowOfflineOverlay(false)}
+                            className="w-full bg-white text-black font-bold py-3 rounded-full hover:bg-gray-200 transition active:scale-95"
+                        >
+                            Got it
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Global Delete Action Sheet Overlay - Absolute within locked viewport to stay above keyboard */}
+            {deleteMenuMessageId && (
+                <div 
+                    className="absolute inset-0 z-[250] bg-black/60 flex items-center justify-center p-6 animate-in fade-in duration-200"
+                    onClick={() => setDeleteMenuMessageId(null)}
+                >
+                    <div 
+                        className="w-full max-w-xs bg-[#15181c] rounded-3xl border border-gray-800 overflow-hidden animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-6 text-center">
+                            <h3 className="text-white font-bold text-lg mb-1">Message Options</h3>
+                            <p className="text-gray-500 text-sm">Choose an action for this message.</p>
+                        </div>
+                        
+                        <div className="flex flex-col border-t border-gray-800 font-bold">
+                            {messages.find(m => m.id === deleteMenuMessageId)?.senderId === user?.uid && (
+                                <>
+                                    <button 
+                                        onClick={() => handleStartEdit(deleteMenuMessageId, messages.find(m => m.id === deleteMenuMessageId)?.text || "")}
+                                        className="w-full py-4 text-[var(--color-twitter-blue)] hover:bg-black/40 transition border-b border-gray-800 active:bg-black flex items-center justify-center gap-2"
+                                    >
+                                        <Edit className="w-4 h-4" />
+                                        Edit Message
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDeleteForBoth(deleteMenuMessageId)}
+                                        className="w-full py-4 text-red-500 hover:bg-black/40 transition border-b border-gray-800 active:bg-black"
+                                    >
+                                        Delete for everyone
+                                    </button>
+                                </>
+                            )}
+                            
+                            <button 
+                                onClick={() => handleDeleteForMe(deleteMenuMessageId)}
+                                className="w-full py-4 text-white hover:bg-black/40 transition border-b border-gray-800 active:bg-black"
+                            >
+                                Delete for me
+                            </button>
+                            
+                            <button 
+                                onClick={() => setDeleteMenuMessageId(null)}
+                                className="w-full py-4 text-gray-400 hover:bg-black/40 transition active:bg-black"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Notification Toast */}
+            {toast && (
+                <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[300] animate-in slide-in-from-top-4 duration-300 pointer-events-none">
+                    <div className="bg-twitter-blue text-white px-4 py-2 rounded-full font-bold shadow-2xl flex items-center gap-2">
+                        <ShieldAlert className="w-4 h-4 fill-white text-twitter-blue" />
+                        {toast}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
