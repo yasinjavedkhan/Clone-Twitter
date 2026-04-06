@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import AgoraRTC, { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack } from "agora-rtc-sdk-ng";
 import { Mic, MicOff, Video, VideoOff, PhoneOff } from "lucide-react";
 
-export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: { roomName: string, callType: 'voice' | 'video', otherUser: any, onEndCall: () => void }) {
+export default function AgoraCall({ roomName, callType, callStatus, otherUser, onEndCall }: { roomName: string, callType: 'voice' | 'video', callStatus: string | null, otherUser: any, onEndCall: () => void }) {
     const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID || "56b46b437307402bb2a172013bab91d2";
     const [client, setClient] = useState<IAgoraRTCClient | null>(null);
     const [localTracks, setLocalTracks] = useState<(ICameraVideoTrack | IMicrophoneAudioTrack)[]>([]);
@@ -148,7 +148,7 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
     };
 
     return (
-        <div className="flex-grow flex flex-col bg-[#050505] relative overflow-hidden">
+        <div className="w-full h-full flex flex-col bg-[#050505] relative overflow-hidden">
             {/* Header Status */}
             <div className="absolute top-8 left-0 right-0 z-30 flex flex-col items-center">
                  <div className="bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-full flex items-center gap-2">
@@ -179,37 +179,42 @@ export default function AgoraCall({ roomName, callType, otherUser, onEndCall }: 
                     ))
                 ) : (
                     /* Real Call Visualizer */
-                    <div className="flex flex-col items-center animate-in fade-in duration-500">
-                        <div className="relative mb-6">
+                    <div className="flex flex-col items-center animate-in fade-in duration-500 w-full px-6">
+                        <div className="relative mb-8">
                             {/* Pulse Rings */}
                             <div className="absolute inset-0 bg-twitter-blue/20 rounded-full animate-ping" />
-                            <div className="absolute inset-0 bg-twitter-blue/10 rounded-full animate-pulse scale-110" />
+                            <div className="absolute inset-0 bg-twitter-blue/10 rounded-full animate-pulse scale-125" />
                             
-                            <div className="relative w-40 h-40 rounded-full border-4 border-twitter-blue/30 overflow-hidden shadow-2xl shadow-twitter-blue/20">
+                            <div className="relative w-44 h-44 rounded-full border-4 border-twitter-blue/30 overflow-hidden shadow-2xl shadow-twitter-blue/20">
                                 {otherUser?.profileImage ? (
-                                    <img src={otherUser.profileImage} className="w-full h-full object-cover" alt="Caller" />
+                                    <img src={otherUser.profileImage} className="w-full h-full object-cover" alt="Avatar" />
                                 ) : (
-                                    <div className="w-full h-full bg-twitter-blue flex items-center justify-center text-5xl font-bold text-white uppercase">
+                                    <div className="w-full h-full bg-twitter-blue flex items-center justify-center text-6xl font-black text-white uppercase">
                                         {otherUser?.displayName?.[0] || "?"}
                                     </div>
                                 )}
                             </div>
                         </div>
                         
-                        <h2 className="text-3xl font-black text-white drop-shadow-lg">{otherUser?.displayName || "Connecting..."}</h2>
+                        <h2 className="text-3xl font-black text-white drop-shadow-lg text-center">{otherUser?.displayName || "Someone"}</h2>
                         
-                        <div className="flex flex-col items-center mt-4">
+                        <div className="flex flex-col items-center mt-6">
                             {remoteUsers.length > 0 ? (
                                 <>
-                                    <span className="text-green-500 font-mono text-2xl font-black tracking-widest animate-in fade-in duration-500">
+                                    <span className="text-green-500 font-mono text-3xl font-black tracking-widest animate-in fade-in duration-500 bg-green-500/10 px-4 py-1 rounded-lg border border-green-500/20">
                                         {formatTime(callDuration)}
                                     </span>
-                                    <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-bold mt-1">In Call</p>
+                                    <p className="text-gray-500 text-[10px] uppercase tracking-[0.4em] font-black mt-3">Connected</p>
                                 </>
                             ) : (
-                                <p className="text-twitter-blue font-medium tracking-[0.2em] uppercase text-xs animate-pulse">
-                                    Ringing...
-                                </p>
+                                <div className="flex flex-col items-center gap-2">
+                                    <p className="text-twitter-blue font-black tracking-[0.25em] uppercase text-sm animate-pulse">
+                                        {callStatus === 'accepted' ? 'Connecting...' : 'Calling...'}
+                                    </p>
+                                    {callStatus === 'ringing' && (
+                                        <p className="text-gray-500 text-[10px] uppercase font-bold tracking-widest">Ringing</p>
+                                    )}
+                                </div>
                             )}
                         </div>
                     </div>
