@@ -13,14 +13,16 @@ export default function AgoraCall({
     onRemoteJoined, 
     isMuted, 
     isSpeakerActive, 
-    isHoldActive 
+    isHoldActive,
+    isVideoOff
 }: { 
     roomName: string, 
     callType: 'voice' | 'video', 
     onRemoteJoined?: () => void,
     isMuted?: boolean,
     isSpeakerActive?: boolean,
-    isHoldActive?: boolean
+    isHoldActive?: boolean,
+    isVideoOff?: boolean
 }) {
     const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID || "56b46b437307402bb2a172013bab91d2";
     const joinInProgress = useRef(false);
@@ -129,9 +131,9 @@ export default function AgoraCall({
             }
         });
 
-        // Toggle Video display on hold
+        // Toggle Video display on hold or explicit Camera Off
         if (videoTrackRef.current) {
-            videoTrackRef.current.setEnabled(!isHoldActive);
+            videoTrackRef.current.setEnabled(!isHoldActive && !isVideoOff);
         }
         remoteVideoTracksRef.current.forEach((track) => {
             if (isHoldActive) {
@@ -140,7 +142,7 @@ export default function AgoraCall({
                 track.play("remote-video-container");
             }
         });
-    }, [isMuted, isSpeakerActive, isHoldActive]);
+    }, [isMuted, isSpeakerActive, isHoldActive, isVideoOff]);
 
     return null;
 }

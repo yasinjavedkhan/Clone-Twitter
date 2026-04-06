@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Phone, PhoneOff, Video, X, User, Volume2, VolumeX, Pause, Play, Mic, MicOff } from "lucide-react";
+import { Phone, PhoneOff, Video, VideoOff, X, User, Volume2, VolumeX, Pause, Play, Mic, MicOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface CallUIProps {
@@ -18,11 +18,14 @@ interface CallUIProps {
     onToggleHold?: () => void;
     isMuted?: boolean;
     onToggleMute?: () => void;
+    isVideoOff?: boolean;
+    onToggleCamera?: () => void;
 }
 
 export default function CallUI({ 
     status, type, otherUser, connectedAt, onEnd, onAccept, onReject,
-    isSpeakerActive, onToggleSpeaker, isHoldActive, onToggleHold, isMuted, onToggleMute 
+    isSpeakerActive, onToggleSpeaker, isHoldActive, onToggleHold, isMuted, onToggleMute,
+    isVideoOff, onToggleCamera
 }: CallUIProps) {
     const { user: currentUser } = useAuth();
     const [duration, setDuration] = useState(0);
@@ -147,9 +150,9 @@ export default function CallUI({
                     </div>
                 ) : (
                     <div className="flex flex-col items-center gap-10 w-full h-full">
-                        {/* Secondary Controls (Speaker, Hold, Mute) - ONLY visible in Connected State */}
+                        {/* Secondary Controls (Speaker, Hold, Mute, Camera) - ONLY visible in Connected State */}
                         {status === 'connected' && (
-                            <div className="flex items-center justify-center gap-8 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="grid grid-cols-3 sm:flex sm:items-center sm:justify-center gap-6 sm:gap-8 w-full animate-in fade-in slide-in-from-bottom-4 duration-500 px-4">
                                 <button 
                                     onClick={onToggleSpeaker}
                                     className="group flex flex-col items-center gap-2 transition-transform active:scale-90"
@@ -169,6 +172,18 @@ export default function CallUI({
                                     </div>
                                     <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Mute</span>
                                 </button>
+
+                                {type === 'video' && (
+                                    <button 
+                                        onClick={onToggleCamera}
+                                        className="group flex flex-col items-center gap-2 transition-transform active:scale-90"
+                                    >
+                                        <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${isVideoOff ? 'bg-red-500 text-white shadow-lg shadow-red-500/10' : 'bg-white/10 text-white hover:bg-white/20'}`}>
+                                            {isVideoOff ? <VideoOff className="w-6 h-6" /> : <Video className="w-6 h-6" />}
+                                        </div>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Camera</span>
+                                    </button>
+                                )}
 
                                 <button 
                                     onClick={onToggleHold}
@@ -209,7 +224,7 @@ export default function CallUI({
                 <div className="relative w-28 h-40 rounded-2xl border border-white/20 overflow-hidden shadow-2xl backdrop-blur-md bg-white/5">
                     {/* Local Video Stream Container */}
                     {type === 'video' && status === 'connected' ? (
-                        <div id="local-video-container" className="w-full h-full bg-black mirror" />
+                        <div id="local-video-container" className="w-full h-full bg-black transform scale-x-[-1]" />
                     ) : (
                         <>
                             {currentUser?.photoURL || (currentUser as any)?.profileImage ? (
