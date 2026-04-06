@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Phone, PhoneOff, Video, X, User } from "lucide-react";
+import { Phone, PhoneOff, Video, X, User, Volume2, VolumeX, Pause, Play, Mic, MicOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface CallUIProps {
@@ -12,9 +12,18 @@ interface CallUIProps {
     onEnd: () => void;
     onAccept?: () => void;
     onReject?: () => void;
+    isSpeakerActive?: boolean;
+    onToggleSpeaker?: () => void;
+    isHoldActive?: boolean;
+    onToggleHold?: () => void;
+    isMuted?: boolean;
+    onToggleMute?: () => void;
 }
 
-export default function CallUI({ status, type, otherUser, connectedAt, onEnd, onAccept, onReject }: CallUIProps) {
+export default function CallUI({ 
+    status, type, otherUser, connectedAt, onEnd, onAccept, onReject,
+    isSpeakerActive, onToggleSpeaker, isHoldActive, onToggleHold, isMuted, onToggleMute 
+}: CallUIProps) {
     const { user: currentUser } = useAuth();
     const [duration, setDuration] = useState(0);
 
@@ -125,15 +134,52 @@ export default function CallUI({ status, type, otherUser, connectedAt, onEnd, on
                         </button>
                     </>
                 ) : (
-                    <button 
-                        onClick={onEnd}
-                        className="group flex flex-col items-center gap-4 transition-transform active:scale-90"
-                    >
-                        <div className="w-20 h-20 bg-red-600 rounded-full hover:bg-red-700 transition-all duration-300 flex items-center justify-center shadow-2xl shadow-red-900/40 transform hover:rotate-[135deg]">
-                            <PhoneOff className="w-10 h-10 text-white" />
-                        </div>
-                        <span className="text-[11px] text-red-500 font-black uppercase tracking-[0.4em] drop-shadow-sm">End Call</span>
-                    </button>
+                    <div className="flex flex-col items-center gap-10 w-full">
+                        {/* Secondary Controls (Speaker, Hold, Mute) */}
+                        {status === 'connected' && (
+                            <div className="flex items-center justify-center gap-8 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <button 
+                                    onClick={onToggleSpeaker}
+                                    className="group flex flex-col items-center gap-2 transition-transform active:scale-90"
+                                >
+                                    <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${isSpeakerActive ? 'bg-white text-black shadow-lg shadow-white/10' : 'bg-white/10 text-white hover:bg-white/20'}`}>
+                                        {isSpeakerActive ? <Volume2 className="w-6 h-6" /> : <VolumeX className="w-6 h-6" />}
+                                    </div>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Speaker</span>
+                                </button>
+
+                                <button 
+                                    onClick={onToggleMute}
+                                    className="group flex flex-col items-center gap-2 transition-transform active:scale-90"
+                                >
+                                    <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${isMuted ? 'bg-red-500 text-white shadow-lg shadow-red-500/10' : 'bg-white/10 text-white hover:bg-white/20'}`}>
+                                        {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                                    </div>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Mute</span>
+                                </button>
+
+                                <button 
+                                    onClick={onToggleHold}
+                                    className="group flex flex-col items-center gap-2 transition-transform active:scale-90"
+                                >
+                                    <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${isHoldActive ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/10' : 'bg-white/10 text-white hover:bg-white/20'}`}>
+                                        {isHoldActive ? <Play className="w-6 h-6" /> : <Pause className="w-6 h-6" />}
+                                    </div>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/40">{isHoldActive ? 'Resume' : 'Hold'}</span>
+                                </button>
+                            </div>
+                        )}
+
+                        <button 
+                            onClick={onEnd}
+                            className="group flex flex-col items-center gap-4 transition-transform active:scale-90"
+                        >
+                            <div className="w-20 h-20 bg-red-600 rounded-full hover:bg-red-700 transition-all duration-300 flex items-center justify-center shadow-2xl shadow-red-900/40 transform hover:rotate-[135deg]">
+                                <PhoneOff className="w-10 h-10 text-white" />
+                            </div>
+                            <span className="text-[11px] text-red-500 font-black uppercase tracking-[0.4em] drop-shadow-sm">End Call</span>
+                        </button>
+                    </div>
                 )}
             </div>
 
