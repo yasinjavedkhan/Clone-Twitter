@@ -779,15 +779,15 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                                 {msg.isEdited && (
                                                     <span className="text-[8px] italic mr-0.5">edited</span>
                                                 )}
-                                                <span className="text-[9px] font-medium leading-none">
+                                                <span className="text-[11px] font-semibold leading-none drop-shadow-sm">
                                                     {msg.createdAt ? format(msgDate, 'h:mm a') : '...'}
                                                 </span>
                                                 {isMine && !msg.isDeletedForEveryone && (
                                                     <div className="flex items-center ml-0.5">
                                                         {msg.read ? (
-                                                            <CheckCheck className="w-3 h-3 text-white" />
+                                                            <CheckCheck className="w-3.5 h-3.5 text-white drop-shadow-sm" />
                                                         ) : (
-                                                            <Check className="w-3 h-3 opacity-60" />
+                                                            <Check className="w-3.5 h-3.5 text-white/70 drop-shadow-sm" />
                                                         )}
                                                     </div>
                                                 )}
