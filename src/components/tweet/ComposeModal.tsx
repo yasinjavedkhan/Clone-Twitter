@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { Button } from "@/components/ui/Button";
-import { Image, List, Smile, Calendar, MapPin, Globe, X, User } from "lucide-react";
+import { Image, List, Smile, Calendar, MapPin, Globe, X, User, Sparkles } from "lucide-react";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import Avatar from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
@@ -292,6 +292,13 @@ export default function ComposeModal({ isOpen, onClose }: ComposeModalProps) {
                                     <button onClick={() => setShowPoll(!showPoll)} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition", showPoll && "bg-blue-500/10")}><List className="w-5 h-5" /></button>
                                     <button onClick={() => setShowSchedule(!showSchedule)} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition hidden sm:block", showSchedule && "bg-blue-500/10")}><Calendar className="w-5 h-5" /></button>
                                     <button onClick={handleLocation} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition hidden sm:block", (composeLocation || isFetchingLocation) && "bg-blue-500/10")}><MapPin className={cn("w-5 h-5", isFetchingLocation && "animate-pulse")} /></button>
+                                    <button
+                                      className="p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition"
+                                      title="AI Assistant"
+                                      onClick={() => alert("AI Image Editing Assistant coming soon!")}
+                                    >
+                                      <Sparkles className="w-5 h-5" />
+                                    </button>
                                 </div>
                                 <Button onClick={handleTweet} disabled={(!content.trim() && mediaFiles.length === 0) || isTweeting} className="px-5 py-1.5 twitter-button-primary hidden sm:block">{isTweeting ? "Posting..." : "Post"}</Button>
                             </div>

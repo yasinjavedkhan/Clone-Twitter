@@ -9,7 +9,7 @@ import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, getDoc
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { Button } from "@/components/ui/Button";
 import Tweet from "@/components/tweet/Tweet";
-import { Image, List, Smile, Calendar, MapPin, Globe, X, User, Users } from "lucide-react";
+import { Image, List, Smile, Calendar, MapPin, Globe, X, User, Users, Sparkles } from "lucide-react";
 import { useRef } from "react";
 import Avatar from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
@@ -632,14 +632,21 @@ export default function Home() {
                   >
                     <Calendar className="w-5 h-5" />
                   </button>
-                  <button
-                    onClick={handleLocation}
-                    className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition hidden sm:block", (tweetLocation || isFetchingLocation) && "bg-blue-500/10")}
-                    title="Location"
-                  >
-                    <MapPin className={cn("w-5 h-5", isFetchingLocation && "animate-pulse")} />
-                  </button>
-                </div>
+                    <button
+                      onClick={handleLocation}
+                      className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition hidden sm:block", (tweetLocation || isFetchingLocation) && "bg-blue-500/10")}
+                      title="Location"
+                    >
+                      <MapPin className={cn("w-5 h-5", isFetchingLocation && "animate-pulse")} />
+                    </button>
+                    <button
+                      className="p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition"
+                      title="AI Assistant"
+                      onClick={() => alert("AI Image Editing Assistant coming soon!")}
+                    >
+                      <Sparkles className="w-5 h-5" />
+                    </button>
+                  </div>
                 <Button
                   onClick={handleTweet}
                   disabled={(!content.trim() && mediaFiles.length === 0) || isTweeting}
