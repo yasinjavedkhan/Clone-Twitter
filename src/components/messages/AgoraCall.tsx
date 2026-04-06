@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import AgoraRTC, { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack, IRemoteVideoTrack } from "agora-rtc-sdk-ng";
+import AgoraRTC, { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack, IRemoteVideoTrack, ILocalVideoTrack, ILocalAudioTrack } from "agora-rtc-sdk-ng";
 
 /**
  * AgoraCall is now a "Ghost" component that handles the background 
@@ -28,8 +28,8 @@ export default function AgoraCall({
 }) {
     const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID || "56b46b437307402bb2a172013bab91d2";
     const joinInProgress = useRef(false);
-    const audioTrackRef = useRef<IMicrophoneAudioTrack | null>(null);
-    const videoTrackRef = useRef<ICameraVideoTrack | null>(null);
+    const audioTrackRef = useRef<ILocalAudioTrack | null>(null);
+    const videoTrackRef = useRef<ILocalVideoTrack | null>(null);
     const remoteAudioTracksRef = useRef<Map<string, any>>(new Map());
     const remoteVideoTracksRef = useRef<Map<string, IRemoteVideoTrack>>(new Map());
 
@@ -43,8 +43,10 @@ export default function AgoraCall({
             if (!APP_ID || APP_ID === "YOUR_AGORA_APP_ID") return;
 
             try {
+                // Initialize Agora Client
                 agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
+                // Set up event listeners BEFORE joining
                 agoraClient.on("user-published", async (user, mediaType) => {
                     await agoraClient.subscribe(user, mediaType);
                     
@@ -63,7 +65,7 @@ export default function AgoraCall({
                         if (track) {
                             remoteVideoTracksRef.current.set(user.uid.toString(), track);
                             if (onRemoteVideoToggle) onRemoteVideoToggle(true);
-                            // Wait for DOM to be ready
+                            // Ensure DOM is ready for rendering
                             setTimeout(() => {
                                 track.play("remote-video-container");
                             }, 500);
@@ -81,26 +83,30 @@ export default function AgoraCall({
                     }
                 });
 
+                // Join the channel
                 await agoraClient.join(APP_ID, roomName, null, null);
                 
-                audioTrackRef.current = await AgoraRTC.createMicrophoneAudioTrack();
-                
+                // Explicitly request tracks for the local user
                 if (callType === 'video') {
-                    videoTrackRef.current = await AgoraRTC.createCameraVideoTrack().catch(() => null);
-                    if (videoTrackRef.current) {
-                        await agoraClient.publish([audioTrackRef.current, videoTrackRef.current]);
-                        // Wait for DOM to be ready
-                        setTimeout(() => {
-                            videoTrackRef.current?.play("local-video-container");
-                        }, 500);
-                    } else {
-                        await agoraClient.publish([audioTrackRef.current]);
-                    }
+                    const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+                    audioTrackRef.current = audioTrack;
+                    videoTrackRef.current = videoTrack;
+                    
+                    await agoraClient.publish([audioTrack, videoTrack]);
+                    
+                    // Render locally
+                    setTimeout(() => {
+                        videoTrack.play("local-video-container");
+                    }, 500);
                 } else {
-                    await agoraClient.publish([audioTrackRef.current]);
+                    const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+                    audioTrackRef.current = audioTrack;
+                    await agoraClient.publish([audioTrack]);
                 }
+
+                console.log("Agora: Local user tracks published successfully.");
             } catch (error) {
-                console.error("Agora: Background logic failed:", error);
+                console.error("Agora: Bidirectional logic failed:", error);
                 joinInProgress.current = false;
             }
         };
@@ -119,34 +125,39 @@ export default function AgoraCall({
         };
     }, [roomName, callType]);
 
-    // Handle Controls (Mute, Speaker, Hold)
+    // Synchronize Controls Real-time
     useEffect(() => {
-        const shouldMute = isMuted || isHoldActive;
-        if (audioTrackRef.current) {
-            audioTrackRef.current.setEnabled(!shouldMute);
-        }
-
-        remoteAudioTracksRef.current.forEach((track) => {
-            if (isHoldActive) {
-                track.stop();
-            } else {
-                track.play();
-                track.setVolume(isSpeakerActive ? 100 : 40);
+        const syncTracks = async () => {
+            const shouldMute = isMuted || isHoldActive;
+            if (audioTrackRef.current) {
+                audioTrackRef.current.setEnabled(!shouldMute);
             }
-        });
 
-        // Toggle Video display on hold or explicit Camera Off
-        if (videoTrackRef.current) {
-            videoTrackRef.current.setEnabled(!isHoldActive && !isVideoOff);
-        }
+            remoteAudioTracksRef.current.forEach((track) => {
+                if (isHoldActive) {
+                    track.stop();
+                } else {
+                    track.play();
+                    track.setVolume(isSpeakerActive ? 100 : 40);
+                }
+            });
 
-        remoteVideoTracksRef.current.forEach((track) => {
-            if (isHoldActive) {
-                track.stop();
-            } else {
-                track.play("remote-video-container");
+            // Local camera track sync
+            if (videoTrackRef.current) {
+                videoTrackRef.current.setEnabled(!isHoldActive && !isVideoOff);
             }
-        });
+
+            // Remote camera tracks sync
+            remoteVideoTracksRef.current.forEach((track) => {
+                if (isHoldActive) {
+                    track.stop();
+                } else {
+                    track.play("remote-video-container");
+                }
+            });
+        };
+
+        syncTracks();
     }, [isMuted, isSpeakerActive, isHoldActive, isVideoOff]);
 
     return null;
