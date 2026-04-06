@@ -11,7 +11,8 @@ interface CallContextType {
     isCalling: boolean;
     roomName: string | null;
     callType: CallType;
-    callStatus: 'ringing' | 'accepted' | 'ended' | null;
+    callStatus: 'calling' | 'ringing' | 'accepted' | 'connected' | 'ended' | null;
+    connectedAt: number | null;
     activeOtherUser: any | null;
     startCall: (otherUser: any, type: CallType, conversationId: string) => Promise<void>;
     endCall: () => Promise<void>;
@@ -25,7 +26,8 @@ export function CallProvider({ children }: { children: ReactNode }) {
     const [isCalling, setIsCalling] = useState(false);
     const [roomName, setRoomName] = useState<string | null>(null);
     const [callType, setCallType] = useState<CallType>('voice');
-    const [callStatus, setCallStatus] = useState<'ringing' | 'accepted' | 'ended' | null>(null);
+    const [callStatus, setCallStatus] = useState<'calling' | 'ringing' | 'accepted' | 'connected' | 'ended' | null>(null);
+    const [connectedAt, setConnectedAt] = useState<number | null>(null);
     const [activeOtherUser, setActiveOtherUser] = useState<any | null>(null);
     const manuallyInitiated = useRef(false);
 
@@ -47,11 +49,18 @@ export function CallProvider({ children }: { children: ReactNode }) {
                 setIsCalling(false);
                 setRoomName(null);
                 setCallStatus(null);
+                setConnectedAt(null);
                 setActiveOtherUser(null);
                 manuallyInitiated.current = false;
             } else {
                 const data = docSnap.data();
-                if (data?.status) setCallStatus(data.status);
+                if (data?.status) {
+                    setCallStatus(data.status);
+                    if (data.status === 'accepted' && !connectedAt && !manuallyInitiated.current) {
+                         // Receiver just accepted
+                         setConnectedAt(Date.now());
+                    }
+                }
             }
             initialLoad = false;
         }, (error) => {
@@ -68,7 +77,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
         
         setRoomName(generatedRoom);
         setCallType(type);
-        setCallStatus('ringing');
+        setCallStatus('calling');
         setActiveOtherUser(otherUser);
         setIsCalling(true);
         manuallyInitiated.current = true;
@@ -97,7 +106,8 @@ export function CallProvider({ children }: { children: ReactNode }) {
     const joinCall = (room: string, type: CallType, otherUser: any) => {
         setRoomName(room);
         setCallType(type);
-        setCallStatus('accepted');
+        setCallStatus('connected');
+        setConnectedAt(Date.now());
         setActiveOtherUser(otherUser);
         setIsCalling(true);
         manuallyInitiated.current = false;
@@ -110,12 +120,13 @@ export function CallProvider({ children }: { children: ReactNode }) {
         setIsCalling(false);
         setRoomName(null);
         setCallStatus(null);
+        setConnectedAt(null);
         setActiveOtherUser(null);
         manuallyInitiated.current = false;
     };
 
     return (
-        <CallContext.Provider value={{ isCalling, roomName, callType, callStatus, activeOtherUser, startCall, endCall, joinCall }}>
+        <CallContext.Provider value={{ isCalling, roomName, callType, callStatus, connectedAt, activeOtherUser, startCall, endCall, joinCall }}>
             {children}
         </CallContext.Provider>
     );

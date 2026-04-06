@@ -2,21 +2,28 @@
 
 import { useCall } from "@/contexts/CallContext";
 import AgoraCall from "./AgoraCall";
+import CallUI from "./CallUI";
 
 export default function GlobalCallOverlay() {
-  const { isCalling, roomName, callType, callStatus, activeOtherUser, endCall } = useCall();
+  const { isCalling, roomName, callType, callStatus, connectedAt, activeOtherUser, endCall } = useCall();
 
   if (!isCalling || !roomName) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black flex flex-col h-screen w-screen overflow-hidden">
+    <>
+      <CallUI 
+        status={callStatus === 'connected' ? 'connected' : (callStatus === 'accepted' ? 'accepted' : (callStatus === 'ringing' ? 'ringing' : 'calling'))}
+        type={callType}
+        otherUser={activeOtherUser}
+        connectedAt={connectedAt}
+        onEnd={endCall}
+      />
+      
+      {/* Background Agora call logic */}
       <AgoraCall 
         roomName={roomName}
         callType={callType}
-        callStatus={callStatus}
-        otherUser={activeOtherUser}
-        onEndCall={endCall}
       />
-    </div>
+    </>
   );
 }
