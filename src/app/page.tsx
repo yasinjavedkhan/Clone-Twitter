@@ -34,6 +34,7 @@ export default function Home() {
   const [scheduledDate, setScheduledDate] = useState("");
   const [tweetLocation, setTweetLocation] = useState<string | null>(null);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+  const [isAIRefining, setIsAIRefining] = useState(false);
   const [activeTab, setActiveTab] = useState<'foryou' | 'following'>('foryou');
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
@@ -314,6 +315,28 @@ export default function Home() {
       }
     } finally {
       setIsTweeting(false);
+    }
+  };
+
+  const handleAIRefine = async () => {
+    if (!content.trim() || isAIRefining) return;
+    
+    setIsAIRefining(true);
+    try {
+        const response = await fetch('/api/ai/compose', {
+            method: 'POST',
+            body: JSON.stringify({ content, promptType: 'improve' }),
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!response.ok) throw new Error("AI refinement failed");
+        
+        const data = await response.json();
+        if (data.text) setContent(data.text);
+    } catch (error) {
+        console.error("AI Error:", error);
+    } finally {
+        setIsAIRefining(false);
     }
   };
 
@@ -640,11 +663,15 @@ export default function Home() {
                       <MapPin className={cn("w-5 h-5", isFetchingLocation && "animate-pulse")} />
                     </button>
                     <button
-                      className="p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition"
-                      title="AI Assistant"
-                      onClick={() => alert("AI Image Editing Assistant coming soon!")}
+                      className={cn(
+                        "p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition sm:relative", 
+                        isAIRefining && "opacity-50 cursor-not-allowed"
+                      )}
+                      title="AI Smart Refine"
+                      onClick={handleAIRefine}
+                      disabled={isAIRefining || !content.trim()}
                     >
-                      <Sparkles className="w-5 h-5" />
+                      <Sparkles className={cn("w-5 h-5", isAIRefining && "animate-spin")} />
                     </button>
                   </div>
                 <Button

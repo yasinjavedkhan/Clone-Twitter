@@ -30,6 +30,7 @@ export default function ComposeModal({ isOpen, onClose }: ComposeModalProps) {
     const [scheduledDate, setScheduledDate] = useState("");
     const [composeLocation, setComposeLocation] = useState<string | null>(null);
     const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+    const [isAIRefining, setIsAIRefining] = useState(false);
     
     const fileInputRef = useRef<HTMLInputElement>(null);
     const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -170,6 +171,28 @@ export default function ComposeModal({ isOpen, onClose }: ComposeModalProps) {
         }
     };
 
+    const handleAIRefine = async () => {
+        if (!content.trim() || isAIRefining) return;
+        
+        setIsAIRefining(true);
+        try {
+            const response = await fetch('/api/ai/compose', {
+                method: 'POST',
+                body: JSON.stringify({ content, promptType: 'improve' }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            if (!response.ok) throw new Error("AI refinement failed");
+            
+            const data = await response.json();
+            if (data.text) setContent(data.text);
+        } catch (error) {
+            console.error("AI Error:", error);
+        } finally {
+            setIsAIRefining(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-[100] flex items-start justify-center bg-transparent sm:bg-gray-600/50 sm:backdrop-blur-sm sm:pt-[5%]">
             <div className="bg-black w-full h-full sm:h-auto sm:max-w-xl sm:rounded-2xl sm:border border-gray-800 flex flex-col pt-2 shadow-2xl relative overflow-hidden">
@@ -293,11 +316,15 @@ export default function ComposeModal({ isOpen, onClose }: ComposeModalProps) {
                                     <button onClick={() => setShowSchedule(!showSchedule)} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition hidden sm:block", showSchedule && "bg-blue-500/10")}><Calendar className="w-5 h-5" /></button>
                                     <button onClick={handleLocation} className={cn("p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition hidden sm:block", (composeLocation || isFetchingLocation) && "bg-blue-500/10")}><MapPin className={cn("w-5 h-5", isFetchingLocation && "animate-pulse")} /></button>
                                     <button
-                                      className="p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition"
-                                      title="AI Assistant"
-                                      onClick={() => alert("AI Image Editing Assistant coming soon!")}
+                                      className={cn(
+                                        "p-2 rounded-full hover:bg-blue-500/10 text-[var(--color-twitter-blue)] transition sm:relative", 
+                                        isAIRefining && "opacity-50 cursor-not-allowed"
+                                      )}
+                                      title="AI Smart Refine"
+                                      onClick={handleAIRefine}
+                                      disabled={isAIRefining || !content.trim()}
                                     >
-                                      <Sparkles className="w-5 h-5" />
+                                      <Sparkles className={cn("w-5 h-5", isAIRefining && "animate-spin")} />
                                     </button>
                                 </div>
                                 <Button onClick={handleTweet} disabled={(!content.trim() && mediaFiles.length === 0) || isTweeting} className="px-5 py-1.5 twitter-button-primary hidden sm:block">{isTweeting ? "Posting..." : "Post"}</Button>
