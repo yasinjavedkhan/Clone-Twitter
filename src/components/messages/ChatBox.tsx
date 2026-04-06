@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment, deleteDoc, arrayUnion, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -84,29 +84,6 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         };
     }, []);
 
-    // Function to clear unread count for current user
-    const clearUnreadCount = useCallback(async () => {
-        if (!conversationId || !user?.uid) return;
-        try {
-            const convRef = doc(db, "conversations", conversationId);
-            const convSnap = await getDoc(convRef);
-            if (convSnap.exists() && convSnap.data().unreadCount?.[user.uid] > 0) {
-                await updateDoc(convRef, {
-                    [`unreadCount.${user.uid}`]: 0
-                });
-            }
-        } catch (error) {
-            console.error("Error clearing unread count:", error);
-        }
-    }, [conversationId, user?.uid]);
-
-    // Clear unread on mount, and when focus returns
-    useEffect(() => {
-        clearUnreadCount();
-        window.addEventListener('focus', clearUnreadCount);
-        return () => window.removeEventListener('focus', clearUnreadCount);
-    }, [clearUnreadCount]);
-
 
     useEffect(() => {
         // Global Calling: ChatBox no longer handles call triggers from URL
@@ -133,10 +110,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     ...doc.data()
                 }));
 
-                // Clear my unread count for this conversation when active
-                if (user?.uid) {
-                    clearUnreadCount();
-                }
+                // Clear my unread count for this conversation
+                updateDoc(doc(db, "conversations", conversationId), {
+                    [`unreadCount.${user.uid}`]: 0
+                }).catch(() => {});
 
                 // Heartbeat every 3 seconds for real-time presence
                 // Sort in memory to avoid missing index errors
@@ -299,7 +276,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
     const recordCallEvent = async (type: 'voice' | 'video') => {
         if (!user || !conversationId) return;
-        const text = type === 'voice' ? "≡ƒô₧ Started a voice call" : "≡ƒô╣ Started a video call";
+        const text = type === 'voice' ? "📞 Started a voice call" : "📹 Started a video call";
         try {
             await addDoc(collection(db, "conversations", conversationId, "messages"), {
                 senderId: user.uid,
@@ -434,7 +411,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             });
 
             await updateDoc(doc(db, "conversations", conversationId), {
-                lastMessage: "≡ƒÄñ Voice message",
+                lastMessage: "🎤 Voice message",
                 lastTimestamp: serverTimestamp(),
                 ...(otherId ? { [`unreadCount.${otherId}`]: increment(1) } : {})
             });
@@ -443,8 +420,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 const senderName = userData?.displayName || userData?.username || 'Someone';
                 await sendPushNotification({
                     toUserId: otherUser.userId,
-                    title: `≡ƒÆ¼ ${senderName}`,
-                    body: "≡ƒÄñ Sent a voice message",
+                    title: `💬 ${senderName}`,
+                    body: "🎤 Sent a voice message",
                     data: {
                         type: 'message',
                         conversationId,
@@ -521,7 +498,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 const senderName = userData?.displayName || userData?.username || 'Someone';
                 await sendPushNotification({
                     toUserId: otherUser.userId,
-                    title: `≡ƒÆ¼ ${senderName}`,
+                    title: `💬 ${senderName}`,
                     body: text ? (text.length > 80 ? text.substring(0, 80) + '...' : text) : 'Sent you a photo',
                     data: {
                         type: 'message',
@@ -563,7 +540,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         if (!user || !conversationId) return;
         try {
             await updateDoc(doc(db, "conversations", conversationId, "messages", messageId), {
-                text: "≡ƒÜ½ This message was deleted",
+                text: "🚫 This message was deleted",
                 mediaUrls: [],
                 audioUrl: null,
                 isDeletedForEveryone: true
