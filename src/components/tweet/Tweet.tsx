@@ -222,11 +222,11 @@ const VideoItem = ({ url }: { url: string }) => {
     };
 
     return (
-        <div className="relative w-full h-full group/video bg-black">
+        <div className="relative w-full h-full group/video bg-black rounded-xl overflow-hidden aspect-video sm:aspect-auto">
             <video
                 ref={videoRef}
                 src={url}
-                className="w-full h-full object-contain pointer-events-none"
+                className="w-full h-full object-cover sm:object-contain pointer-events-none"
                 playsInline
                 muted={true}
                 preload="auto"
@@ -637,7 +637,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
 
     return (
         <article 
-            className="border-b border-gray-800 p-4 hover:bg-gray-900/50 transition cursor-pointer flex gap-4"
+            className="border-b border-gray-800 p-3 sm:p-4 hover:bg-gray-900/50 transition cursor-pointer flex gap-3 sm:gap-4"
             onClick={handleTap}
         >
             {/* Avatar */}
@@ -693,8 +693,8 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                 {tweet.mediaUrls && tweet.mediaUrls.length > 0 && (
                     <div 
                         className={cn(
-                            "mt-3 mr-2 overflow-hidden rounded-2xl border border-gray-800 grid gap-0.5",
-                            tweet.mediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2",
+                            "mt-3 overflow-hidden rounded-2xl border border-gray-800 grid gap-0.5",
+                            tweet.mediaUrls.length === 1 ? "grid-cols-1 w-full" : "grid-cols-2",
                             tweet.mediaUrls.length === 3 ? "grid-rows-2" : ""
                         )}
                     >
@@ -709,7 +709,11 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                                     key={index} 
                                     className={cn(
                                         "relative overflow-hidden bg-gray-900 cursor-pointer group",
-                                        tweet.mediaUrls!.length === 3 && index === 0 ? "row-span-2" : "aspect-video"
+                                        tweet.mediaUrls!.length === 1 
+                                            ? "min-h-[250px] max-h-[512px] w-full" 
+                                            : tweet.mediaUrls!.length === 3 && index === 0 
+                                                ? "row-span-2" 
+                                                : "aspect-video"
                                     )}
                                     onClick={(e) => {
                                         if (isVideo) {
@@ -726,7 +730,10 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                                         <img
                                             src={url}
                                             alt="Tweet media"
-                                            className="w-full h-full object-cover group-hover:opacity-90 transition duration-200"
+                                            className={cn(
+                                                "w-full h-full transition duration-200 group-hover:opacity-95",
+                                                tweet.mediaUrls!.length === 1 ? "object-contain bg-black/40" : "object-cover"
+                                            )}
                                         />
                                     )}
                                     {/* Expand/play hint on hover */}

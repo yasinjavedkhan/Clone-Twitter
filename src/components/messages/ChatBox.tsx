@@ -5,7 +5,7 @@ import Link from "next/link";
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment, deleteDoc, arrayUnion, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Send, Image, User, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2, Minimize2, MoreHorizontal, Trash2, Circle, Info, ArrowLeft, ShieldAlert, Edit } from "lucide-react";
+import { Send, Image, User, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2, Minimize2, MoreHorizontal, Trash2, Circle, Info, ArrowLeft, ShieldAlert, Edit, Check, CheckCheck } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { sendPushNotification } from "@/lib/notifications";
 import AgoraCall from "./AgoraCall";
@@ -13,6 +13,16 @@ import { uploadToCloudinary } from "@/lib/cloudinary";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { useCall } from "@/contexts/CallContext";
+
+const formatDateSeparator = (date: Date) => {
+    const now = new Date();
+    const dString = date.toDateString();
+    if (dString === now.toDateString()) return "Today";
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    if (dString === yesterday.toDateString()) return "Yesterday";
+    return format(date, 'MMMM d, yyyy');
+};
 
 export default function ChatBox({ conversationId }: { conversationId: string }) {
     const searchParams = useSearchParams();
@@ -38,6 +48,11 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const [viewportHeight, setViewportHeight] = useState('100dvh');
     const [viewportTop, setViewportTop] = useState(0);
     const [toast, setToast] = useState<string | null>(null);
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingDuration, setRecordingDuration] = useState(0);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
 
     useEffect(() => {
@@ -322,6 +337,106 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) audioChunksRef.current.push(e.data);
+            };
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                // Automatically send after stopping if not cancelled
+                if (audioChunksRef.current.length > 0) {
+                    await sendVoiceMessage(audioBlob);
+                }
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+            setRecordingDuration(0);
+            recordingIntervalRef.current = setInterval(() => {
+                setRecordingDuration(prev => prev + 1);
+            }, 1000);
+        } catch (err) {
+            console.error("Microphone access denied:", err);
+            alert("Please allow microphone access to send voice messages.");
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            if (recordingIntervalRef.current) {
+                clearInterval(recordingIntervalRef.current);
+            }
+        }
+    };
+
+    const cancelRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            audioChunksRef.current = [];
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            if (recordingIntervalRef.current) {
+                clearInterval(recordingIntervalRef.current);
+            }
+            setRecordingDuration(0);
+        }
+    };
+
+    const sendVoiceMessage = async (blob: Blob) => {
+        if (!user || !conversationId) return;
+        setIsSending(true);
+        try {
+            const audioFile = new File([blob], "voice_message.webm", { type: blob.type });
+            const audioUrl = await uploadToCloudinary(audioFile);
+
+            const convDoc = await getDoc(doc(db, "conversations", conversationId));
+            const participants = convDoc.data()?.participants || [];
+            const otherId = participants.find((p: string) => p !== user.uid);
+
+            await addDoc(collection(db, "conversations", conversationId, "messages"), {
+                senderId: user.uid,
+                text: "",
+                audioUrl,
+                read: otherId ? false : true,
+                createdAt: serverTimestamp(),
+            });
+
+            await updateDoc(doc(db, "conversations", conversationId), {
+                lastMessage: "🎤 Voice message",
+                lastTimestamp: serverTimestamp(),
+                ...(otherId ? { [`unreadCount.${otherId}`]: increment(1) } : {})
+            });
+
+            if (otherUser?.userId && otherUser.userId !== user.uid) {
+                const senderName = userData?.displayName || userData?.username || 'Someone';
+                await sendPushNotification({
+                    toUserId: otherUser.userId,
+                    title: `💬 ${senderName}`,
+                    body: "🎤 Sent a voice message",
+                    data: {
+                        type: 'message',
+                        conversationId,
+                        fromUserId: user.uid,
+                        url: `/messages/${conversationId}`,
+                    },
+                });
+            }
+        } catch (error) {
+            console.error("Error sending voice message:", error);
+        } finally {
+            setIsSending(false);
+        }
+    };
+
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if ((!newMessage.trim() && mediaFiles.length === 0) || !user || isSending) return;
@@ -588,55 +703,90 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         const isMine = msg.senderId === user?.uid;
                         if (msg.deletedBy && msg.deletedBy.includes(user?.uid)) return null;
 
+                        const msgDate = msg.createdAt?.toDate ? msg.createdAt.toDate() : (msg.createdAt instanceof Date ? msg.createdAt : new Date());
+                        const prevMsg = index > 0 ? messages[index - 1] : null;
+                        const prevDate = prevMsg?.createdAt?.toDate ? prevMsg.createdAt.toDate() : (prevMsg?.createdAt instanceof Date ? prevMsg.createdAt : null);
+                        
+                        const showDateSeparator = !prevDate || msgDate.toDateString() !== prevDate.toDateString();
+
                         return (
-                            <div 
-                                key={msg.id} 
-                                id={`msg-${msg.id}`} // Unique ID for smart scrolling
-                                className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
-                            >
+                            <div key={msg.id} className="flex flex-col gap-4">
+                                {showDateSeparator && (
+                                    <div className="flex justify-center my-2">
+                                        <div className="bg-[#15181c] text-gray-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-gray-800 shadow-sm uppercase tracking-wider opacity-80">
+                                            {formatDateSeparator(msgDate)}
+                                        </div>
+                                    </div>
+                                )}
                                 <div 
-                                    className={cn(
-                                        "max-w-[85%] sm:max-w-[75%] px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl select-none touch-none shadow-sm",
-                                        isMine 
-                                            ? "bg-twitter-blue text-white rounded-br-none" 
-                                            : msg.isDeletedForEveryone 
-                                                ? "bg-transparent border border-gray-800 text-gray-500 italic rounded-2xl rounded-tl-none"
-                                                : "bg-[#202327] text-white rounded-bl-none"
-                                    )}
-                                    onTouchStart={() => startPress(msg.id)}
-                                    onTouchEnd={endPress}
-                                    onMouseDown={() => startPress(msg.id)}
-                                    onMouseUp={endPress}
-                                    onMouseLeave={endPress}
-                                    onContextMenu={(e) => e.preventDefault()}
+                                    id={`msg-${msg.id}`} // Unique ID for smart scrolling
+                                    className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
                                 >
-                                    {msg.mediaUrls && msg.mediaUrls.length > 0 && (
-                                        <div className="mb-2 space-y-2">
-                                            {msg.mediaUrls.map((url: string, i: number) => {
-                                                const isVideo = url.includes('/video/upload/');
-                                                return (
-                                                    <div key={i} className="rounded-xl overflow-hidden border border-white/5">
-                                                        {isVideo ? (
-                                                            <video src={url} controls className="max-w-full h-auto" />
+                                    <div 
+                                        className={cn(
+                                            "w-fit max-w-[85%] sm:max-w-[70%] px-2.5 py-1.5 rounded-2xl select-none touch-none shadow-sm relative group",
+                                            isMine 
+                                                ? "bg-twitter-blue text-white rounded-br-none" 
+                                                : msg.isDeletedForEveryone 
+                                                    ? "bg-transparent border border-gray-800 text-gray-500 italic rounded-2xl rounded-tl-none"
+                                                    : "bg-[#202327] text-white rounded-bl-none"
+                                        )}
+                                        onTouchStart={() => startPress(msg.id)}
+                                        onTouchEnd={endPress}
+                                        onMouseDown={() => startPress(msg.id)}
+                                        onMouseUp={endPress}
+                                        onMouseLeave={endPress}
+                                        onContextMenu={(e) => e.preventDefault()}
+                                    >
+                                        {msg.mediaUrls && msg.mediaUrls.length > 0 && (
+                                            <div className="mb-2 space-y-2">
+                                                {msg.mediaUrls.map((url: string, i: number) => {
+                                                    const isVideo = url.includes('/video/upload/');
+                                                    return (
+                                                        <div key={i} className="rounded-xl overflow-hidden border border-white/5">
+                                                            {isVideo ? (
+                                                                <video src={url} controls className="max-w-full h-auto" />
+                                                            ) : (
+                                                                <img src={url} alt="" className="max-w-full h-auto" />
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                        {msg.audioUrl && (
+                                            <div className="mb-2 py-1">
+                                                <audio src={msg.audioUrl} controls className="max-w-full h-10 filter invert brightness-200" />
+                                            </div>
+                                        )}
+                                        
+                                        <div className="flex flex-col min-w-[40px]">
+                                            <p className="text-[13px] sm:text-[14px] whitespace-pre-wrap break-words leading-tight pr-1">
+                                                {msg.text}
+                                            </p>
+                                            
+                                            <div className={cn(
+                                                "flex items-center justify-end gap-1 mt-0.5 self-end select-none",
+                                                isMine ? "text-blue-100/60" : "text-gray-500"
+                                            )}>
+                                                {msg.isEdited && (
+                                                    <span className="text-[8px] italic mr-0.5">edited</span>
+                                                )}
+                                                <span className="text-[9px] font-medium leading-none">
+                                                    {msg.createdAt ? format(msgDate, 'h:mm a') : '...'}
+                                                </span>
+                                                {isMine && !msg.isDeletedForEveryone && (
+                                                    <div className="flex items-center ml-0.5">
+                                                        {msg.read ? (
+                                                            <CheckCheck className="w-3 h-3 text-white" />
                                                         ) : (
-                                                            <img src={url} alt="" className="max-w-full h-auto" />
+                                                            <Check className="w-3 h-3 opacity-60" />
                                                         )}
                                                     </div>
-                                                );
-                                            })}
+                                                )}
+                                            </div>
                                         </div>
-                                    )}
-                                    {msg.audioUrl && (
-                                        <div className="mb-2 py-1">
-                                            <audio src={msg.audioUrl} controls className="max-w-full h-10 filter invert brightness-200" />
-                                        </div>
-                                    )}
-                                    <p className="text-[14px] sm:text-[15px] whitespace-pre-wrap break-words leading-relaxed">
-                                        {msg.text}
-                                    </p>
-                                    {msg.isEdited && (
-                                        <span className="text-[10px] opacity-60 block mt-1">(edited)</span>
-                                    )}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -710,38 +860,73 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 )}
 
                 <form onSubmit={handleSendMessage} className="p-3 flex items-center gap-2">
-                    <>
-                        <input id="chat-file-input" type="file" accept="image/*,video/*" multiple className="hidden" ref={fileInputRef} onChange={handleMediaSelect} />
-                        <label htmlFor="chat-file-input" className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition cursor-pointer shrink-0"><Image className="w-5 h-5" /></label>
-                        {/* Microphone (Voice Message) button REMOVED as per request */}
-                        <input
-                                type="text"
-                                value={newMessage}
-                                onChange={(e) => {
-                                    setNewMessage(e.target.value);
-                                    if (user?.uid && conversationId) {
-                                        updateDoc(doc(db, "conversations", conversationId), { [`typing.${user.uid}`]: true }).catch(() => {});
-                                        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-                                        typingTimeoutRef.current = setTimeout(() => {
-                                            updateDoc(doc(db, "conversations", conversationId), { [`typing.${user.uid}`]: false }).catch(() => {});
-                                        }, 4000);
-                                    }
-                                }}
-                                placeholder="Start a new message"
-                                className="flex-grow bg-[#202327] rounded-2xl py-2 px-4 outline-none focus:ring-1 focus:ring-twitter-blue transition text-[15px] min-w-0"
-                            />
-                            <button
-                                type="submit"
-                                disabled={(!newMessage.trim() && mediaFiles.length === 0) || isSending}
-                                className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition disabled:opacity-50 shrink-0"
-                            >
-                                {isSending ? (
-                                    <div className="w-5 h-5 border-2 border-twitter-blue border-t-transparent animate-spin rounded-full" />
-                                ) : (
+                    {isRecording ? (
+                        <div className="flex-grow flex items-center justify-between bg-[#202327] rounded-3xl px-4 py-2 animate-in slide-in-from-bottom-2 duration-300">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                <span className="text-white font-medium tabular-nums">{formatDuration(recordingDuration)}</span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <button 
+                                    type="button"
+                                    onClick={cancelRecording}
+                                    className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={stopRecording}
+                                    className="bg-twitter-blue hover:bg-blue-600 text-white rounded-full p-2 transition-all active:scale-90"
+                                >
                                     <Send className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <input id="chat-file-input" type="file" accept="image/*,video/*" multiple className="hidden" ref={fileInputRef} onChange={handleMediaSelect} />
+                            <label htmlFor="chat-file-input" className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition cursor-pointer shrink-0"><Image className="w-5 h-5" /></label>
+                            
+                            <input
+                                    type="text"
+                                    value={newMessage}
+                                    onChange={(e) => {
+                                        setNewMessage(e.target.value);
+                                        if (user?.uid && conversationId) {
+                                            updateDoc(doc(db, "conversations", conversationId), { [`typing.${user.uid}`]: true }).catch(() => {});
+                                            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                                            typingTimeoutRef.current = setTimeout(() => {
+                                                updateDoc(doc(db, "conversations", conversationId), { [`typing.${user.uid}`]: false }).catch(() => {});
+                                            }, 4000);
+                                        }
+                                    }}
+                                    placeholder="Start a new message"
+                                    className="flex-grow bg-[#202327] rounded-2xl py-2 px-4 outline-none focus:ring-1 focus:ring-twitter-blue transition text-[15px] min-w-0"
+                                />
+                                {(!newMessage.trim() && mediaFiles.length === 0) ? (
+                                    <button
+                                        type="button"
+                                        onClick={startRecording}
+                                        className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition shrink-0"
+                                    >
+                                        <Mic className="w-5 h-5" />
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="submit"
+                                        disabled={isSending}
+                                        className="p-2 hover:bg-twitter-blue/10 rounded-full text-twitter-blue transition disabled:opacity-50 shrink-0"
+                                    >
+                                        {isSending ? (
+                                            <div className="w-5 h-5 border-2 border-twitter-blue border-t-transparent animate-spin rounded-full" />
+                                        ) : (
+                                            <Send className="w-5 h-5" />
+                                        )}
+                                    </button>
                                 )}
-                            </button>
-                        </>
+                            </>
+                    )}
                 </form>
             </div>
 
