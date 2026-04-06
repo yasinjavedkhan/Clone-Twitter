@@ -5,7 +5,7 @@ import { Phone, PhoneOff, Video, X, User, Volume2, VolumeX, Pause, Play, Mic, Mi
 import { useAuth } from "@/contexts/AuthContext";
 
 interface CallUIProps {
-    status: 'calling' | 'ringing' | 'accepted' | 'connected' | 'incoming';
+    status: 'calling' | 'ringing' | 'connected' | 'ended' | 'incoming';
     type: 'voice' | 'video';
     otherUser: any;
     connectedAt: number | null;
@@ -47,12 +47,12 @@ export default function CallUI({
     };
 
     const getStatusText = () => {
-        if (status === 'incoming') return `Incoming ${type === 'video' ? 'Video' : 'Voice'} Call...`;
+        if (status === 'incoming') return 'Incoming Call...';
         if (status === 'calling') return 'Calling...';
         if (status === 'ringing') return 'Ringing...';
-        if (status === 'accepted') return 'Connecting...';
         if (status === 'connected') return formatTime(duration);
-        return 'Call Ended';
+        if (status === 'ended') return 'Call Ended';
+        return '';
     };
 
     return (
@@ -112,30 +112,35 @@ export default function CallUI({
             {/* Bottom Section: Controls */}
             <div className="relative z-10 flex items-center justify-center gap-12 w-full max-w-sm mb-10">
                 {status === 'incoming' ? (
-                    <>
-                        <button 
-                            onClick={onReject}
-                            className="group flex flex-col items-center gap-3"
-                        >
-                            <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center text-white hover:bg-red-700 transition-all hover:scale-110 active:scale-95 shadow-xl shadow-red-900/30">
-                                <PhoneOff className="w-8 h-8" />
-                            </div>
-                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Decline</span>
-                        </button>
+                    <div className="flex flex-col items-center gap-10 w-full animate-in fade-in zoom-in duration-500">
+                        <p className="text-twitter-blue font-black uppercase tracking-[0.3em] text-[10px] animate-pulse">
+                            Incoming {type === 'video' ? 'Video' : 'Voice'} Call...
+                        </p>
+                        <div className="flex items-center justify-center gap-12 w-full max-w-sm">
+                            <button 
+                                onClick={onReject}
+                                className="group flex flex-col items-center gap-3"
+                            >
+                                <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center text-white hover:bg-red-700 transition-all hover:scale-110 active:scale-95 shadow-xl shadow-red-900/30">
+                                    <PhoneOff className="w-8 h-8" />
+                                </div>
+                                <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Reject</span>
+                            </button>
 
-                        <button 
-                            onClick={onAccept}
-                            className="group flex flex-col items-center gap-3"
-                        >
-                            <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-white hover:bg-green-600 transition-all hover:scale-110 active:scale-95 shadow-xl shadow-green-900/30 animate-bounce">
-                                {type === 'video' ? <Video className="w-8 h-8" /> : <Phone className="w-8 h-8" />}
-                            </div>
-                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Accept</span>
-                        </button>
-                    </>
+                            <button 
+                                onClick={onAccept}
+                                className="group flex flex-col items-center gap-3"
+                            >
+                                <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-white hover:bg-green-600 transition-all hover:scale-110 active:scale-95 shadow-xl shadow-green-900/30 animate-bounce">
+                                    {type === 'video' ? <Video className="w-8 h-8" /> : <Phone className="w-8 h-8" />}
+                                </div>
+                                <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Accept</span>
+                            </button>
+                        </div>
+                    </div>
                 ) : (
-                    <div className="flex flex-col items-center gap-10 w-full">
-                        {/* Secondary Controls (Speaker, Hold, Mute) */}
+                    <div className="flex flex-col items-center gap-10 w-full h-full">
+                        {/* Secondary Controls (Speaker, Hold, Mute) - ONLY visible in Connected State */}
                         {status === 'connected' && (
                             <div className="flex items-center justify-center gap-8 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <button 
@@ -145,7 +150,7 @@ export default function CallUI({
                                     <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${isSpeakerActive ? 'bg-white text-black shadow-lg shadow-white/10' : 'bg-white/10 text-white hover:bg-white/20'}`}>
                                         {isSpeakerActive ? <Volume2 className="w-6 h-6" /> : <VolumeX className="w-6 h-6" />}
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Speaker</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/40">{isSpeakerActive ? 'Speaker On' : 'Speaker Off'}</span>
                                 </button>
 
                                 <button 
@@ -170,15 +175,24 @@ export default function CallUI({
                             </div>
                         )}
 
-                        <button 
-                            onClick={onEnd}
-                            className="group flex flex-col items-center gap-4 transition-transform active:scale-90"
-                        >
-                            <div className="w-20 h-20 bg-red-600 rounded-full hover:bg-red-700 transition-all duration-300 flex items-center justify-center shadow-2xl shadow-red-900/40 transform hover:rotate-[135deg]">
-                                <PhoneOff className="w-10 h-10 text-white" />
-                            </div>
-                            <span className="text-[11px] text-red-500 font-black uppercase tracking-[0.4em] drop-shadow-sm">End Call</span>
-                        </button>
+                        {/* End Call Button - Visible in all other non-incoming states */}
+                        {status !== 'ended' && (
+                            <button 
+                                onClick={onEnd}
+                                className="group flex flex-col items-center gap-4 transition-transform active:scale-90"
+                            >
+                                <div className="w-20 h-20 bg-red-600 rounded-full hover:bg-red-700 transition-all duration-300 flex items-center justify-center shadow-2xl shadow-red-900/40 transform hover:rotate-[135deg]">
+                                    <PhoneOff className="w-10 h-10 text-white" />
+                                </div>
+                                <span className="text-[11px] text-red-500 font-black uppercase tracking-[0.4em] drop-shadow-sm">End Call</span>
+                            </button>
+                        )}
+
+                        {status === 'ended' && (
+                             <div className="text-red-500 font-black uppercase tracking-[0.5em] text-sm animate-pulse">
+                                 Disconnected
+                             </div>
+                        )}
                     </div>
                 )}
             </div>

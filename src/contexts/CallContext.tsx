@@ -11,7 +11,7 @@ interface CallContextType {
     isCalling: boolean;
     roomName: string | null;
     callType: CallType;
-    callStatus: 'calling' | 'ringing' | 'accepted' | 'connected' | 'ended' | null;
+    callStatus: 'calling' | 'ringing' | 'connected' | 'ended' | null;
     conversationId: string | null;
     connectedAt: number | null;
     activeOtherUser: any | null;
@@ -27,7 +27,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
     const [isCalling, setIsCalling] = useState(false);
     const [roomName, setRoomName] = useState<string | null>(null);
     const [callType, setCallType] = useState<CallType>('voice');
-    const [callStatus, setCallStatus] = useState<'calling' | 'ringing' | 'accepted' | 'connected' | 'ended' | null>(null);
+    const [callStatus, setCallStatus] = useState<'calling' | 'ringing' | 'connected' | 'ended' | null>(null);
     const [conversationId, setConversationId] = useState<string | null>(null);
     const [connectedAt, setConnectedAt] = useState<number | null>(null);
     const [activeOtherUser, setActiveOtherUser] = useState<any | null>(null);
@@ -59,7 +59,11 @@ export function CallProvider({ children }: { children: ReactNode }) {
                 const data = docSnap.data();
                 if (data?.status) {
                     if (data.conversationId && !conversationId) setConversationId(data.conversationId);
-                    setCallStatus(data.status);
+                    
+                    // Unified state mapping
+                    const mappedStatus = data.status === 'accepted' ? 'connected' : data.status;
+                    setCallStatus(mappedStatus);
+                    
                     if (data.status === 'accepted' && !connectedAt && !manuallyInitiated.current) {
                          // Receiver just accepted
                          setConnectedAt(Date.now());
@@ -159,11 +163,16 @@ export function CallProvider({ children }: { children: ReactNode }) {
 
         setIsCalling(false);
         setRoomName(null);
-        setCallStatus(null);
-        setConversationId(null);
-        setConnectedAt(null);
-        setActiveOtherUser(null);
-        manuallyInitiated.current = false;
+        setCallStatus('ended');
+        
+        // Let 'Call Ended' show for 2 seconds before closing
+        setTimeout(() => {
+            setCallStatus(null);
+            setConversationId(null);
+            setConnectedAt(null);
+            setActiveOtherUser(null);
+            manuallyInitiated.current = false;
+        }, 2000);
     };
 
     return (
