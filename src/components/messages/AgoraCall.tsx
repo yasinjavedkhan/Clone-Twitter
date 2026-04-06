@@ -4,8 +4,7 @@ import { useEffect, useRef } from "react";
 import AgoraRTC, { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack, IRemoteVideoTrack, ILocalVideoTrack, ILocalAudioTrack } from "agora-rtc-sdk-ng";
 
 /**
- * AgoraCall handles the background media tracks for calling.
- * This version is strictly optimized for bidirectional video.
+ * AgoraCall handles media tracks for bidirectional calling.
  */
 export default function AgoraCall({ 
     roomName, 
@@ -43,10 +42,10 @@ export default function AgoraCall({
             if (!APP_ID || APP_ID === "YOUR_AGORA_APP_ID") return;
 
             try {
-                // 1. Create client
+                // Initialize Agora Client
                 agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
-                // 2. Set up remote publishing listeners
+                // Subscribing to remote publishing
                 agoraClient.on("user-published", async (user, mediaType) => {
                     await agoraClient.subscribe(user, mediaType);
                     
@@ -64,17 +63,25 @@ export default function AgoraCall({
                         const track = user.videoTrack;
                         if (track) {
                             remoteVideoTracksRef.current.set(user.uid.toString(), track);
+                            // Notify UI immediately that video is available
                             if (onRemoteVideoToggle) onRemoteVideoToggle(true);
-                            // Verify DOM element before playing
-                            const checkContainer = setInterval(() => {
-                                 const container = document.getElementById("remote-video-container");
-                                 if (container) {
-                                      track.play("remote-video-container");
-                                      clearInterval(checkContainer);
-                                 }
-                            }, 500);
-                            // Safety timeout for the loop
-                            setTimeout(() => clearInterval(checkContainer), 5000);
+                            
+                            // Retry playing until the container is ready
+                            const playWithRetry = () => {
+                                const container = document.getElementById("remote-video-container");
+                                if (container) {
+                                    track.play("remote-video-container");
+                                    return true;
+                                }
+                                return false;
+                            };
+
+                            if (!playWithRetry()) {
+                                const interval = setInterval(() => {
+                                    if (playWithRetry()) clearInterval(interval);
+                                }, 500);
+                                setTimeout(() => clearInterval(interval), 5000);
+                            }
                         }
                     }
                 });
@@ -89,10 +96,10 @@ export default function AgoraCall({
                     }
                 });
 
-                // 3. Join channel
+                // Join the channel
                 await agoraClient.join(APP_ID, roomName, null, null);
                 
-                // 4. Capture and Publish local tracks
+                // Publish tracks
                 if (callType === 'video') {
                     const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
                     audioTrackRef.current = audioTrack;
@@ -100,24 +107,29 @@ export default function AgoraCall({
                     
                     await agoraClient.publish([audioTrack, videoTrack]);
                     
-                    // Render locally mirrored feed
-                    const checkLocalContainer = setInterval(() => {
-                         const container = document.getElementById("local-video-container");
-                         if (container) {
-                              videoTrack.play("local-video-container");
-                              clearInterval(checkLocalContainer);
-                         }
-                    }, 500);
-                    setTimeout(() => clearInterval(checkLocalContainer), 5000);
+                    // Local render
+                    const playLocalWithRetry = () => {
+                        const container = document.getElementById("local-video-container");
+                        if (container) {
+                            videoTrack.play("local-video-container");
+                            return true;
+                        }
+                        return false;
+                    };
+
+                    if (!playLocalWithRetry()) {
+                        const interval = setInterval(() => {
+                            if (playLocalWithRetry()) clearInterval(interval);
+                        }, 500);
+                        setTimeout(() => clearInterval(interval), 5000);
+                    }
                 } else {
                     const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
                     audioTrackRef.current = audioTrack;
                     await agoraClient.publish([audioTrack]);
                 }
-
-                console.log("Agora: Bidirectional connection established.");
             } catch (error) {
-                console.error("Agora: Bidirectional setup error:", error);
+                console.error("Agora: Simultaneous setup failed:", error);
                 joinInProgress.current = false;
             }
         };
@@ -136,7 +148,7 @@ export default function AgoraCall({
         };
     }, [roomName, callType]);
 
-    // Handle Toggles (Mute, Speaker, Hold, Video Off)
+    // Constant Sync Loop for UI toggles
     useEffect(() => {
         const syncMedia = async () => {
             const shouldMute = isMuted || isHoldActive;
