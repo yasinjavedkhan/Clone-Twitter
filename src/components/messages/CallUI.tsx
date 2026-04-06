@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Phone, PhoneOff, Video, X, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CallUIProps {
     status: 'calling' | 'ringing' | 'accepted' | 'connected' | 'incoming';
@@ -14,6 +15,7 @@ interface CallUIProps {
 }
 
 export default function CallUI({ status, type, otherUser, connectedAt, onEnd, onAccept, onReject }: CallUIProps) {
+    const { user: currentUser } = useAuth();
     const [duration, setDuration] = useState(0);
 
     useEffect(() => {
@@ -133,6 +135,26 @@ export default function CallUI({ status, type, otherUser, connectedAt, onEnd, on
                         <span className="text-[11px] text-red-500 font-black uppercase tracking-[0.4em] drop-shadow-sm">End Call</span>
                     </button>
                 )}
+            </div>
+
+            {/* Current User Small Profile (WhatsApp style PiP) */}
+            <div className="absolute top-20 right-6 z-20 animate-in slide-in-from-right duration-700">
+                <div className="relative w-20 h-28 rounded-2xl border border-white/20 overflow-hidden shadow-2xl backdrop-blur-md bg-white/5">
+                    {currentUser?.photoURL || (currentUser as any)?.profileImage ? (
+                        <img 
+                            src={currentUser?.photoURL || (currentUser as any)?.profileImage} 
+                            className="w-full h-full object-cover" 
+                            alt="Me" 
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-gray-800 flex items-center justify-center text-xl font-bold text-white uppercase">
+                            {currentUser?.displayName?.[0] || "?"}
+                        </div>
+                    )}
+                    <div className="absolute bottom-1 right-1">
+                         <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.8)]" />
+                    </div>
+                </div>
             </div>
         </div>
     );
