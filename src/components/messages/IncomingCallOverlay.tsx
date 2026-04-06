@@ -100,7 +100,7 @@ export default function IncomingCallOverlay() {
             userId: incomingCall.fromUserId, 
             displayName: fromUserName, 
             profileImage: fromUserAvatar 
-        });
+        }, conversationId);
 
         // Navigate to the chat for a better UI experience, but the call is now global
         router.push(`/messages/${conversationId}`);

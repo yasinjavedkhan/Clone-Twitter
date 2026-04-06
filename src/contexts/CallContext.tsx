@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useRef, useEffect, ReactNode } from "react";
-import { doc, setDoc, deleteDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, deleteDoc, onSnapshot, serverTimestamp, addDoc, collection, updateDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "./AuthContext";
 
@@ -12,11 +12,12 @@ interface CallContextType {
     roomName: string | null;
     callType: CallType;
     callStatus: 'calling' | 'ringing' | 'accepted' | 'connected' | 'ended' | null;
+    conversationId: string | null;
     connectedAt: number | null;
     activeOtherUser: any | null;
     startCall: (otherUser: any, type: CallType, conversationId: string) => Promise<void>;
     endCall: () => Promise<void>;
-    joinCall: (room: string, type: CallType, otherUser: any) => void;
+    joinCall: (room: string, type: CallType, otherUser: any, conversationId: string) => void;
 }
 
 const CallContext = createContext<CallContextType | undefined>(undefined);
@@ -27,6 +28,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
     const [roomName, setRoomName] = useState<string | null>(null);
     const [callType, setCallType] = useState<CallType>('voice');
     const [callStatus, setCallStatus] = useState<'calling' | 'ringing' | 'accepted' | 'connected' | 'ended' | null>(null);
+    const [conversationId, setConversationId] = useState<string | null>(null);
     const [connectedAt, setConnectedAt] = useState<number | null>(null);
     const [activeOtherUser, setActiveOtherUser] = useState<any | null>(null);
     const manuallyInitiated = useRef(false);
@@ -49,12 +51,14 @@ export function CallProvider({ children }: { children: ReactNode }) {
                 setIsCalling(false);
                 setRoomName(null);
                 setCallStatus(null);
+                setConversationId(null);
                 setConnectedAt(null);
                 setActiveOtherUser(null);
                 manuallyInitiated.current = false;
             } else {
                 const data = docSnap.data();
                 if (data?.status) {
+                    if (data.conversationId && !conversationId) setConversationId(data.conversationId);
                     setCallStatus(data.status);
                     if (data.status === 'accepted' && !connectedAt && !manuallyInitiated.current) {
                          // Receiver just accepted
@@ -77,6 +81,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
         
         setRoomName(generatedRoom);
         setCallType(type);
+        setConversationId(conversationId);
         setCallStatus('calling');
         setActiveOtherUser(otherUser);
         setIsCalling(true);
@@ -99,13 +104,15 @@ export function CallProvider({ children }: { children: ReactNode }) {
             setIsCalling(false);
             setRoomName(null);
             setCallStatus(null);
+            setConversationId(null);
             manuallyInitiated.current = false;
         }
     };
 
-    const joinCall = (room: string, type: CallType, otherUser: any) => {
+    const joinCall = (room: string, type: CallType, otherUser: any, convId: string) => {
         setRoomName(room);
         setCallType(type);
+        setConversationId(convId);
         setCallStatus('connected');
         setConnectedAt(Date.now());
         setActiveOtherUser(otherUser);
@@ -114,19 +121,53 @@ export function CallProvider({ children }: { children: ReactNode }) {
     };
 
     const endCall = async () => {
+        if (!user) return;
+
+        // Calculate duration if the call was connected
+        let summaryMessage = "";
+        if (connectedAt && conversationId) {
+             const seconds = Math.floor((Date.now() - connectedAt) / 1000);
+             const m = Math.floor(seconds / 60);
+             const s = seconds % 60;
+             const durationStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+             summaryMessage = `📞 ${callType === 'video' ? 'Video' : 'Voice'} call ended (${durationStr})`;
+        }
+
         if (roomName) {
             await deleteDoc(doc(db, "calls", roomName)).catch(console.error);
         }
+
+        // Post summary message to chat
+        if (summaryMessage && conversationId) {
+            try {
+                await addDoc(collection(db, "conversations", conversationId, "messages"), {
+                    senderId: user.uid,
+                    text: summaryMessage,
+                    isSystem: true,
+                    createdAt: serverTimestamp(),
+                    read: false
+                });
+
+                await updateDoc(doc(db, "conversations", conversationId), {
+                    lastMessage: summaryMessage,
+                    lastTimestamp: serverTimestamp()
+                });
+            } catch (err) {
+                console.error("Failed to send call summary:", err);
+            }
+        }
+
         setIsCalling(false);
         setRoomName(null);
         setCallStatus(null);
+        setConversationId(null);
         setConnectedAt(null);
         setActiveOtherUser(null);
         manuallyInitiated.current = false;
     };
 
     return (
-        <CallContext.Provider value={{ isCalling, roomName, callType, callStatus, connectedAt, activeOtherUser, startCall, endCall, joinCall }}>
+        <CallContext.Provider value={{ isCalling, roomName, callType, callStatus, conversationId, connectedAt, activeOtherUser, startCall, endCall, joinCall }}>
             {children}
         </CallContext.Provider>
     );
