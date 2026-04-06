@@ -222,11 +222,11 @@ const VideoItem = ({ url }: { url: string }) => {
     };
 
     return (
-        <div className="relative w-full h-full group/video bg-black rounded-xl overflow-hidden aspect-video sm:aspect-auto">
+        <div className="relative w-full h-full group/video bg-black rounded-xl overflow-hidden">
             <video
                 ref={videoRef}
                 src={url}
-                className="w-full h-full object-cover sm:object-contain pointer-events-none"
+                className="w-full h-full object-cover pointer-events-none"
                 playsInline
                 muted={true}
                 preload="auto"
@@ -710,7 +710,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                                     className={cn(
                                         "relative overflow-hidden bg-gray-900 cursor-pointer group",
                                         tweet.mediaUrls!.length === 1 
-                                            ? "min-h-[200px] max-h-[400px] w-full" 
+                                            ? "aspect-[4/3] max-h-[350px] w-full" 
                                             : tweet.mediaUrls!.length === 3 && index === 0 
                                                 ? "row-span-2" 
                                                 : "aspect-video"
