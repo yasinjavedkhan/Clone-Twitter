@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import { X, RefreshCw, Smartphone, Info, Share } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const CURRENT_VERSION = "2.0.0"; // Increment this when icon or major features change
+const CURRENT_VERSION = "3.0.0"; // Force a new update check
 
 export default function UpdateBanner() {
     const [isVisible, setIsVisible] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
 
     useEffect(() => {
         // Only run on client
@@ -21,14 +22,27 @@ export default function UpdateBanner() {
         const savedVersion = localStorage.getItem("twitter_clone_version");
         if (savedVersion !== CURRENT_VERSION) {
             // Show banner if version mismatch
-            const timer = setTimeout(() => setIsVisible(true), 2000);
+            const timer = setTimeout(() => setIsVisible(true), 1500);
             return () => clearTimeout(timer);
         }
     }, []);
 
-    const handleUpdate = () => {
+    const handleUpdate = async () => {
+        setIsUpdating(true);
         localStorage.setItem("twitter_clone_version", CURRENT_VERSION);
-        window.location.reload();
+        
+        // Try to clear service workers if they exist
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const registration of registrations) {
+                await registration.unregister();
+            }
+        }
+
+        // Small delay for visual feedback
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
     };
 
     const handleDismiss = () => {
@@ -77,9 +91,11 @@ export default function UpdateBanner() {
                         <div className="flex gap-2 mt-1">
                             <button 
                                 onClick={handleUpdate}
-                                className="flex-grow bg-white text-[#1d9bf0] font-bold py-2 rounded-full text-sm hover:bg-gray-100 transition active:scale-95"
+                                disabled={isUpdating}
+                                className="flex-grow bg-white text-[#1d9bf0] font-bold py-2 rounded-full text-sm hover:bg-gray-100 transition active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
-                                Refresh Now
+                                {isUpdating && <RefreshCw className="w-4 h-4 animate-spin" />}
+                                {isUpdating ? "Updating..." : "Refresh Now"}
                             </button>
                             <button 
                                 onClick={handleDismiss}
