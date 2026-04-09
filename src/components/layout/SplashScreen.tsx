@@ -28,7 +28,7 @@ export default function SplashScreen() {
           className="flex flex-col items-center gap-2"
         >
           <h1 className="text-xl sm:text-2xl font-bold tracking-[0.2em] uppercase text-white bg-clip-text text-center px-4">
-            WELCOME TO Twitter Clone
+            WELCOME TO Dark Twitter
           </h1>
           <motion.div 
             initial={{ width: 0 }}

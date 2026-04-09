@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "twitter-mobile",
-    "slug": "twitter-mobile",
+    "name": "Dark Twitter",
+    "slug": "dark-twitter",
     "version": "1.0.0",
     "scheme": "twitter-clone",
     "orientation": "portrait",

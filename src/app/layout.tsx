@@ -16,7 +16,7 @@ import CallOverlayWrapper from "@/components/messages/CallOverlayWrapper";
 import { CallProvider } from "@/contexts/CallContext";
 
 export const metadata: Metadata = {
-  title: "Twitter Clone",
+  title: "Dark Twitter",
   description: "A production-ready generic social media platform",
   icons: {
     icon: "/v5-twitter-icon.png",
