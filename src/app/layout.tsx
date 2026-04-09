@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   title: "Twitter Clone",
   description: "A production-ready generic social media platform",
   icons: {
-    icon: "/v2-twitter-icon.png",
+    icon: "/v3-twitter-icon.png",
     apple: "/apple-touch-icon.png",
   },
 };
