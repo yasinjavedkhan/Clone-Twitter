@@ -90,7 +90,7 @@ export default function MobileNav() {
 
     return (
         <nav 
-            className={`sm:hidden fixed left-0 right-0 bg-black border-t border-gray-800 flex items-center justify-around h-12 z-50 px-2 transition-transform duration-300 ${isNavVisible ? 'translate-y-0' : 'translate-y-full'} bottom-0`}
+            className={`sm:hidden fixed left-0 right-0 bg-black/95 backdrop-blur-md border-t border-gray-800 flex items-center justify-around z-50 px-2 transition-transform duration-300 ${isNavVisible ? 'translate-y-0' : 'translate-y-full'} bottom-0 pb-[env(safe-area-inset-bottom)] h-[calc(56px+env(safe-area-inset-bottom))]`}
         >
             {items.map((item) => {
                 const isActive = pathname === item.href;

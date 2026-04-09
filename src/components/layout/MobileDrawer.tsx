@@ -63,12 +63,35 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                         transition={{ type: "spring", damping: 25, stiffness: 200 }}
                         className="fixed top-0 left-0 h-full w-[280px] bg-black border-r border-gray-800 z-[70] sm:hidden flex flex-col shadow-2xl"
                     >
-                        {/* Header */}
-                        <div className="p-4 flex items-center justify-between border-b border-gray-800/50">
-                            <span className="font-bold text-lg">Menu</span>
-                            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition">
-                                <X className="w-5 h-5 text-gray-400" />
-                            </button>
+                        {/* User Profile Header Section */}
+                        <div className="p-6 border-b border-gray-800">
+                            <div className="flex flex-col gap-3">
+                                <Link href={`/profile/${user.uid}`} onClick={onClose}>
+                                    <Avatar
+                                        src={userData?.profileImage}
+                                        fallbackText={userData?.displayName || userData?.username}
+                                        size="lg"
+                                    />
+                                </Link>
+                                <div className="flex flex-col min-w-0 mt-1">
+                                    <span className="font-extrabold text-white text-[18px] leading-tight truncate">
+                                        {userData?.displayName || userData?.username}
+                                    </span>
+                                    <span className="text-gray-500 text-[15px] truncate">
+                                        @{userData?.username}
+                                    </span>
+                                </div>
+                                <div className="flex gap-4 mt-1">
+                                    <div className="flex items-center gap-1 hover:underline cursor-pointer" onClick={() => { onClose(); router.push(`/profile/${user.uid}`); }}>
+                                        <span className="font-bold text-white text-[14px]">{userData?.followingCount || 0}</span>
+                                        <span className="text-gray-500 text-[14px]">Following</span>
+                                    </div>
+                                    <div className="flex items-center gap-1 hover:underline cursor-pointer" onClick={() => { onClose(); router.push(`/profile/${user.uid}`); }}>
+                                        <span className="font-bold text-white text-[14px]">{userData?.followersCount || 0}</span>
+                                        <span className="text-gray-500 text-[14px]">Followers</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Navigation Items */}
