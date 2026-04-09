@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { X, RefreshCw, Smartphone, Info, Share } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const CURRENT_VERSION = "4.0.0"; // Force a new update check
+const CURRENT_VERSION = "5.0.0"; // Force a new update check
 
 export default function UpdateBanner() {
     const [isVisible, setIsVisible] = useState(false);
@@ -68,7 +68,7 @@ export default function UpdateBanner() {
                                 <div>
                                     <h3 className="font-bold text-[15px]">New Update Available! ✨</h3>
                                     <p className="text-[13px] opacity-90 leading-tight mt-0.5">
-                                        We've updated the design and added the new Twitter logo.
+                                        We've updated the design and added the new X logo.
                                     </p>
                                 </div>
                             </div>
