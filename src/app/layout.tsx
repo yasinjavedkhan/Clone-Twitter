@@ -18,13 +18,9 @@ import { CallProvider } from "@/contexts/CallContext";
 export const metadata: Metadata = {
   title: "Twitter Clone",
   description: "A production-ready generic social media platform",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: "cover",
-    interactiveWidget: "resizes-content",
+  icons: {
+    icon: "/twitter-logo.svg",
+    apple: "/twitter-logo.svg",
   },
 };
 
