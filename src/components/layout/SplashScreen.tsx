@@ -37,7 +37,7 @@ export default function SplashScreen() {
             className="h-[1px] bg-gradient-to-r from-transparent via-twitter-blue to-transparent w-full"
           />
           <p className="text-gray-500 font-medium tracking-widest text-[10px] uppercase mt-1">
-            Loading your experience
+            Connecting to what's happening...
           </p>
         </motion.div>
       </div>
