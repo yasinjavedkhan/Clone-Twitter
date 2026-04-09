@@ -165,7 +165,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             // We can use a simpler check: if the scroll is already near the bottom, stay there
                             const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
                             
-                            if (isNearBottom || sorted.length <= messages.length + 1) {
+                            if (messages.length === 0 || isNearBottom || sorted.length <= messages.length + 1) {
                                 scrollRef.current?.scrollIntoView({ 
                                     behavior: messages.length === 0 ? "auto" : "smooth",
                                     block: "end"
