@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { X, RefreshCw, Smartphone, Info, Share } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const CURRENT_VERSION = "6.0.0"; // Force a new update check
+const CURRENT_VERSION = "7.0.0"; // Force a new update check
 
 export default function UpdateBanner() {
     const [isVisible, setIsVisible] = useState(false);
