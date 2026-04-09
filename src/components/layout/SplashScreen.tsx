@@ -52,7 +52,7 @@ export default function SplashScreen() {
           className="flex flex-col items-center gap-2"
         >
           <h1 className="text-2xl font-bold tracking-[0.2em] uppercase text-white bg-clip-text">
-            A New Beginning
+            WELCOME TO JD CLONE
           </h1>
           <motion.div 
             initial={{ width: 0 }}
