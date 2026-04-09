@@ -7,7 +7,9 @@ import MobileNav from "@/components/layout/MobileNav";
 import MobileDrawer from "@/components/layout/MobileDrawer";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus, BellOff, X } from "lucide-react";
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense, lazy } from "react";
+const SplashScreen = lazy(() => import("@/components/layout/SplashScreen"));
+
 import { cn } from "@/lib/utils";
 
 interface MainLayoutProps {
@@ -18,7 +20,8 @@ function MainLayoutContent({ children }: MainLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
   const [showNotificationNotice, setShowNotificationNotice] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -80,9 +83,12 @@ function MainLayoutContent({ children }: MainLayoutProps) {
   const isImmersiveVideo = pathname !== null && pathname.includes("/videos") && searchParams?.get('url');
   const isMessageConversation = (pathname !== null && pathname.startsWith("/messages/") && pathname !== "/messages") || isGrokPage;
 
-  return (
+    if (loading) return <SplashScreen />;
+
+    return (
     <div className="max-w-[1300px] mx-auto flex w-full justify-center sm:justify-start bg-black min-h-screen">
       {!isImmersiveVideo && <Sidebar />}
+
       
       <main 
         className={cn(
@@ -91,13 +97,10 @@ function MainLayoutContent({ children }: MainLayoutProps) {
           isImmersiveVideo ? "max-w-none border-none" : "max-w-2xl pb-14 sm:pb-0"
         )}
       >
-        <Suspense fallback={
-          <div className="flex items-center justify-center h-screen bg-black">
-            <div className="w-8 h-8 border-2 border-twitter-blue border-t-transparent animate-spin rounded-full" />
-          </div>
-        }>
+        <Suspense fallback={<SplashScreen />}>
           {children}
         </Suspense>
+
       </main>
 
       {!isMessagePage && !isImmersiveVideo && (
@@ -146,8 +149,9 @@ function MainLayoutContent({ children }: MainLayoutProps) {
 
 export default function MainLayout(props: MainLayoutProps) {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-black" />}>
+    <Suspense fallback={<SplashScreen />}>
       <MainLayoutContent {...props} />
     </Suspense>
   );
 }
+

@@ -40,7 +40,10 @@ export default function AgoraCall({
             if (joinInProgress.current) return;
             joinInProgress.current = true;
 
-            if (!APP_ID || APP_ID === "YOUR_AGORA_APP_ID") return;
+            if (!APP_ID || APP_ID === "YOUR_AGORA_APP_ID") {
+                joinInProgress.current = false;
+                return;
+            }
 
             try {
                 // 1. Create client
@@ -54,7 +57,8 @@ export default function AgoraCall({
                         const track = user.audioTrack;
                         if (track) {
                             remoteAudioTracksRef.current.set(user.uid.toString(), track);
-                            if (!isHoldActive) track.play();
+                            // Auto play audio
+                            track.play();
                             track.setVolume(isSpeakerActive ? 100 : 40);
                             if (onRemoteJoined) onRemoteJoined();
                         }
@@ -65,16 +69,18 @@ export default function AgoraCall({
                         if (track) {
                             remoteVideoTracksRef.current.set(user.uid.toString(), track);
                             if (onRemoteVideoToggle) onRemoteVideoToggle(true);
-                            // Verify DOM element before playing
+                            
+                            // Strict check for container availability (important if call is just connecting)
+                            let attempts = 0;
                             const checkContainer = setInterval(() => {
+                                 attempts++;
                                  const container = document.getElementById("remote-video-container");
                                  if (container) {
                                       track.play("remote-video-container");
                                       clearInterval(checkContainer);
                                  }
+                                 if (attempts > 60) clearInterval(checkContainer); // Stop after 30s
                             }, 500);
-                            // Safety timeout for the loop
-                            setTimeout(() => clearInterval(checkContainer), 5000);
                         }
                     }
                 });
@@ -94,21 +100,23 @@ export default function AgoraCall({
                 
                 // 4. Capture and Publish local tracks
                 if (callType === 'video') {
+                    // Both users MUST publish audio and video tracks for strict bidirectional
                     const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
                     audioTrackRef.current = audioTrack;
                     videoTrackRef.current = videoTrack;
                     
-                    await agoraClient.publish([audioTrack, videoTrack]);
-                    
                     // Render locally mirrored feed
-                    const checkLocalContainer = setInterval(() => {
-                         const container = document.getElementById("local-video-container");
-                         if (container) {
-                              videoTrack.play("local-video-container");
-                              clearInterval(checkLocalContainer);
-                         }
+                    const localCheck = setInterval(() => {
+                        const localContainer = document.getElementById("local-video-container");
+                        if (localContainer) {
+                            videoTrack.play("local-video-container");
+                            clearInterval(localCheck);
+                        }
                     }, 500);
-                    setTimeout(() => clearInterval(checkLocalContainer), 5000);
+                    setTimeout(() => clearInterval(localCheck), 10000);
+
+                    // PUBLISH BOTH
+                    await agoraClient.publish([audioTrack, videoTrack]);
                 } else {
                     const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
                     audioTrackRef.current = audioTrack;
@@ -158,16 +166,18 @@ export default function AgoraCall({
             }
 
             remoteVideoTracksRef.current.forEach((track) => {
-                if (isHoldActive) {
-                    track.stop();
-                } else {
+                const container = document.getElementById("remote-video-container");
+                if (container && !isHoldActive) {
                     track.play("remote-video-container");
+                } else if (isHoldActive) {
+                    track.stop();
                 }
             });
         };
 
         syncMedia();
-    }, [isMuted, isSpeakerActive, isHoldActive, isVideoOff]);
+    }, [isMuted, isSpeakerActive, isHoldActive, isVideoOff, roomName]);
+
 
     return null;
 }
