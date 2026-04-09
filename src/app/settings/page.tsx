@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { User, LogOut, ChevronRight, Shield, Bell, Eye, Accessibility, HelpCircle } from "lucide-react";
+import { User, LogOut, ChevronRight, Shield, Bell, Eye, Accessibility, HelpCircle, Smartphone } from "lucide-react";
 import Link from "next/link";
 import Avatar from "@/components/ui/Avatar";
 
@@ -32,6 +32,12 @@ export default function Settings() {
             icon: <Accessibility className="w-5 h-5" />,
             description: "Manage how content is displayed to you.",
             href: "/settings/accessibility"
+        },
+        {
+            title: "Install App",
+            icon: <Smartphone className="w-5 h-5" />,
+            description: "Step-by-step instructions to add our app to your home screen for the best experience.",
+            href: "/settings/install"
         },
         {
             title: "Resources",

@@ -13,7 +13,8 @@ import {
     Settings, 
     LogOut, 
     X,
-    Sparkles 
+    Sparkles,
+    Smartphone
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Avatar from "@/components/ui/Avatar";
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
     { label: "Bookmarks", href: "/bookmarks", icon: Bookmark },
     { label: "Profile", href: "/profile", icon: User },
     { label: "Settings", href: "/settings", icon: Settings },
+    { label: "Install App", href: "/settings/install", icon: Smartphone },
 ];
 
 interface MobileDrawerProps {

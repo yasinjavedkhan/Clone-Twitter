@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Plus, BellOff, X } from "lucide-react";
 import { useState, useEffect, useRef, Suspense, lazy } from "react";
 const SplashScreen = lazy(() => import("@/components/layout/SplashScreen"));
+import UpdateBanner from "@/components/layout/UpdateBanner";
 
 import { cn } from "@/lib/utils";
 
@@ -143,6 +144,8 @@ function MainLayoutContent({ children }: MainLayoutProps) {
         isOpen={isDrawerOpen} 
         onClose={() => setIsDrawerOpen(false)} 
       />
+
+      <UpdateBanner />
     </div>
   );
 }
