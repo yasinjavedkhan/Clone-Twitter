@@ -14,6 +14,7 @@ import { useRef } from "react";
 import Avatar from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // Lazy-load the heavy emoji picker
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
@@ -21,6 +22,7 @@ const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 export default function Home() {
   const router = useRouter();
   const { user, userData, signInWithGoogle } = useAuth();
+  const { theme } = useTheme();
   const [content, setContent] = useState("");
   const [isTweeting, setIsTweeting] = useState(false);
   const [tweets, setTweets] = useState<any[]>([]);
@@ -610,7 +612,7 @@ export default function Home() {
                       <div className="absolute bottom-12 left-0 z-50">
                         <EmojiPicker
                           onEmojiClick={onEmojiClick}
-                          theme={theme === "light" ? "light" : "dark"}
+                          theme={(theme === "light" ? "light" : "dark") as any}
                           autoFocusSearch={false}
                           width={300}
                           height={400}

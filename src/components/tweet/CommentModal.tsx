@@ -507,7 +507,7 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                                     <div className="absolute bottom-12 left-0 z-50">
                                         <EmojiPicker
                                             onEmojiClick={onEmojiClick}
-                                            theme={theme === 'light' ? 'light' : 'dark'}
+                                            theme={(theme === 'light' ? 'light' : 'dark') as any}
                                             autoFocusSearch={false}
                                             width={300}
                                             height={400}
