@@ -11,6 +11,9 @@ import {
     Bookmark, 
     User, 
     Settings, 
+    X,
+    Sparkles,
+    Smartphone,
     MoonStar
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
