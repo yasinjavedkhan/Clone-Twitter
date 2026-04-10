@@ -14,6 +14,7 @@ const outfit = Outfit({ subsets: ["latin"] });
 
 import CallOverlayWrapper from "@/components/messages/CallOverlayWrapper";
 import { CallProvider } from "@/contexts/CallContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 export const metadata: Metadata = {
   title: "Dark Twitter",
@@ -39,15 +40,17 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
       </head>
-      <body className={`${outfit.className} bg-black text-white min-h-screen`}>
-        <AuthProvider>
-          <CallProvider>
-            <MainLayout>
-              {children}
-            </MainLayout>
-            <CallOverlayWrapper />
-          </CallProvider>
-        </AuthProvider>
+      <body className={outfit.className}>
+        <ThemeProvider>
+          <AuthProvider>
+            <CallProvider>
+              <MainLayout>
+                {children}
+              </MainLayout>
+              <CallOverlayWrapper />
+            </CallProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

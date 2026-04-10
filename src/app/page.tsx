@@ -322,7 +322,7 @@ export default function Home() {
       {/* Tabs */}
       <div 
         className={cn(
-          "sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800 flex items-center transition-transform duration-300 w-full pl-3 sm:pl-0",
+          "sticky top-0 z-40 bg-[var(--tw-bg-main)]/80 backdrop-blur-md border-b border-[var(--tw-border-main)] flex items-center transition-transform duration-300 w-full pl-3 sm:pl-0",
           isHeaderVisible ? "translate-y-0" : "-translate-y-full"
         )}
       >
@@ -330,7 +330,7 @@ export default function Home() {
             <div className="shrink-0 sm:hidden pr-2">
                 <button
                     onClick={signInWithGoogle}
-                    className="flex items-center gap-1.5 bg-white text-black font-bold px-3 py-1.5 rounded-full text-[12px] hover:bg-gray-200 transition"
+                    className="flex items-center gap-1.5 bg-[var(--tw-text-main)] text-[var(--tw-bg-main)] font-bold px-3 py-1.5 rounded-full text-[12px] hover:opacity-90 transition"
                 >
                     <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -346,7 +346,7 @@ export default function Home() {
             <div className="shrink-0 sm:hidden pr-2 z-50">
                 <button 
                   onClick={() => window.dispatchEvent(new CustomEvent("toggleMobileDrawer"))}
-                  className="flex items-center justify-center p-1 rounded-full active:bg-white/10 transition cursor-pointer"
+                  className="flex items-center justify-center p-1 rounded-full active:bg-[var(--tw-text-main)]/10 transition cursor-pointer"
                 >
                     <Avatar
                         src={userData?.profileImage}
@@ -360,25 +360,25 @@ export default function Home() {
         <div className="flex flex-1 relative">
           <button
             onClick={() => setActiveTab('foryou')}
-            className="flex-1 hover:bg-white/5 transition flex justify-center z-10"
+            className="flex-1 hover:bg-[var(--tw-text-main)]/5 transition flex justify-center z-10"
           >
             <div className="py-4">
-              <span className={cn("font-bold text-[15px] transition-colors duration-200", activeTab === 'foryou' ? "text-white" : "text-gray-500")}>For you</span>
+              <span className={cn("font-bold text-[15px] transition-colors duration-200", activeTab === 'foryou' ? "text-[var(--tw-text-main)]" : "text-[var(--tw-text-muted)]")}>For you</span>
             </div>
           </button>
           
           <div className="sm:hidden flex items-center justify-center px-1 z-10">
-            <svg viewBox="0 0 24 24" className="w-5 h-5 text-white fill-current">
+            <svg viewBox="0 0 24 24" className="w-5 h-5 text-[var(--tw-text-main)] fill-current">
               <path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z"></path>
             </svg>
           </div>
 
           <button
             onClick={() => setActiveTab('following')}
-            className="flex-1 hover:bg-white/5 transition flex justify-center z-10"
+            className="flex-1 hover:bg-[var(--tw-text-main)]/5 transition flex justify-center z-10"
           >
             <div className="py-4">
-              <span className={cn("font-bold text-[15px] transition-colors duration-200", activeTab === 'following' ? "text-white" : "text-gray-500")}>Following</span>
+              <span className={cn("font-bold text-[15px] transition-colors duration-200", activeTab === 'following' ? "text-[var(--tw-text-main)]" : "text-[var(--tw-text-muted)]")}>Following</span>
             </div>
           </button>
 
@@ -404,7 +404,7 @@ export default function Home() {
 
       {/* Tweet Input */}
       {user && (
-        <div className="p-4 border-b border-gray-800 flex gap-4">
+        <div className="p-4 border-b border-[var(--tw-border-main)] flex gap-4">
           <Link href={`/profile/${user.uid}`} className="shrink-0 hover:opacity-90 transition">
             <Avatar
               src={userData?.profileImage}
@@ -414,7 +414,7 @@ export default function Home() {
           </Link>
           <div className="flex-grow">
             <textarea
-              className="w-full bg-transparent text-xl outline-none resize-none placeholder-gray-500 min-h-[50px]"
+              className="w-full bg-transparent text-xl outline-none resize-none placeholder-[var(--tw-text-muted)] min-h-[50px] text-[var(--tw-text-main)]"
               placeholder="What's happening?"
               value={content}
               onChange={(e) => {
@@ -441,9 +441,9 @@ export default function Home() {
                 {showReplySettings && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowReplySettings(false)} />
-                    <div className="absolute top-10 left-0 bg-black border border-gray-800 rounded-2xl shadow-[0_0_15px_rgba(255,255,255,0.1)] z-50 w-72 overflow-hidden py-2" onClick={(e) => e.stopPropagation()}>
-                      <div className="px-4 py-2 font-bold text-white text-[15px]">Who can reply?</div>
-                      <div className="px-4 pb-2 text-sm text-gray-500 mb-2 border-b border-gray-800">
+                    <div className="absolute top-10 left-0 bg-[var(--tw-bg-main)] border border-[var(--tw-border-main)] rounded-2xl shadow-xl z-50 w-72 overflow-hidden py-2" onClick={(e) => e.stopPropagation()}>
+                      <div className="px-4 py-2 font-bold text-[var(--tw-text-main)] text-[15px]">Who can reply?</div>
+                      <div className="px-4 pb-2 text-sm text-[var(--tw-text-muted)] mb-2 border-b border-[var(--tw-border-main)]">
                         Choose who can reply to this post. Anyone mentioned can always reply.
                       </div>
                       <button 
@@ -487,7 +487,7 @@ export default function Home() {
                   mediaFiles.length === 1 ? "grid-cols-1" : "grid-cols-2"
                 )}>
                   {mediaFiles.map((media, index) => (
-                    <div key={index} className="relative aspect-video rounded-2xl overflow-hidden border border-gray-800 bg-gray-900">
+                    <div key={index} className="relative aspect-video rounded-2xl overflow-hidden border border-[var(--tw-border-main)] bg-[var(--tw-bg-card)]">
                       <button
                         onClick={() => removeMedia(index)}
                         className="absolute top-2 left-2 z-10 bg-black/50 hover:bg-black/70 p-1.5 rounded-full text-white transition backdrop-blur-sm"
@@ -514,7 +514,7 @@ export default function Home() {
               )}
 
               {showPoll && (
-                  <div className="mt-4 mb-3 p-4 border border-gray-800 rounded-2xl relative mr-4 ml-1">
+                  <div className="mt-4 mb-3 p-4 border border-[var(--tw-border-main)] rounded-2xl relative mr-4 ml-1">
                       <button
                           onClick={() => setShowPoll(false)}
                           className="absolute top-2 right-2 p-1 hover:bg-gray-900 rounded-full text-gray-500"
@@ -533,7 +533,7 @@ export default function Home() {
                                           setPollOptions(newOptions);
                                       }}
                                       placeholder={`Choice ${index + 1}`}
-                                      className="flex-grow bg-transparent border border-gray-800 rounded-md p-2 text-sm text-white focus:border-blue-500 outline-none"
+                                      className="flex-grow bg-transparent border border-[var(--tw-border-main)] rounded-md p-2 text-sm text-[var(--tw-text-main)] focus:border-blue-500 outline-none"
                                   />
                                   {pollOptions.length > 2 && (
                                       <button onClick={() => removePollOption(index)} className="text-gray-500 hover:text-red-500">
@@ -555,7 +555,7 @@ export default function Home() {
               )}
 
               {showSchedule && (
-                  <div className="mt-4 mb-3 p-4 border border-gray-800 rounded-2xl relative mr-4 ml-1">
+                  <div className="mt-4 mb-3 p-4 border border-[var(--tw-border-main)] rounded-2xl relative mr-4 ml-1">
                       <button
                           onClick={() => setShowSchedule(false)}
                           className="absolute top-2 right-2 p-1 hover:bg-gray-900 rounded-full text-gray-500"
@@ -567,7 +567,7 @@ export default function Home() {
                           type="datetime-local"
                           value={scheduledDate}
                           onChange={(e) => setScheduledDate(e.target.value)}
-                          className="bg-transparent border border-gray-800 rounded-md p-2 text-white text-sm outline-none focus:border-blue-500 w-full"
+                          className="bg-transparent border border-[var(--tw-border-main)] rounded-md p-2 text-[var(--tw-text-main)] text-sm outline-none focus:border-blue-500 w-full"
                       />
                   </div>
               )}
@@ -610,7 +610,7 @@ export default function Home() {
                       <div className="absolute bottom-12 left-0 z-50">
                         <EmojiPicker
                           onEmojiClick={onEmojiClick}
-                          theme={"dark" as any}
+                          theme={theme === "light" ? "light" : "dark"}
                           autoFocusSearch={false}
                           width={300}
                           height={400}
@@ -672,10 +672,10 @@ export default function Home() {
           )}
         >
           {/* For You Feed Page */}
-          <div className="w-1/2 flex flex-col min-h-screen border-r border-gray-800">
+          <div className="w-1/2 flex flex-col min-h-screen border-r border-[var(--tw-border-main)]">
             {tweets.length === 0 ? (
-              <div className="p-12 text-center text-gray-500">
-                <p className="text-xl font-bold text-white mb-2">No tweets yet.</p>
+              <div className="p-12 text-center text-[var(--tw-text-muted)]">
+                <p className="text-xl font-bold text-[var(--tw-text-main)] mb-2">No tweets yet.</p>
                 <p className="text-[15px]">Be the first to post!</p>
               </div>
             ) : (
@@ -684,7 +684,7 @@ export default function Home() {
               ))
             )}
             {!hasMore && tweets.length > 0 && (
-              <div className="p-12 text-center text-gray-500 border-b border-gray-800">
+              <div className="p-12 text-center text-[var(--tw-text-muted)] border-b border-[var(--tw-border-main)]">
                 <p className="text-[15px]">You've reached the end of the timeline.</p>
               </div>
             )}

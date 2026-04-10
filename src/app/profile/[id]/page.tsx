@@ -200,9 +200,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         }
     };
 
-    if (isInitialLoading) return <div className="p-8 text-center text-gray-500">Loading profile...</div>;
+    if (isInitialLoading) return <div className="p-8 text-center text-[var(--tw-text-muted)]">Loading profile...</div>;
 
-    if (!profileData) return <div className="p-8 text-center text-gray-500">User not found.</div>;
+    if (!profileData) return <div className="p-8 text-center text-[var(--tw-text-muted)]">User not found.</div>;
 
     const joinDate = profileData.createdAt?.toDate ? format(profileData.createdAt.toDate(), 'MMMM yyyy') : 'Unknown';
 
@@ -217,15 +217,15 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     return (
         <div className="flex flex-col relative pb-20">
             {/* Header */}
-            <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-md px-4 py-1 flex items-center gap-6 h-[53px]">
-                <Link href="/" className="p-1.5 hover:bg-white/10 rounded-full transition -ml-1">
+            <div className="sticky top-0 z-10 bg-[var(--tw-bg-main)]/80 backdrop-blur-md px-4 py-1 flex items-center gap-6 h-[53px] border-b border-[var(--tw-border-main)] transition-colors">
+                <Link href="/" className="p-1.5 hover:bg-[var(--tw-text-main)]/10 rounded-full transition -ml-1 text-[var(--tw-text-main)]">
                     <ArrowLeft className="w-5 h-5" />
                 </Link>
                 <div className="flex flex-col min-w-0 truncate">
-                    <h1 className="text-[20px] font-extrabold truncate leading-tight">
+                    <h1 className="text-[20px] font-extrabold truncate leading-tight text-[var(--tw-text-main)]">
                         {profileData.displayName || profileData.username}
                     </h1>
-                    <p className="text-[13px] text-[#71767b] leading-tight">{tweets.length} posts</p>
+                    <p className="text-[13px] text-[var(--tw-text-muted)] leading-tight">{tweets.length} posts</p>
                 </div>
             </div>
 
@@ -235,7 +235,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             {/* Cover / Profile Images */}
             <div className="relative group/cover">
                 <div
-                    className="h-48 bg-[#333639] w-full relative cursor-pointer"
+                    className="h-48 bg-[var(--tw-bg-card)] w-full relative cursor-pointer"
                     onClick={() => {
                         if (profileData.coverImage) {
                             setViewingImage(profileData.coverImage);
@@ -256,7 +256,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                     )}
                 </div>
                 <div 
-                    className="absolute -bottom-16 left-4 border-[4px] border-black rounded-full overflow-hidden w-32 h-32 bg-[#16181c] cursor-pointer"
+                    className="absolute -bottom-16 left-4 border-[4px] border-[var(--tw-bg-main)] rounded-full overflow-hidden w-32 h-32 bg-[var(--tw-bg-card)] cursor-pointer"
                     onClick={() => {
                         if (profileData.profileImage) {
                             setViewingImage(profileData.profileImage);
@@ -279,9 +279,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 {!isOwnProfile && (
                     <button
                         onClick={handleMessage}
-                        className="p-2 border border-[#536471] rounded-full hover:bg-white/10 transition"
+                        className="p-2 border border-[var(--tw-border-main)] rounded-full hover:bg-[var(--tw-text-main)]/10 transition"
                     >
-                        <Mail className="w-5 h-5 text-white" />
+                        <Mail className="w-5 h-5 text-[var(--tw-text-main)]" />
                     </button>
                 )}
                 {isOwnProfile ? (
@@ -294,7 +294,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                         </button>
                         <button
                             onClick={() => setIsEditModalOpen(true)}
-                            className="px-4 py-1.5 border border-[#536471] hover:bg-[#eff3f4]/10 rounded-full font-bold text-[15px] transition"
+                            className="px-4 py-1.5 border border-[var(--tw-border-main)] hover:bg-[var(--tw-text-main)]/10 rounded-full font-bold text-[15px] transition text-[var(--tw-text-main)]"
                         >
                             Edit profile
                         </button>
@@ -303,8 +303,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                     <button
                         onClick={handleFollowToggle}
                         className={`${isFollowing
-                            ? "border border-gray-600 text-white hover:border-red-600 hover:text-red-500 hover:after:content-['Unfollow'] after:content-['Following']"
-                            : "bg-[#eff3f4] text-black hover:bg-[#d7dbdc]"
+                            ? "border border-[var(--tw-border-main)] text-[var(--tw-text-main)] hover:border-red-600 hover:text-red-500 hover:after:content-['Unfollow'] after:content-['Following']"
+                            : "bg-[var(--tw-text-main)] text-[var(--tw-bg-main)] hover:opacity-90"
                             } font-bold text-[15px] px-6 py-1.5 rounded-full transition min-w-[100px]`}
                     >
                         {!isFollowing && "Follow"}
@@ -315,15 +315,15 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             {/* Profile Info */}
             <div className="px-4 pb-4">
                 <div className="flex flex-col mb-3">
-                    <h2 className="text-[20px] font-extrabold leading-tight truncate">
+                    <h2 className="text-[20px] font-extrabold leading-tight truncate text-[var(--tw-text-main)]">
                         {profileData.displayName || profileData.username}
                     </h2>
-                    <p className="text-[#71767b] text-[15px] leading-tight">@{profileData.username}</p>
+                    <p className="text-[var(--tw-text-muted)] text-[15px] leading-tight">@{profileData.username}</p>
                 </div>
 
-                {profileData.bio && <p className="text-[15px] text-white leading-normal mb-3 whitespace-pre-wrap">{profileData.bio}</p>}
+                {profileData.bio && <p className="text-[15px] text-[var(--tw-text-main)] leading-normal mb-3 whitespace-pre-wrap">{profileData.bio}</p>}
 
-                <div className="flex items-center gap-3 text-[#71767b] text-[15px] mb-3">
+                <div className="flex items-center gap-3 text-[var(--tw-text-muted)] text-[15px] mb-3">
                     <div className="flex items-center gap-1.5">
                         <CalendarDays className="w-[18px] h-[18px]" />
                         <span>Joined {joinDate}</span>
@@ -332,25 +332,25 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
                 <div className="flex gap-4 text-[14px]">
                     <Link href={`/profile/${profileId}/following`} className="hover:underline">
-                        <span className="font-bold text-white">{followCounts.following}</span>
-                        <span className="text-[#71767b] ml-1">Following</span>
+                        <span className="font-bold text-[var(--tw-text-main)]">{followCounts.following}</span>
+                        <span className="text-[var(--tw-text-muted)] ml-1">Following</span>
                     </Link>
                     <Link href={`/profile/${profileId}/followers`} className="hover:underline">
-                        <span className="font-bold text-white">{followCounts.followers}</span>
-                        <span className="text-[#71767b] ml-1">Followers</span>
+                        <span className="font-bold text-[var(--tw-text-main)]">{followCounts.followers}</span>
+                        <span className="text-[var(--tw-text-muted)] ml-1">Followers</span>
                     </Link>
                 </div>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-[#2f3336] mt-1 overflow-x-auto hidden-scrollbar">
+            <div className="flex border-b border-[var(--tw-border-main)] mt-1 overflow-x-auto hidden-scrollbar transition-colors">
                 {["Posts", "Replies", "Highlights", "Articles", "Media", "Likes"].map((tab) => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`flex-1 flex justify-center hover:bg-white/10 transition px-2 min-w-[100px] sm:min-w-0`}
+                        className={`flex-1 flex justify-center hover:bg-[var(--tw-text-main)]/10 transition px-2 min-w-[100px] sm:min-w-0`}
                     >
-                        <div className={`py-4 relative text-[15px] ${activeTab === tab ? 'font-bold text-white' : 'font-medium text-[#71767b]'}`}>
+                        <div className={`py-4 relative text-[15px] ${activeTab === tab ? 'font-bold text-[var(--tw-text-main)]' : 'font-medium text-[var(--tw-text-muted)]'}`}>
                             {tab}
                             {activeTab === tab && (
                                 <div className="absolute bottom-0 left-0 right-0 h-[4px] bg-[var(--color-twitter-blue)] rounded-full"></div>
@@ -372,18 +372,18 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                     <>
                         {activeTab === "Posts" ? (
                             tweets.length === 0 ? (
-                                <div className="p-12 text-center text-gray-500">No posts yet.</div>
+                                <div className="p-12 text-center text-[var(--tw-text-muted)]">No posts yet.</div>
                             ) : (
                                 tweets.map((tweet) => <Tweet key={tweet.id} tweet={tweet} />)
                             )
                         ) : activeTab === "Likes" ? (
                             likedTweets.length === 0 ? (
-                                <div className="p-12 text-center text-gray-500">No likes yet.</div>
+                                <div className="p-12 text-center text-[var(--tw-text-muted)]">No likes yet.</div>
                             ) : (
                                 likedTweets.map((tweet) => <Tweet key={tweet.id} tweet={tweet} />)
                             )
                         ) : (
-                            <div className="p-12 text-center text-gray-500">Empty.</div>
+                            <div className="p-12 text-center text-[var(--tw-text-muted)]">Empty.</div>
                         )}
                     </>
                 )}

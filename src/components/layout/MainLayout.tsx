@@ -6,8 +6,9 @@ import RightSidebar from "@/components/layout/RightSidebar";
 import MobileNav from "@/components/layout/MobileNav";
 import MobileDrawer from "@/components/layout/MobileDrawer";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Plus, BellOff, X } from "lucide-react";
-import { useState, useEffect, useRef, Suspense, lazy } from "react";
+import { useState, useEffect, useRef, Suspense, lazy, useCallback } from "react";
 const SplashScreen = lazy(() => import("@/components/layout/SplashScreen"));
 import UpdateBanner from "@/components/layout/UpdateBanner";
 
@@ -25,6 +26,7 @@ function MainLayoutContent({ children }: MainLayoutProps) {
 
   const [showNotificationNotice, setShowNotificationNotice] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const { theme } = useTheme();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -75,7 +77,9 @@ function MainLayoutContent({ children }: MainLayoutProps) {
   useEffect(() => {
     const handleToggle = () => setIsDrawerOpen(prev => !prev);
     window.addEventListener("toggleMobileDrawer", handleToggle);
-    return () => window.removeEventListener("toggleMobileDrawer", handleToggle);
+    return () => {
+      window.removeEventListener("toggleMobileDrawer", handleToggle);
+    };
   }, []);
 
   const isHomePage = pathname === "/";
@@ -87,15 +91,15 @@ function MainLayoutContent({ children }: MainLayoutProps) {
     if (loading) return <SplashScreen />;
 
     return (
-    <div className="max-w-[1300px] mx-auto flex w-full justify-center sm:justify-start bg-black min-h-screen">
+    <div className="max-w-[1300px] mx-auto flex w-full justify-center sm:justify-start bg-[var(--tw-bg-main)] min-h-screen">
       {!isImmersiveVideo && <Sidebar />}
 
       
       <main 
         className={cn(
-          "flex-grow border-x border-gray-800 w-full relative",
+          "flex-grow border-x border-[var(--tw-border-main)] w-full relative",
           !isImmersiveVideo && "ml-0 sm:ml-20 xl:ml-64",
-          isImmersiveVideo ? "max-w-none border-none" : "max-w-2xl pb-14 sm:pb-0"
+          isImmersiveVideo ? "max-w-none border-none" : cn("max-w-2xl", !isMessageConversation && "pb-14 sm:pb-0")
         )}
       >
         <Suspense fallback={<SplashScreen />}>
@@ -113,7 +117,7 @@ function MainLayoutContent({ children }: MainLayoutProps) {
       {!isImmersiveVideo && !isMessageConversation && <MobileNav />}
       
       {showNotificationNotice && user && !isMessageConversation && (
-        <div className="sm:hidden fixed top-0 left-0 right-0 z-[100] bg-zinc-900 border-b border-gray-800 p-3 shadow-2xl">
+        <div className="sm:hidden fixed top-0 left-0 right-0 z-[100] bg-[var(--tw-bg-card)] border-b border-[var(--tw-border-main)] p-3 shadow-2xl">
           <div className="flex items-start gap-3">
             <div className="bg-red-500/10 p-2 rounded-full">
               <BellOff className="w-5 h-5 text-red-500" />

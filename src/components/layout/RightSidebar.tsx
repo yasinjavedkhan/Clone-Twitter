@@ -88,27 +88,27 @@ export default function RightSidebar() {
             {pathname !== "/" && (
                 <>
                     {/* Search Bar */}
-                    <form onSubmit={handleSearch} className="relative mb-3 sticky top-0 bg-black py-1 z-10">
-                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-4.5 h-4.5" />
+                    <form onSubmit={handleSearch} className="relative mb-3 sticky top-0 bg-[var(--tw-bg-main)] py-1 z-10 transition-colors">
+                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--tw-text-muted)] w-4.5 h-4.5" />
                         <input
                             type="text"
                             placeholder="Search"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-[#202327] text-white rounded-full py-2.5 pl-12 pr-4 w-full focus:bg-black focus:border-[var(--color-twitter-blue)] border border-transparent outline-none transition text-[15px] placeholder:text-gray-500"
+                            className="bg-[var(--tw-input-bg)] text-[var(--tw-text-main)] rounded-full py-2.5 pl-12 pr-4 w-full focus:bg-[var(--tw-bg-main)] focus:border-[var(--color-twitter-blue)] border border-[var(--tw-border-main)] outline-none transition text-[15px] placeholder:text-[var(--tw-text-muted)]"
                         />
                     </form>
 
                     {/* Trending Box - Only show if there's any content (customizable later) */}
-                    <div className="bg-[#16181c] rounded-2xl overflow-hidden mb-4 p-4">
-                        <h2 className="font-extrabold text-xl mb-4">What's happening</h2>
-                        <p className="text-[#71767b] text-[15px]">No trending topics right now. Check back later!</p>
+                    <div className="bg-[var(--tw-bg-card)] rounded-2xl overflow-hidden mb-4 p-4 border border-[var(--tw-border-main)]">
+                        <h2 className="font-extrabold text-xl mb-4 text-[var(--tw-text-main)]">What's happening</h2>
+                        <p className="text-[var(--tw-text-muted)] text-[15px]">No trending topics right now. Check back later!</p>
                     </div>
 
                     {/* Who to follow */}
                     {suggestedUsers.length > 0 && (
-                        <div className="bg-[#16181c] rounded-2xl overflow-hidden">
-                            <h2 className="font-extrabold text-xl px-4 py-3">Who to follow</h2>
+                        <div className="bg-[var(--tw-bg-card)] rounded-2xl overflow-hidden border border-[var(--tw-border-main)]">
+                            <h2 className="font-extrabold text-xl px-4 py-3 text-[var(--tw-text-main)]">Who to follow</h2>
 
                             {suggestedUsers.filter(u => {
                                 const isQuery = searchQuery.trim().toLowerCase();
@@ -121,15 +121,15 @@ export default function RightSidebar() {
                                 // If not searching, show 3 random users (not including self)
                                 return u.id !== user?.uid;
                             }).slice(0, searchQuery ? 10 : 3).map((u) => (
-                                <div key={u.id} className="flex items-center justify-between hover:bg-white/5 px-4 py-3 cursor-pointer transition">
+                                <div key={u.id} className="flex items-center justify-between hover:bg-[var(--tw-text-main)]/5 px-4 py-3 cursor-pointer transition border-b border-[var(--tw-border-main)] last:border-0">
                                     <Link href={`/profile/${u.id}`} className="flex items-center gap-3 overflow-hidden flex-grow">
                                         <Avatar
                                             src={u.profileImage}
                                             fallbackText={u.displayName || u.username}
                                         />
                                         <div className="flex flex-col truncate">
-                                            <p className="font-bold text-white text-[15px] truncate hover:underline">{u.displayName || u.username}</p>
-                                            <p className="text-[#71767b] text-[15px] truncate">@{u.username || u.handle}</p>
+                                            <p className="font-bold text-[var(--tw-text-main)] text-[15px] truncate hover:underline">{u.displayName || u.username}</p>
+                                            <p className="text-[var(--tw-text-muted)] text-[15px] truncate">@{u.username || u.handle}</p>
                                         </div>
                                     </Link>
                                     {u.id !== user?.uid && (
@@ -139,8 +139,8 @@ export default function RightSidebar() {
                                                 handleFollow(u.id);
                                             }}
                                             className={`${following[u.id]
-                                                ? "border border-gray-600 text-white hover:border-red-600 hover:text-red-500 hover:after:content-['Unfollow'] after:content-['Following']"
-                                                : "bg-[#eff3f4] text-black hover:bg-[#d7dbdc]"
+                                                ? "border border-[var(--tw-border-main)] text-[var(--tw-text-main)] hover:border-red-600 hover:text-red-500 hover:after:content-['Unfollow'] after:content-['Following']"
+                                                : "bg-[var(--tw-text-main)] text-[var(--tw-bg-main)] hover:opacity-90"
                                                 } font-bold text-[14px] px-4 py-1.5 rounded-full transition shrink-0 min-w-[80px] ml-4`}
                                         >
                                             {!following[u.id] && "Follow"}

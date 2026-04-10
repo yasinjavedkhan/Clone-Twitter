@@ -11,14 +11,15 @@ import {
     Bookmark, 
     User, 
     Settings, 
-    LogOut, 
     X,
     Sparkles,
-    Smartphone
+    Smartphone,
+    MoonStar
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Avatar from "@/components/ui/Avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const NAV_ITEMS = [
     { label: "Home", href: "/", icon: Home },
@@ -41,6 +42,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
     const pathname = usePathname();
     const router = useRouter();
     const { user, userData, signOut } = useAuth();
+    const { toggleTheme } = useTheme();
 
     if (!user) return null;
 
@@ -63,10 +65,10 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                         animate={{ x: 0 }}
                         exit={{ x: "-100%" }}
                         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                        className="fixed top-0 left-0 h-full w-[280px] bg-black border-r border-gray-800 z-[70] sm:hidden flex flex-col shadow-2xl"
+                        className="fixed top-0 left-0 h-full w-[280px] bg-[var(--tw-bg-main)] border-r border-[var(--tw-border-main)] z-[70] sm:hidden flex flex-col shadow-2xl transition-colors"
                     >
                         {/* User Profile Header Section */}
-                        <div className="p-6 border-b border-gray-800">
+                        <div className="p-6 border-b border-[var(--tw-border-main)]">
                             <div className="flex flex-col gap-3">
                                 <Link href={`/profile/${user.uid}`} onClick={onClose}>
                                     <Avatar
@@ -76,21 +78,21 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                                     />
                                 </Link>
                                 <div className="flex flex-col min-w-0 mt-1">
-                                    <span className="font-extrabold text-white text-[18px] leading-tight truncate">
+                                    <span className="font-extrabold text-[var(--tw-text-main)] text-[18px] leading-tight truncate">
                                         {userData?.displayName || userData?.username}
                                     </span>
-                                    <span className="text-gray-500 text-[15px] truncate">
+                                    <span className="text-[var(--tw-text-muted)] text-[15px] truncate">
                                         @{userData?.username}
                                     </span>
                                 </div>
                                 <div className="flex gap-4 mt-1">
                                     <div className="flex items-center gap-1 hover:underline cursor-pointer" onClick={() => { onClose(); router.push(`/profile/${user.uid}`); }}>
-                                        <span className="font-bold text-white text-[14px]">{userData?.followingCount || 0}</span>
-                                        <span className="text-gray-500 text-[14px]">Following</span>
+                                        <span className="font-bold text-[var(--tw-text-main)] text-[14px]">{userData?.followingCount || 0}</span>
+                                        <span className="text-[var(--tw-text-muted)] text-[14px]">Following</span>
                                     </div>
                                     <div className="flex items-center gap-1 hover:underline cursor-pointer" onClick={() => { onClose(); router.push(`/profile/${user.uid}`); }}>
-                                        <span className="font-bold text-white text-[14px]">{userData?.followersCount || 0}</span>
-                                        <span className="text-gray-500 text-[14px]">Followers</span>
+                                        <span className="font-bold text-[var(--tw-text-main)] text-[14px]">{userData?.followersCount || 0}</span>
+                                        <span className="text-[var(--tw-text-muted)] text-[14px]">Followers</span>
                                     </div>
                                 </div>
                             </div>
@@ -107,11 +109,11 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                                             key={item.href}
                                             href={item.href}
                                             onClick={onClose}
-                                            className={`flex items-center gap-5 px-6 py-4 hover:bg-white/10 transition ${
-                                                isActive ? "font-bold text-white bg-white/5" : "text-gray-200"
+                                            className={`flex items-center gap-5 px-6 py-4 hover:bg-[var(--tw-text-main)]/10 transition ${
+                                                isActive ? "font-bold text-[var(--tw-text-main)] bg-[var(--tw-text-main)]/5" : "text-[var(--tw-text-main)]"
                                             }`}
                                         >
-                                            <Icon className={`w-6 h-6 ${isActive ? "text-white" : "text-gray-400"}`} />
+                                            <Icon className={`w-6 h-6 ${isActive ? "text-[var(--tw-text-main)]" : "text-[var(--tw-text-muted)]"}`} />
                                             <span className="text-[19px]">{item.label}</span>
                                         </Link>
                                     );
@@ -133,8 +135,8 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                         </div>
 
                         {/* Footer / User Profile section */}
-                        <div className="p-4 border-t border-gray-800">
-                             <div className="flex items-center justify-between w-full hover:bg-white/10 p-2 rounded-full transition group cursor-pointer">
+                        <div className="p-4 border-t border-[var(--tw-border-main)]">
+                             <div className="flex items-center justify-between w-full hover:bg-[var(--tw-text-main)]/10 p-2 rounded-full transition group cursor-pointer">
                                 <Link href={`/profile/${user.uid}`} onClick={onClose} className="flex items-center gap-3 flex-grow overflow-hidden">
                                     <Avatar
                                         src={userData?.profileImage}
@@ -142,23 +144,22 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                                         size="md"
                                     />
                                     <div className="flex flex-col truncate">
-                                        <span className="font-bold text-[15px] truncate text-white">
+                                        <span className="font-bold text-[15px] truncate text-[var(--tw-text-main)]">
                                             {userData?.displayName || userData?.username}
                                         </span>
-                                        <span className="text-gray-500 text-[13px] truncate">
+                                        <span className="text-[var(--tw-text-muted)] text-[13px] truncate">
                                             @{userData?.username}
                                         </span>
                                     </div>
                                 </Link>
                                 <button
                                     onClick={() => {
-                                        signOut();
-                                        onClose();
+                                        toggleTheme();
                                     }}
-                                    className="p-2 hover:bg-red-500/10 rounded-full transition group/logout"
-                                    title="Sign out"
+                                    className="p-2 hover:bg-[var(--tw-text-main)]/10 rounded-full transition text-[var(--tw-text-muted)] hover:text-[var(--tw-text-main)]"
+                                    title="Display"
                                 >
-                                    <LogOut className="w-5 h-5 text-gray-500 group-hover/logout:text-red-500 transition-colors" />
+                                    <MoonStar className="w-5 h-5" />
                                 </button>
                             </div>
                         </div>

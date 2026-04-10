@@ -222,7 +222,7 @@ const VideoItem = ({ url }: { url: string }) => {
     };
 
     return (
-        <div className="relative w-full h-full group/video bg-black rounded-xl overflow-hidden">
+        <div className="relative w-full h-full group/video bg-[var(--tw-bg-card)] rounded-xl overflow-hidden">
             <video
                 ref={videoRef}
                 src={url}
@@ -637,7 +637,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
 
     return (
         <article 
-            className="border-b border-gray-800 p-3 sm:p-4 hover:bg-gray-900/50 transition cursor-pointer flex gap-3 sm:gap-4"
+            className="border-b border-[var(--tw-border-main)] p-3 sm:p-4 hover:bg-[var(--tw-text-main)]/5 transition cursor-pointer flex gap-3 sm:gap-4"
             onClick={handleTap}
         >
             {/* Avatar */}
@@ -654,14 +654,14 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                     <div className="flex items-center gap-1 text-[15px] min-w-0">
                         <Link
                             href={`/profile/${tweet.userId}`}
-                            className="font-bold text-white hover:underline truncate"
+                            className="font-bold text-[var(--tw-text-main)] hover:underline truncate"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {author?.displayName || author?.username || "Loading..."}
                         </Link>
-                        <span className="text-gray-500 truncate ml-0.5">@{author?.username}</span>
-                        <span className="text-gray-500 mx-1">·</span>
-                        <span className="text-gray-500 hover:underline">
+                        <span className="text-[var(--tw-text-muted)] truncate ml-0.5">@{author?.username}</span>
+                        <span className="text-[var(--tw-text-muted)] mx-1">·</span>
+                        <span className="text-[var(--tw-text-muted)] hover:underline">
                             {tweet.createdAt?.toDate ? formatDistanceToNow(tweet.createdAt.toDate(), { addSuffix: true })
                                 .replace('about ', '')
                                 .replace('less than a minute ago', 'just now')
@@ -676,7 +676,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                     {isOwner && (
                         <button
                             onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-                            className="text-gray-500 hover:text-red-500 p-2 rounded-full hover:bg-red-500/10 transition"
+                            className="text-[var(--tw-text-muted)] hover:text-red-500 p-2 rounded-full hover:bg-red-500/10 transition"
                             title="Delete tweet"
                         >
                             <Trash2 className="w-4 h-4" />
@@ -686,14 +686,14 @@ const Tweet = memo(({ tweet }: TweetProps) => {
 
                 {/* Content - double tap to like, triple tap for comments */}
                 <p 
-                    className="text-white mt-1 whitespace-pre-wrap break-words"
+                    className="text-[var(--tw-text-main)] mt-1 whitespace-pre-wrap break-words"
                 >{tweet.content}</p>
 
                 {/* Media - double tap to like, triple tap for comments */}
                 {tweet.mediaUrls && tweet.mediaUrls.length > 0 && (
                     <div 
                         className={cn(
-                            "mt-3 overflow-hidden rounded-2xl border border-gray-800 grid gap-0.5",
+                            "mt-3 overflow-hidden rounded-2xl border border-[var(--tw-border-main)] grid gap-0.5",
                             tweet.mediaUrls.length === 1 ? "grid-cols-1 w-full" : "grid-cols-2",
                             tweet.mediaUrls.length === 3 ? "grid-rows-2" : ""
                         )}
@@ -708,7 +708,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                                 <div 
                                     key={index} 
                                     className={cn(
-                                        "relative overflow-hidden bg-gray-900 cursor-pointer group",
+                                        "relative overflow-hidden bg-[var(--tw-bg-card)] cursor-pointer group",
                                         tweet.mediaUrls!.length === 1 
                                             ? "aspect-[4/3] max-h-[350px] w-full" 
                                             : tweet.mediaUrls!.length === 3 && index === 0 
@@ -757,7 +757,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between text-gray-500 mt-3 -ml-2 w-full max-w-md pr-4">
+                <div className="flex items-center justify-between text-[var(--tw-text-muted)] mt-3 -ml-2 w-full max-w-md pr-4">
                     <button
                         className={cn("flex items-center gap-1 transition group", canReply ? 'hover:text-blue-500 cursor-pointer' : 'opacity-50 cursor-not-allowed')}
                         onClick={(e) => { 

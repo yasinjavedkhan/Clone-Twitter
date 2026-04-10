@@ -51,6 +51,7 @@ export default function GrokPage() {
           prompt: messageText,
           history: messages,
           userName: userData?.displayName || userData?.username || "User",
+          userId: user?.uid,
         }),
       });
 
@@ -93,7 +94,7 @@ export default function GrokPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-56px)] sm:h-screen bg-black text-white border-r border-gray-800 overflow-hidden">
+    <div className="flex flex-col min-h-screen sm:h-screen bg-[var(--tw-bg-main)] text-[var(--tw-text-main)] border-r border-[var(--tw-border-main)] overflow-hidden transition-colors">
         {/* Force hide mobile FAB on this page */}
         <style jsx global>{`
           .sm\\:hidden.fixed.bottom-20.right-4 {
@@ -101,7 +102,7 @@ export default function GrokPage() {
           }
         `}</style>
       {/* Header */}
-      <div className="p-4 border-b border-gray-800 flex items-center justify-between sticky top-0 bg-black/80 backdrop-blur-md z-10 shrink-0">
+      <div className="p-4 border-b border-[var(--tw-border-main)] flex items-center justify-between sticky top-0 bg-[var(--tw-bg-main)]/80 backdrop-blur-md z-10 shrink-0 transition-colors">
         <div className="flex items-center gap-3">
           {user && (
             <button 
@@ -125,7 +126,7 @@ export default function GrokPage() {
         </div>
         <button 
           onClick={clearChat}
-          className="p-2 hover:bg-white/10 rounded-full transition text-gray-500 hover:text-red-500"
+          className="p-2 hover:bg-[var(--tw-text-main)]/10 rounded-full transition text-[var(--tw-text-muted)] hover:text-red-500"
           title="Clear Chat"
         >
           <Trash2 className="w-5 h-5" />
@@ -141,8 +142,8 @@ export default function GrokPage() {
                 <Sparkles className="w-16 h-16 text-twitter-blue relative z-10" />
             </div>
             <div>
-                <h2 className="text-3xl font-black mb-2 italic tracking-tight">Grok is ready.</h2>
-                <p className="text-gray-500">Ask me anything about what's happening or just have a chat.</p>
+                <h2 className="text-3xl font-black mb-2 italic tracking-tight text-[var(--tw-text-main)]">Grok is ready.</h2>
+                <p className="text-[var(--tw-text-muted)]">Ask me anything about what's happening or just have a chat.</p>
             </div>
             
             <div className="grid grid-cols-1 gap-2 w-full">
@@ -150,9 +151,9 @@ export default function GrokPage() {
                     <button
                         key={prompt}
                         onClick={() => handleSend(prompt)}
-                        className="text-left p-4 rounded-2xl border border-gray-800 hover:border-twitter-blue/50 hover:bg-twitter-blue/5 transition group"
+                        className="text-left p-4 rounded-2xl border border-[var(--tw-border-main)] hover:border-twitter-blue/50 hover:bg-twitter-blue/5 transition group"
                     >
-                        <p className="text-[14px] group-hover:text-twitter-blue transition">{prompt}</p>
+                        <p className="text-[14px] group-hover:text-twitter-blue transition text-[var(--tw-text-main)]">{prompt}</p>
                     </button>
                 ))}
             </div>
@@ -167,7 +168,7 @@ export default function GrokPage() {
                 className={`max-w-[85%] p-4 rounded-3xl ${
                   msg.role === "user" 
                     ? "bg-twitter-blue text-white rounded-tr-none shadow-[0_0_20px_rgba(29,155,240,0.15)]" 
-                    : "bg-[#16181c] text-gray-100 rounded-tl-none border border-gray-800"
+                    : "bg-[var(--tw-bg-card)] text-[var(--tw-text-main)] rounded-tl-none border border-[var(--tw-border-main)]"
                 }`}
               >
                 <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
@@ -177,7 +178,7 @@ export default function GrokPage() {
         )}
         {isLoading && (
             <div className="flex justify-start animate-pulse">
-                <div className="bg-[#16181c] p-4 rounded-3xl rounded-tl-none border border-gray-800">
+                <div className="bg-[var(--tw-bg-card)] p-4 rounded-3xl rounded-tl-none border border-[var(--tw-border-main)]">
                     <div className="flex gap-1.5 px-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce"></div>
                         <div className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce [animation-delay:0.2s]"></div>
@@ -190,8 +191,9 @@ export default function GrokPage() {
       </div>
 
       {/* Input Area */}
-      <div className="p-4 border-t border-gray-800 bg-black shrink-0">
-        <div className="max-w-4xl mx-auto relative group">
+      <div className="pt-3 pb-1 px-4 border-t border-[var(--tw-border-main)] bg-[var(--tw-bg-main)] shrink-0 transition-colors">
+        <div className="max-w-4xl mx-auto relative group flex items-center">
+          <Sparkles className="absolute left-4 w-5 h-5 text-gray-500 z-10" />
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -202,7 +204,7 @@ export default function GrokPage() {
               }
             }}
             placeholder="Ask Grok..."
-            className="w-full bg-[#202327] rounded-3xl py-4 pl-6 pr-14 resize-none outline-none focus:ring-2 focus:ring-twitter-blue/30 border border-transparent focus:border-twitter-blue/50 transition min-h-[56px] max-h-32 text-[15px] shadow-inner"
+            className="w-full bg-[var(--tw-input-bg)] text-[var(--tw-text-main)] rounded-3xl py-4 pl-12 pr-14 resize-none outline-none focus:ring-2 focus:ring-twitter-blue/30 border border-[var(--tw-border-main)] focus:border-twitter-blue/50 transition min-h-[56px] max-h-32 text-[15px] shadow-inner"
             rows={1}
           />
           <button
@@ -210,14 +212,14 @@ export default function GrokPage() {
             disabled={!input.trim() || isLoading}
             className={`absolute right-2 bottom-2 p-2.5 rounded-full transition-all duration-300 ${
               input.trim() && !isLoading 
-                ? "bg-white text-black scale-100 shadow-lg hover:bg-gray-200" 
-                : "bg-gray-800 text-gray-500 scale-90 opacity-50 cursor-not-allowed"
+                ? "bg-[var(--tw-text-main)] text-[var(--tw-bg-main)] scale-100 shadow-lg hover:opacity-90" 
+                : "bg-[var(--tw-bg-card)] text-[var(--tw-text-muted)] scale-90 opacity-50 cursor-not-allowed"
             }`}
           >
             <Send className="w-5 h-5 fill-current" />
           </button>
         </div>
-        <p className="text-[10px] text-gray-600 text-center mt-3 tracking-wide">
+        <p className="text-[10px] text-gray-600 text-center mt-1 mb-0 tracking-wide">
           Grok is an AI and sometimes provides incorrect information.
         </p>
       </div>
