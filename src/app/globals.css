@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 @theme {
-  --color-twitter-blue: #38bdf8;
+  --color-twitter-blue: #4f46e5;
   --color-twitter-black: var(--tw-bg-main);
   --color-twitter-gray: var(--tw-bg-card);
   --color-twitter-border: var(--tw-border-main);
-  --color-accent-gradient: linear-gradient(135deg, #38bdf8 0%, #1d9bf0 100%);
+  --color-accent-gradient: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
   --glass-bg: var(--tw-glass-bg);
   --glass-border: var(--tw-glass-border);
 }
@@ -74,12 +74,12 @@
 
   .twitter-button-primary {
     background: var(--color-accent-gradient);
-    @apply text-white shadow-lg shadow-sky-500/20 hover:shadow-sky-500/40 hover:brightness-110;
+    @apply text-white shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:brightness-110;
   }
 
   .twitter-input {
     background: var(--tw-input-bg);
-    @apply border border-[var(--tw-border-main)] rounded-xl p-3 text-[var(--tw-text-main)] focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 transition-all duration-300 w-full;
+    @apply border border-[var(--tw-border-main)] rounded-xl p-3 text-[var(--tw-text-main)] focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all duration-300 w-full;
   }
 
   .background-gradient {
