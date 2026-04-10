@@ -9,10 +9,11 @@ import { uploadToCloudinary } from "@/lib/cloudinary";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { useRef, useEffect } from "react";
-import EmojiPicker, { Theme } from "emoji-picker-react";
+import EmojiPicker from "emoji-picker-react";
 import { formatDistanceToNow } from "date-fns";
 import Avatar from "@/components/ui/Avatar";
 import { sendPushNotification } from "@/lib/notifications";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface CommentModalProps {
     tweet: any;
@@ -23,6 +24,7 @@ interface CommentModalProps {
 
 export default function CommentModal({ tweet, author, isOpen, onClose }: CommentModalProps) {
     const { user, userData } = useAuth();
+    const { theme } = useTheme();
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -256,12 +258,12 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-transparent sm:bg-gray-600/50 sm:backdrop-blur-sm sm:pt-[5%]">
-            <div className="bg-black w-full h-full sm:h-auto sm:max-w-xl sm:rounded-2xl sm:border border-gray-800 overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm sm:pt-[5%]">
+            <div className="bg-[var(--tw-bg-main)] w-full h-full sm:h-auto sm:max-w-xl sm:rounded-2xl sm:border border-[var(--tw-border-main)] overflow-hidden flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 bg-black/90 backdrop-blur z-10 sticky top-0">
-                    <button onClick={onClose} className="p-2 hover:bg-gray-900 rounded-full transition">
-                        <X className="w-5 h-5 text-white" />
+                <div className="flex items-center justify-between p-4 bg-[var(--tw-bg-main)]/90 backdrop-blur z-10 sticky top-0">
+                    <button onClick={onClose} className="p-2 hover:bg-[var(--tw-text-main)]/10 rounded-full transition">
+                        <X className="w-5 h-5 text-[var(--tw-text-main)]" />
                     </button>
                     <span className="text-blue-500 font-bold cursor-pointer hover:underline text-[15px]">Drafts</span>
                 </div>
@@ -278,16 +280,16 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                                 />
                             </div>
                             {/* Vertical Line to next item */}
-                            <div className="w-0.5 grow bg-gray-800 my-1"></div>
+                            <div className="w-0.5 grow bg-[var(--tw-border-main)] my-1"></div>
                         </div>
                         <div className="flex flex-col py-1 pb-6 min-w-0 flex-grow">
                             <div className="flex items-center gap-1 text-[15px]">
-                                <span className="font-bold text-white leading-tight">{author?.displayName || author?.username}</span>
-                                <span className="text-gray-500 leading-tight">·</span>
-                                <span className="text-gray-500 leading-tight">now</span>
+                                <span className="font-bold text-[var(--tw-text-main)] leading-tight">{author?.displayName || author?.username}</span>
+                                <span className="text-[var(--tw-text-muted)] leading-tight">·</span>
+                                <span className="text-[var(--tw-text-muted)] leading-tight">now</span>
                             </div>
-                            <p className="text-white mt-1 text-[15px] break-words">{tweet.content}</p>
-                            <p className="text-gray-500 text-[15px] mt-3">
+                            <p className="text-[var(--tw-text-main)] mt-1 text-[15px] break-words">{tweet.content}</p>
+                            <p className="text-[var(--tw-text-muted)] text-[15px] mt-3">
                                 Replying to <span className="text-blue-500">@{author?.username}</span>
                             </p>
                         </div>
@@ -298,7 +300,7 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                         <div key={comment.id} className="flex gap-4">
                             <div className="flex flex-col items-center">
                                 {/* Line from above */}
-                                <div className="w-0.5 h-2 bg-gray-800 -mt-2"></div>
+                                <div className="w-0.5 h-2 bg-[var(--tw-border-main)] -mt-2"></div>
                                 <div className="w-12 h-12 shrink-0">
                                     <Avatar
                                         src={comment.author?.profileImage}
@@ -307,20 +309,20 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                                     />
                                 </div>
                                 {/* Line to below */}
-                                <div className="w-0.5 grow bg-gray-800 my-1"></div>
+                                <div className="w-0.5 grow bg-[var(--tw-border-main)] my-1"></div>
                             </div>
                             <div className="flex flex-col py-1 pb-6 min-w-0 flex-grow">
                                 <div className="flex items-center gap-1 text-[15px]">
-                                    <span className="font-bold text-white leading-tight">{comment.author?.displayName || comment.author?.username}</span>
-                                    <span className="text-gray-500 leading-tight">·</span>
-                                    <span className="text-gray-500 text-xs leading-tight">
+                                    <span className="font-bold text-[var(--tw-text-main)] leading-tight">{comment.author?.displayName || comment.author?.username}</span>
+                                    <span className="text-[var(--tw-text-muted)] leading-tight">·</span>
+                                    <span className="text-[var(--tw-text-muted)] text-xs leading-tight">
                                         {comment.createdAt?.toDate ? formatDistanceToNow(comment.createdAt.toDate(), { addSuffix: true }) : 'now'}
                                     </span>
                                 </div>
-                                <p className="text-white mt-1 text-[15px] break-words">{comment.content}</p>
+                                <p className="text-[var(--tw-text-main)] mt-1 text-[15px] break-words">{comment.content}</p>
                                 {comment.mediaUrls && comment.mediaUrls.length > 0 && (
                                     <div className={cn(
-                                        "mt-2 overflow-hidden rounded-2xl border border-gray-800 grid gap-0.5",
+                                        "mt-2 overflow-hidden rounded-2xl border border-[var(--tw-border-main)] grid gap-0.5",
                                         comment.mediaUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"
                                     )}>
                                         {comment.mediaUrls.map((url: string, idx: number) => {
@@ -329,7 +331,7 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                                                          url.toLowerCase().includes('.webm') ||
                                                          url.includes('video');
                                             return (
-                                                <div key={idx} className="relative aspect-video bg-gray-900 overflow-hidden">
+                                                <div key={idx} className="relative aspect-video bg-[var(--tw-bg-card)] overflow-hidden">
                                                     {isVid ? (
                                                         <video src={url} controls className="w-full h-full object-cover" />
                                                     ) : (
@@ -348,7 +350,7 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                     <div className="flex gap-4 mt-2">
                         <div className="flex flex-col items-center">
                             {/* Line from above to connect into the reply section */}
-                            <div className="w-0.5 h-full bg-gray-800 -mt-4 mb-2"></div>
+                            <div className="w-0.5 h-full bg-[var(--tw-border-main)] -mt-4 mb-2"></div>
                             <div className="w-12 h-12 shrink-0">
                                 <Avatar
                                     src={userData?.profileImage}
@@ -362,7 +364,7 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
                                 placeholder="Post your reply"
-                                className="w-full bg-transparent border-none outline-none text-white text-xl resize-none min-h-[120px]"
+                                className="w-full bg-transparent border-none outline-none text-[var(--tw-text-main)] text-xl resize-none min-h-[120px]"
                                 autoFocus
                             />
                             {mediaFiles.length > 0 && (
@@ -371,7 +373,7 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                                     mediaFiles.length === 1 ? "grid-cols-1" : "grid-cols-2"
                                 )}>
                                     {mediaFiles.map((media, index) => (
-                                        <div key={index} className="relative aspect-video rounded-2xl overflow-hidden border border-gray-800 bg-gray-900">
+                                        <div key={index} className="relative aspect-video rounded-2xl overflow-hidden border border-[var(--tw-border-main)] bg-[var(--tw-bg-card)]">
                                             <button
                                                 onClick={() => removeMedia(index)}
                                                 className="absolute top-2 left-2 z-10 bg-black/50 hover:bg-black/70 p-1.5 rounded-full text-white transition backdrop-blur-sm"
@@ -398,10 +400,10 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                             )}
 
                             {showPoll && (
-                                <div className="mt-4 p-4 border border-gray-800 rounded-2xl relative">
+                                <div className="mt-4 p-4 border border-[var(--tw-border-main)] rounded-2xl relative">
                                     <button
                                         onClick={() => setShowPoll(false)}
-                                        className="absolute top-2 right-2 p-1 hover:bg-gray-900 rounded-full text-gray-500"
+                                        className="absolute top-2 right-2 p-1 hover:bg-[var(--tw-text-main)]/10 rounded-full text-[var(--tw-text-muted)]"
                                     >
                                         <X className="w-4 h-4" />
                                     </button>
@@ -417,7 +419,7 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                                                         setPollOptions(newOptions);
                                                     }}
                                                     placeholder={`Choice ${index + 1}`}
-                                                    className="flex-grow bg-transparent border border-gray-800 rounded-md p-2 text-sm text-white focus:border-blue-500 outline-none"
+                                                    className="flex-grow bg-transparent border border-[var(--tw-border-main)] rounded-md p-2 text-sm text-[var(--tw-text-main)] focus:border-blue-500 outline-none"
                                                 />
                                                 {pollOptions.length > 2 && (
                                                     <button onClick={() => removePollOption(index)} className="text-gray-500 hover:text-red-500">
@@ -439,19 +441,19 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                             )}
 
                             {showSchedule && (
-                                <div className="mt-4 p-4 border border-gray-800 rounded-2xl relative">
+                                <div className="mt-4 p-4 border border-[var(--tw-border-main)] rounded-2xl relative">
                                     <button
                                         onClick={() => setShowSchedule(false)}
-                                        className="absolute top-2 right-2 p-1 hover:bg-gray-900 rounded-full text-gray-500"
+                                        className="absolute top-2 right-2 p-1 hover:bg-[var(--tw-text-main)]/10 rounded-full text-[var(--tw-text-muted)]"
                                     >
                                         <X className="w-4 h-4" />
                                     </button>
-                                    <label className="text-xs text-gray-500 block mb-1">Send at</label>
+                                    <label className="text-xs text-[var(--tw-text-muted)] block mb-1">Send at</label>
                                     <input
                                         type="datetime-local"
                                         value={scheduledDate}
                                         onChange={(e) => setScheduledDate(e.target.value)}
-                                        className="bg-transparent border border-gray-800 rounded-md p-2 text-white text-sm outline-none focus:border-blue-500 w-full"
+                                        className="bg-transparent border border-[var(--tw-border-main)] rounded-md p-2 text-[var(--tw-text-main)] text-sm outline-none focus:border-blue-500 w-full"
                                     />
                                 </div>
                             )}
@@ -505,7 +507,7 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                                     <div className="absolute bottom-12 left-0 z-50">
                                         <EmojiPicker
                                             onEmojiClick={onEmojiClick}
-                                            theme={Theme.DARK}
+                                            theme={theme === 'light' ? 'light' : 'dark'}
                                             autoFocusSearch={false}
                                             width={300}
                                             height={400}

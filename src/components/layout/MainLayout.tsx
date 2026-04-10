@@ -123,13 +123,13 @@ function MainLayoutContent({ children }: MainLayoutProps) {
               <BellOff className="w-5 h-5 text-red-500" />
             </div>
             <div className="flex-grow flex flex-col gap-1">
-              <p className="text-white font-bold text-[14px]">Notifications are blocked</p>
-              <p className="text-gray-400 text-xs leading-tight pr-4">
+              <p className="text-[var(--tw-text-main)] font-bold text-[14px]">Notifications are blocked</p>
+              <p className="text-[var(--tw-text-muted)] text-xs leading-tight pr-4">
                 Allow notifications to receive messages instantly.
               </p>
             </div>
-            <button onClick={() => setShowNotificationNotice(false)} className="p-1 hover:bg-white/10 rounded-full transition">
-              <X className="w-4 h-4 text-gray-400" />
+            <button onClick={() => setShowNotificationNotice(false)} className="p-1 hover:bg-[var(--tw-text-main)]/10 rounded-full transition">
+              <X className="w-4 h-4 text-[var(--tw-text-muted)]" />
             </button>
           </div>
         </div>
@@ -138,9 +138,9 @@ function MainLayoutContent({ children }: MainLayoutProps) {
       {user && !isMessagePage && !isImmersiveVideo && pathname !== "/grok" && (
           <button 
               onClick={() => router.push('/compose/post')}
-              className="sm:hidden fixed bottom-20 right-4 w-14 h-14 bg-white text-black rounded-full flex items-center justify-center shadow-lg z-40 transition hover:bg-gray-200"
+              className="sm:hidden fixed bottom-20 right-4 w-14 h-14 bg-[var(--tw-text-main)] text-[var(--tw-bg-main)] rounded-full flex items-center justify-center shadow-lg z-40 transition hover:bg-[var(--tw-text-muted)]"
           >
-            <Plus className="w-6 h-6 text-black" />
+            <Plus className="w-6 h-6 text-[var(--tw-bg-main)]" />
           </button>
       )}
 

@@ -116,7 +116,7 @@ export default function Sidebar({ onOpenCompose }: SidebarProps) {
                         <button onClick={() => router.push('/compose/post')} className="twitter-button twitter-button-primary py-3.5 px-4 mt-4 text-[17px] w-full hidden xl:flex">
                             Post
                         </button>
-                        <button onClick={() => router.push('/compose/post')} className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center hover:bg-gray-200 transition mt-2 mx-auto xl:hidden shadow-md">
+                        <button onClick={() => router.push('/compose/post')} className="w-12 h-12 bg-[var(--tw-text-main)] text-[var(--tw-bg-main)] rounded-full flex items-center justify-center hover:opacity-90 transition mt-2 mx-auto xl:hidden shadow-md">
                             <span className="text-2xl font-bold leading-none -mt-1">+</span>
                         </button>
                     </>

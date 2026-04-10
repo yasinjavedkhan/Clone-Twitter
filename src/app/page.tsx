@@ -448,38 +448,35 @@ export default function Home() {
                       </div>
                       <button 
                         onClick={() => { setReplySetting('everyone'); setShowReplySettings(false); }} 
-                        className={cn("w-full text-left px-4 py-3 hover:bg-white/5 transition flex items-center gap-3", replySetting === 'everyone' && "bg-white/5")}
-                      >
-                        <div className="bg-blue-500 text-white p-2 rounded-full"><Globe className="w-5 h-5" /></div>
-                        <span className="font-bold text-[15px] text-white">Everyone</span>
+                        <span className="font-bold text-[15px] text-[var(--tw-text-main)]">Everyone</span>
                       </button>
                       <button 
                         onClick={() => { setReplySetting('followers'); setShowReplySettings(false); }} 
-                        className={cn("w-full text-left px-4 py-3 hover:bg-white/5 transition flex items-center gap-3", replySetting === 'followers' && "bg-white/5")}
+                        className={cn("w-full text-left px-4 py-3 hover:bg-[var(--tw-text-main)]/5 transition flex items-center gap-3", replySetting === 'followers' && "bg-[var(--tw-text-main)]/5")}
                       >
                         <div className="bg-blue-500 text-white p-2 rounded-full"><Users className="w-5 h-5" /></div>
-                        <span className="font-bold text-[15px] text-white">Followers</span>
+                        <span className="font-bold text-[15px] text-[var(--tw-text-main)]">Followers</span>
                       </button>
                       <button 
                         onClick={() => { setReplySetting('following'); setShowReplySettings(false); }} 
-                        className={cn("w-full text-left px-4 py-3 hover:bg-white/5 transition flex items-center gap-3", replySetting === 'following' && "bg-white/5")}
+                        className={cn("w-full text-left px-4 py-3 hover:bg-[var(--tw-text-main)]/5 transition flex items-center gap-3", replySetting === 'following' && "bg-[var(--tw-text-main)]/5")}
                       >
                         <div className="bg-blue-500 text-white p-2 rounded-full"><User className="w-5 h-5" /></div>
-                        <span className="font-bold text-[15px] text-white">People you follow</span>
+                        <span className="font-bold text-[15px] text-[var(--tw-text-main)]">People you follow</span>
                       </button>
                       <button 
                         onClick={() => { setReplySetting('mentions'); setShowReplySettings(false); }} 
-                        className={cn("w-full text-left px-4 py-3 hover:bg-white/5 transition flex items-center gap-3", replySetting === 'mentions' && "bg-white/5")}
+                        className={cn("w-full text-left px-4 py-3 hover:bg-[var(--tw-text-main)]/5 transition flex items-center gap-3", replySetting === 'mentions' && "bg-[var(--tw-text-main)]/5")}
                       >
                         <div className="bg-blue-500 text-white p-2 text-[18px] font-bold leading-5 text-center flex items-center justify-center rounded-full w-9 h-9">@</div>
-                        <span className="font-bold text-[15px] text-white">Only people you mention</span>
+                        <span className="font-bold text-[15px] text-[var(--tw-text-main)]">Only people you mention</span>
                       </button>
                     </div>
                   </>
                 )}
               </div>
               
-              <div className="w-full h-[1px] bg-gray-800 mb-3 ml-1 mr-4"></div>
+              <div className="w-full h-[1px] bg-[var(--tw-border-main)] mb-3 ml-1 mr-4"></div>
 
               {mediaFiles.length > 0 && (
                 <div className={cn(
@@ -517,7 +514,7 @@ export default function Home() {
                   <div className="mt-4 mb-3 p-4 border border-[var(--tw-border-main)] rounded-2xl relative mr-4 ml-1">
                       <button
                           onClick={() => setShowPoll(false)}
-                          className="absolute top-2 right-2 p-1 hover:bg-gray-900 rounded-full text-gray-500"
+                          className="absolute top-2 right-2 p-1 hover:bg-[var(--tw-text-main)]/10 rounded-full text-[var(--tw-text-muted)]"
                       >
                           <X className="w-4 h-4" />
                       </button>
@@ -558,7 +555,7 @@ export default function Home() {
                   <div className="mt-4 mb-3 p-4 border border-[var(--tw-border-main)] rounded-2xl relative mr-4 ml-1">
                       <button
                           onClick={() => setShowSchedule(false)}
-                          className="absolute top-2 right-2 p-1 hover:bg-gray-900 rounded-full text-gray-500"
+                          className="absolute top-2 right-2 p-1 hover:bg-[var(--tw-text-main)]/10 rounded-full text-[var(--tw-text-muted)]"
                       >
                           <X className="w-4 h-4" />
                       </button>
@@ -696,8 +693,8 @@ export default function Home() {
               const followingTweets = tweets.filter(t => followingIds.includes(t.userId));
               if (followingTweets.length === 0) {
                 return (
-                  <div className="p-12 text-center text-gray-500">
-                    <p className="text-xl font-bold text-white mb-2">Welcome to your timeline!</p>
+                  <div className="p-12 text-center text-[var(--tw-text-muted)]">
+                    <p className="text-xl font-bold text-[var(--tw-text-main)] mb-2">Welcome to your timeline!</p>
                     <p className="text-[15px]">When you follow people, you'll see their tweets here.</p>
                   </div>
                 );
@@ -708,7 +705,7 @@ export default function Home() {
                     <Tweet key={`following-${tweet.id}`} tweet={tweet} />
                   ))}
                   {!hasMore && followingTweets.length > 0 && (
-                    <div className="p-12 text-center text-gray-500 border-b border-gray-800">
+                    <div className="p-12 text-center text-[var(--tw-text-muted)] border-b border-[var(--tw-border-main)]">
                       <p className="text-[15px]">You've reached the end of the timeline.</p>
                     </div>
                   )}
