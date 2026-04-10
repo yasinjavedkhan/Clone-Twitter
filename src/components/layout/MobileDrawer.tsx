@@ -18,7 +18,7 @@ import Avatar from "@/components/ui/Avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getCountFromServer } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 
 const NAV_ITEMS = [
     { label: "Home", href: "/", icon: Home },
@@ -47,26 +47,21 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
     React.useEffect(() => {
         if (!user?.uid || !isOpen) return;
 
-        const fetchCounts = async () => {
-            try {
-                const followingQuery = query(collection(db, "follows"), where("followerId", "==", user.uid));
-                const followersQuery = query(collection(db, "follows"), where("followingId", "==", user.uid));
-                
-                const [followingSnap, followersSnap] = await Promise.all([
-                    getCountFromServer(followingQuery),
-                    getCountFromServer(followersQuery)
-                ]);
+        const followingQuery = query(collection(db, "follows"), where("followerId", "==", user.uid));
+        const followersQuery = query(collection(db, "follows"), where("followingId", "==", user.uid));
 
-                setCounts({
-                    following: followingSnap.data().count,
-                    followers: followersSnap.data().count
-                });
-            } catch (error) {
-                console.error("Error fetching drawer counts:", error);
-            }
+        const unsubFollowing = onSnapshot(followingQuery, (snap) => {
+            setCounts(prev => ({ ...prev, following: snap.size }));
+        });
+
+        const unsubFollowers = onSnapshot(followersQuery, (snap) => {
+            setCounts(prev => ({ ...prev, followers: snap.size }));
+        });
+
+        return () => {
+            unsubFollowing();
+            unsubFollowers();
         };
-
-        fetchCounts();
     }, [user?.uid, isOpen]);
 
     if (!user) return null;
