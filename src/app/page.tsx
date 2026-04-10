@@ -448,6 +448,9 @@ export default function Home() {
                       </div>
                       <button 
                         onClick={() => { setReplySetting('everyone'); setShowReplySettings(false); }} 
+                        className={cn("w-full text-left px-4 py-3 hover:bg-[var(--tw-text-main)]/5 transition flex items-center gap-3", replySetting === 'everyone' && "bg-[var(--tw-text-main)]/5")}
+                      >
+                        <div className="bg-blue-500 text-white p-2 rounded-full"><Globe className="w-5 h-5" /></div>
                         <span className="font-bold text-[15px] text-[var(--tw-text-main)]">Everyone</span>
                       </button>
                       <button 
