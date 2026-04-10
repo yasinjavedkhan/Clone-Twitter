@@ -586,7 +586,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
     return (
         <div 
-            className="flex flex-col w-full border-r border-gray-800 bg-black overflow-hidden fixed left-0 sm:relative z-[50]"
+            className="flex flex-col w-full border-r border-[var(--tw-border-main)] bg-[var(--tw-bg-main)] overflow-hidden fixed left-0 sm:relative z-[50]"
             style={{ 
                 height: viewportHeight,
                 top: viewportTop,
@@ -595,7 +595,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         >
             {/* Local AgoraCall rendering removed - now handled by RootLayout/CallContext */}
             {/* Header - Pure Flex Item (stays at top naturally) */}
-            <header className="flex-none w-full min-h-[64px] border-b border-gray-800 flex items-center px-4 gap-3 sm:gap-4 bg-black/95 backdrop-blur-md z-[20] pt-[env(safe-area-inset-top)]">
+            <header className="flex-none w-full min-h-[64px] border-b border-[var(--tw-border-main)] flex items-center px-4 gap-3 sm:gap-4 bg-[var(--tw-bg-main)]/95 backdrop-blur-md z-[20] pt-[env(safe-area-inset-top)]">
                 <Link 
                     href={otherUser?.userId ? `/profile/${otherUser.userId}` : "#"} 
                     className="flex items-center gap-3 sm:gap-4 flex-grow min-w-0 group hover:opacity-80 transition-opacity"
@@ -673,8 +673,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
             {/* Offline Message Indicator */}
             {otherUser && !isUserActive(otherUser.lastSeen) && (hasMounted) && (
-                <div className="flex-none bg-zinc-900 border-b border-gray-800 px-4 py-2 text-center">
-                    <p className="text-[11px] text-gray-400 font-medium tracking-tight">
+                <div className="flex-none bg-[var(--tw-bg-card)] border-b border-[var(--tw-border-main)] px-4 py-2 text-center">
+                    <p className="text-[11px] text-[var(--tw-text-muted)] font-medium tracking-tight">
                         {otherUser.displayName || otherUser.username} is currently offline. Calls are disabled.
                     </p>
                 </div>
@@ -720,7 +720,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             <div key={msg.id} className="flex flex-col gap-4">
                                 {showDateSeparator && (
                                     <div className="flex justify-center my-2">
-                                        <div className="bg-[#15181c] text-gray-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-gray-800 shadow-sm uppercase tracking-wider opacity-80">
+                                        <div className="bg-[var(--tw-bg-card)] text-[var(--tw-text-muted)] text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-[var(--tw-border-main)] shadow-sm uppercase tracking-wider opacity-80">
                                             {formatDateSeparator(msgDate)}
                                         </div>
                                     </div>
@@ -735,8 +735,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                             isMine 
                                                 ? "background-gradient text-white rounded-br-none shadow-indigo-500/20" 
                                                 : msg.isDeletedForEveryone 
-                                                    ? "bg-transparent border border-gray-800 text-gray-500 italic rounded-2xl rounded-tl-none"
-                                                    : "bg-[#202327] text-white rounded-bl-none shadow-sm"
+                                                    ? "bg-transparent border border-[var(--tw-border-main)] text-[var(--tw-text-muted)] italic rounded-2xl rounded-tl-none"
+                                                    : "bg-[var(--tw-bg-card)] text-[var(--tw-text-main)] rounded-bl-none shadow-sm"
                                         )}
                                         onTouchStart={() => startPress(msg.id)}
                                         onTouchEnd={endPress}

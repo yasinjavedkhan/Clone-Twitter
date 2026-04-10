@@ -122,12 +122,12 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
     };
 
     return (
-        <div className="flex flex-col h-screen bg-black">
+        <div className="flex flex-col h-screen bg-[var(--tw-bg-main)]">
             {/* Header */}
-            <div className="sticky top-0 z-20 bg-black/90 backdrop-blur-md border-b border-gray-800">
+            <div className="sticky top-0 z-20 bg-[var(--tw-bg-main)]/90 backdrop-blur-md border-b border-[var(--tw-border-main)]">
                 {showSearch ? (
                     <div className="flex items-center gap-3 p-3 px-4">
-                        <button onClick={() => { setShowSearch(false); setSearchTerm(""); }} className="p-1 hover:bg-white/10 rounded-full transition">
+                        <button onClick={() => { setShowSearch(false); setSearchTerm(""); }} className="p-1 hover:bg-[var(--tw-text-main)]/10 rounded-full transition">
                             <ArrowLeft className="w-5 h-5 text-white" />
                         </button>
                         <div className="flex-grow relative">
@@ -161,7 +161,7 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                         </div>
                         <button
                             onClick={() => setShowSearch(true)}
-                            className="p-2 hover:bg-white/10 rounded-full transition text-[var(--color-twitter-blue)]"
+                            className="p-2 hover:bg-[var(--tw-text-main)]/10 rounded-full transition text-[var(--color-twitter-blue)]"
                             title="New message"
                         >
                             <Edit className="w-5 h-5" />
@@ -172,7 +172,7 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
 
             {/* Search bar (always visible below) */}
             {!showSearch && (
-                <div className="px-4 py-2 bg-black border-b border-gray-800/50">
+                <div className="px-4 py-2 bg-[var(--tw-bg-main)] border-b border-[var(--tw-border-main)]/50">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                         <input
@@ -209,7 +209,7 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                                         key={u.id}
                                         href={`/messages/${conversationId}`}
                                         onClick={() => handleStartChat(u.id)}
-                                        className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition"
+                                        className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--tw-text-main)]/5 transition"
                                     >
                                         <Avatar src={u.profileImage} fallbackText={u.displayName || u.username} size="lg" />
                                         <div className="flex flex-col truncate min-w-0">
@@ -248,7 +248,7 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                             <Link
                                 key={conv.id}
                                 href={`/messages/${conv.id}`}
-                                className={`flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition border-l-2 ${isActive ? 'border-[var(--color-twitter-blue)] bg-[var(--color-twitter-blue)]/5' : 'border-transparent'}`}
+                                className={`flex items-center gap-3 px-4 py-3 hover:bg-[var(--tw-text-main)]/5 transition border-l-2 ${isActive ? 'border-[var(--color-twitter-blue)] bg-[var(--color-twitter-blue)]/5' : 'border-transparent'}`}
                             >
                                 <div className="shrink-0">
                                     <Avatar src={otherUser?.profileImage} fallbackText={otherUser?.displayName || otherUser?.username} size="lg" />
