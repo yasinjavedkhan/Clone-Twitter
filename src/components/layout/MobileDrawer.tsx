@@ -11,15 +11,14 @@ import {
     Bookmark, 
     User, 
     Settings, 
-    X,
-    Sparkles,
-    Smartphone,
     MoonStar
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Avatar from "@/components/ui/Avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getCountFromServer } from "firebase/firestore";
 
 const NAV_ITEMS = [
     { label: "Home", href: "/", icon: Home },
@@ -43,6 +42,32 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
     const router = useRouter();
     const { user, userData, signOut } = useAuth();
     const { toggleTheme } = useTheme();
+    const [counts, setCounts] = React.useState({ following: 0, followers: 0 });
+
+    React.useEffect(() => {
+        if (!user?.uid || !isOpen) return;
+
+        const fetchCounts = async () => {
+            try {
+                const followingQuery = query(collection(db, "follows"), where("followerId", "==", user.uid));
+                const followersQuery = query(collection(db, "follows"), where("followingId", "==", user.uid));
+                
+                const [followingSnap, followersSnap] = await Promise.all([
+                    getCountFromServer(followingQuery),
+                    getCountFromServer(followersQuery)
+                ]);
+
+                setCounts({
+                    following: followingSnap.data().count,
+                    followers: followersSnap.data().count
+                });
+            } catch (error) {
+                console.error("Error fetching drawer counts:", error);
+            }
+        };
+
+        fetchCounts();
+    }, [user?.uid, isOpen]);
 
     if (!user) return null;
 
@@ -87,11 +112,11 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                                 </div>
                                 <div className="flex gap-4 mt-1">
                                     <div className="flex items-center gap-1 hover:underline cursor-pointer" onClick={() => { onClose(); router.push(`/profile/${user.uid}`); }}>
-                                        <span className="font-bold text-[var(--tw-text-main)] text-[14px]">{userData?.followingCount || 0}</span>
+                                        <span className="font-bold text-[var(--tw-text-main)] text-[14px]">{counts.following}</span>
                                         <span className="text-[var(--tw-text-muted)] text-[14px]">Following</span>
                                     </div>
                                     <div className="flex items-center gap-1 hover:underline cursor-pointer" onClick={() => { onClose(); router.push(`/profile/${user.uid}`); }}>
-                                        <span className="font-bold text-[var(--tw-text-main)] text-[14px]">{userData?.followersCount || 0}</span>
+                                        <span className="font-bold text-[var(--tw-text-main)] text-[14px]">{counts.followers}</span>
                                         <span className="text-[var(--tw-text-muted)] text-[14px]">Followers</span>
                                     </div>
                                 </div>
