@@ -138,7 +138,7 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder="Search people..."
-                                className="w-full bg-[#202327] rounded-full py-2 pl-10 pr-4 outline-none focus:ring-1 focus:ring-[var(--color-twitter-blue)] transition text-white text-[15px]"
+                                className="w-full bg-[var(--tw-input-bg)] rounded-full py-2 pl-10 pr-4 outline-none focus:ring-1 focus:ring-[var(--color-twitter-blue)]/50 focus:border-[var(--color-twitter-blue)]/50 transition text-white text-[15px]"
                             />
                         </div>
                     </div>
@@ -181,7 +181,7 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                             onChange={(e) => { setSearchTerm(e.target.value); if (!showSearch) setShowSearch(true); }}
                             onFocus={() => setShowSearch(true)}
                             placeholder="Search Direct Messages"
-                            className="w-full bg-[#202327] rounded-full py-2 pl-10 pr-4 outline-none focus:ring-1 focus:ring-[var(--color-twitter-blue)] transition text-white text-sm"
+                            className="w-full bg-[var(--tw-input-bg)] rounded-full py-2 pl-10 pr-4 outline-none focus:ring-1 focus:ring-[var(--color-twitter-blue)]/50 focus:border-[var(--color-twitter-blue)]/50 transition text-white text-sm"
                         />
                     </div>
                 </div>
@@ -235,7 +235,7 @@ export default function ConversationList({ activeId }: { activeId?: string }) {
                         </p>
                         <button
                             onClick={() => setShowSearch(true)}
-                            className="mt-2 px-5 py-2.5 bg-[var(--color-twitter-blue)] hover:bg-[#1a8cd8] text-white font-bold rounded-full transition text-[15px]"
+                            className="mt-2 twitter-button twitter-button-primary px-8 py-2.5"
                         >
                             Start a conversation
                         </button>

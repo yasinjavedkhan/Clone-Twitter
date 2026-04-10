@@ -733,10 +733,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                         className={cn(
                                             "w-fit max-w-[85%] sm:max-w-[70%] px-2.5 py-1.5 rounded-2xl select-none touch-none shadow-sm relative group",
                                             isMine 
-                                                ? "bg-twitter-blue text-white rounded-br-none" 
+                                                ? "background-gradient text-white rounded-br-none shadow-indigo-500/20" 
                                                 : msg.isDeletedForEveryone 
                                                     ? "bg-transparent border border-gray-800 text-gray-500 italic rounded-2xl rounded-tl-none"
-                                                    : "bg-[#202327] text-white rounded-bl-none"
+                                                    : "bg-[#202327] text-white rounded-bl-none shadow-sm"
                                         )}
                                         onTouchStart={() => startPress(msg.id)}
                                         onTouchEnd={endPress}
