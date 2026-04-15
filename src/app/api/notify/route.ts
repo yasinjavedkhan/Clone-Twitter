@@ -25,25 +25,27 @@ function getAdminApp() {
 
     let formattedKey = privateKey.trim();
     
-    // Remove wrapping quotes if present
-    if (formattedKey.startsWith('"') && formattedKey.endsWith('"')) {
-        formattedKey = formattedKey.slice(1, -1);
-    } else if (formattedKey.startsWith("'") && formattedKey.endsWith("'")) {
-        formattedKey = formattedKey.slice(1, -1);
-    }
+    // 1. Remove wrapping quotes
+    formattedKey = formattedKey.replace(/^['"]+|['"]+$/g, '');
     
-    // Replace all literal \n or double-escaped \n with actual newlines
+    // 2. Handle double-escaped or literal newlines
+    // This turns literal "\n" strings into actual newline characters
     formattedKey = formattedKey.replace(/\\n/g, '\n');
     
-    // Ensure the key has proper BEGIN/END markers if they got stripped
-    if (!formattedKey.includes("-----BEGIN PRIVATE KEY-----")) {
-        console.warn("Firebase Admin: Private key missing BEGIN marker, fixing format.");
-        // If it's just the raw base64, wrap it
-        formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey.replace(/\s/g, '\n')}\n-----END PRIVATE KEY-----`;
+    // 3. Robust PEM reconstruction
+    // If the key is messy, we extract ONLY the base64 part and re-wrap it
+    if (formattedKey.includes("-----BEGIN PRIVATE KEY-----")) {
+        const base64Part = formattedKey
+            .replace("-----BEGIN PRIVATE KEY-----", "")
+            .replace("-----END PRIVATE KEY-----", "")
+            .replace(/\s+/g, ""); // Remove ALL whitespace/newlines
+        
+        // Reconstruct with proper 64-character lines
+        formattedKey = `-----BEGIN PRIVATE KEY-----\n${base64Part.match(/.{1,64}/g)?.join("\n")}\n-----END PRIVATE KEY-----`;
     }
 
-    // Use Application Default Credentials or service account
     try {
+        console.log("Firebase Admin: Attempting initialization with sanitized key...");
         return initializeApp({
             credential: cert({
                 projectId,

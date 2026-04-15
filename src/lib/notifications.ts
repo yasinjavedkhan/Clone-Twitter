@@ -79,11 +79,12 @@ export async function requestNotificationPermission(userId: string): Promise<str
     } catch (error: any) {
         console.error("CRITICAL FCM Error:", error);
         
-        if (error.code === 'messaging/token-subscribe-failed' || error.message?.includes('401')) {
-          console.error("DIAGNOSTIC HINT: 401/Unauthorized usually means:");
-          console.error("1. 'Firebase Cloud Messaging API' is NOT enabled in Google Cloud Console.");
-          console.error("2. The API key is restricted and doesn't have permissions for FCM.");
-          console.error("3. The VAPID key in .env.local doesn't match the current project settings.");
+        if (error.code === 'messaging/token-subscribe-failed' || error.message?.includes('401') || error.message?.includes('403')) {
+          console.error("DIAGNOSTIC HINT: This is usually a setup issue in Google Cloud Console:");
+          console.error("1. YOU MUST ENABLE the 'Firebase Cloud Messaging API' in the Google Cloud Library.");
+          console.error("2. Ensure your API Key (AIzaSy...) has no restrictions or allows FCM.");
+          console.error("3. If testing on Vercel, add 'clone-twitter-fmya.vercel.app' to Authorized Domains in Firebase.");
+          console.error("Link: https://console.cloud.google.com/apis/library/fcmregistrations.googleapis.com");
         }
         
         return null;

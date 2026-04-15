@@ -3,6 +3,7 @@
 import { ArrowLeft, Bell, Settings2, Mail, Info, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import NotificationDiagnostic from "@/components/settings/NotificationDiagnostic";
 
 export default function NotificationSettings() {
     const { user } = useAuth();
@@ -67,6 +68,9 @@ export default function NotificationSettings() {
                     <p className="text-[13px] text-gray-500">
                         Get instant alerts when someone sends you a message or interacts with your posts.
                     </p>
+                </div>
+                <div className="p-4 border-b border-gray-800">
+                    <NotificationDiagnostic />
                 </div>
             </div>
 

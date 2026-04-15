@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import {
     onAuthStateChanged,
     User,
@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [userData, setUserData] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const hasRequestedNotifications = useRef(false);
 
     useEffect(() => {
         let unsubscribeUser: (() => void) | null = null;
@@ -86,11 +87,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     }
                     setLoading(false);
                     
-                    // Request notification permission after login
-                    if (currentUser) {
+                    // Request notification permission after login (ONLY ONCE per session to avoid 429 error)
+                    if (currentUser && !hasRequestedNotifications.current) {
+                        hasRequestedNotifications.current = true;
                         setTimeout(() => {
-                            requestNotificationPermission(currentUser.uid).catch(console.error);
-                        }, 3000);
+                            requestNotificationPermission(currentUser.uid).catch(err => {
+                                console.error("AuthContext: FCM Error:", err);
+                                // If it failed, allow retry later
+                                hasRequestedNotifications.current = false;
+                            });
+                        }, 5000);
                     }
                 }, (error) => {
                     console.error("User snapshot error:", error);
