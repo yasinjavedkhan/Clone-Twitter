@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useRef, useEffect, ReactNode } fro
 import { doc, setDoc, deleteDoc, onSnapshot, serverTimestamp, addDoc, collection, updateDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "./AuthContext";
+import { sendPushNotification } from "@/lib/notifications";
 
 type CallType = 'voice' | 'video';
 
@@ -103,6 +104,22 @@ export function CallProvider({ children }: { children: ReactNode }) {
                 status: 'ringing',
                 createdAt: serverTimestamp()
             });
+
+            // Send push notification for background users
+            await sendPushNotification({
+                toUserId: otherUser.userId,
+                title: `📞 Incoming ${type} Call`,
+                body: `${user.displayName || "Someone"} is calling you...`,
+                data: {
+                    type: 'call',
+                    roomName: generatedRoom,
+                    callType: type,
+                    fromUserId: user.uid,
+                    fromUserName: user.displayName || "Someone",
+                    fromUserAvatar: (user as any).profileImage || '',
+                    conversationId
+                }
+            }).catch(err => console.error("Call Notification Error:", err));
         } catch (error) {
             console.error("Global Call: Failed to start call:", error);
             setIsCalling(false);

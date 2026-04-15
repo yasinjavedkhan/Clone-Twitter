@@ -636,10 +636,6 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         <>
                             <button 
                                 onClick={() => {
-                                    if (!isUserActive(otherUser.lastSeen)) {
-                                        setShowOfflineOverlay(true);
-                                        return;
-                                    }
                                     recordCallEvent('voice');
                                     startCall(otherUser, 'voice', conversationId);
                                 }}
@@ -650,10 +646,6 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             </button>
                             <button 
                                 onClick={() => {
-                                    if (!isUserActive(otherUser.lastSeen)) {
-                                        setShowOfflineOverlay(true);
-                                        return;
-                                    }
                                     recordCallEvent('video');
                                     startCall(otherUser, 'video', conversationId);
                                 }}
@@ -671,14 +663,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 </div>
             </header>
 
-            {/* Offline Message Indicator */}
-            {otherUser && !isUserActive(otherUser.lastSeen) && (hasMounted) && (
-                <div className="flex-none bg-[var(--tw-bg-card)] border-b border-[var(--tw-border-main)] px-4 py-2 text-center">
-                    <p className="text-[11px] text-[var(--tw-text-muted)] font-medium tracking-tight">
-                        {otherUser.displayName || otherUser.username} is currently offline. Calls are disabled.
-                    </p>
-                </div>
-            )}
+
 
             {/* Messages Container - Flex-1 (Grows to fill space) */}
             <div 

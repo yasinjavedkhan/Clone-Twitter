@@ -24,35 +24,65 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage(function(payload) {
   console.log('[SW] Background message received:', payload);
 
+  const data = payload.data || {};
+  
+  // Handle call notifications specifically
+  if (data.type === 'call') {
+    const title = `📞 Incoming ${data.callType || 'Video'} Call`;
+    const options = {
+      body: `${data.fromUserName || 'Someone'} is calling you...`,
+      icon: data.fromUserAvatar || '/icon-192.png',
+      badge: '/icon-192.png',
+      data: data,
+      vibrate: [200, 100, 200, 100, 200, 100, 500],
+      requireInteraction: true,
+      renotify: true,
+      tag: 'incoming-call',
+      actions: [
+        { action: 'accept', title: '✅ Accept' },
+        { action: 'decline', title: '❌ Decline' }
+      ]
+    };
+    return self.registration.showNotification(title, options);
+  }
+
+  // Standard notification handling
   const notificationTitle = payload.notification?.title || 'JD — New Notification';
   const notificationOptions = {
     body: payload.notification?.body || 'You have a new notification',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
-    data: payload.data,
+    data: data,
     vibrate: [200, 100, 200],
     requireInteraction: false,
-    tag: payload.data?.type || 'general',
+    tag: data.type || 'general',
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // Click handler — open the app when notification is clicked
 self.addEventListener('notificationclick', function(event) {
+  console.log('[SW] Notification clicked. Action:', event.action);
   event.notification.close();
   
   const data = event.notification.data;
   let url = '/';
   
-  if (data?.type === 'message') {
+  // Handle specific actions for calls
+  if (data?.type === 'call') {
+    if (event.action === 'decline') {
+      // In a real app, we might want to ping an API to decline the call here
+      return;
+    }
+    // For 'accept' or clicking the notification itself, open the chat
+    url = `/messages/${data.conversationId}?action=joining&room=${data.roomName}`;
+  } else if (data?.type === 'message') {
     url = `/messages/${data.conversationId}`;
   } else if (data?.type === 'follow') {
     url = `/profile/${data.followerId || data.fromUserId}`;
   } else if (data?.type === 'post') {
-    url = `/`; // Or a specific tweet page if available, e.g., `/tweet/${data.tweetId}`
-  } else if (data?.type === 'like' || data?.type === 'retweet' || data?.type === 'comment') {
-    url = `/`;
+    url = `/`; 
   }
 
   event.waitUntil(

@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { onForegroundMessage } from "@/lib/notifications";
 import { Phone, PhoneOff, Video, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { collection, query, where, onSnapshot, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, deleteDoc, doc, updateDoc, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useCall } from "@/contexts/CallContext";
 import CallUI from "./CallUI";
@@ -16,6 +16,43 @@ export default function IncomingCallOverlay() {
     const { user } = useAuth();
     const ringtoneRef = useRef<HTMLAudioElement | null>(null);
     const [isAnswering, setIsAnswering] = useState(false);
+    const searchParams = useSearchParams();
+    const { joinCall } = useCall();
+
+    useEffect(() => {
+        const action = searchParams.get('action');
+        const room = searchParams.get('room');
+        
+        if (action === 'joining' && room && user?.uid) {
+            console.log("FCM: Auto-joining call from URL parameter. Room:", room);
+            
+            const q = query(
+                collection(db, "calls"),
+                where("roomName", "==", room)
+            );
+            
+            getDocs(q).then(snapshot => {
+                if (!snapshot.empty) {
+                    const callDoc = snapshot.docs[0];
+                    const callData = callDoc.data();
+                    
+                    if (callData.status === 'ringing' || callData.status === 'accepted') {
+                        if (callData.status === 'ringing') {
+                            updateDoc(callDoc.ref, { status: 'accepted' }).catch(() => {});
+                        }
+                        
+                        joinCall(room, callData.callType, {
+                            userId: callData.fromUserId,
+                            displayName: callData.fromUserName,
+                            profileImage: callData.fromUserAvatar
+                        }, callData.conversationId);
+                        
+                        console.log("FCM: Successfully joined call from URL.");
+                    }
+                }
+            }).catch(err => console.error("FCM: Error auto-joining call:", err));
+        }
+    }, [searchParams, user?.uid]);
 
     useEffect(() => {
         // Fallback: Listen for incoming FCM call signals for edge cases
@@ -87,8 +124,6 @@ export default function IncomingCallOverlay() {
     if (!incomingCall) return null;
 
     const { callType, conversationId, fromUserName, fromUserAvatar, roomName, id } = incomingCall;
-
-    const { joinCall } = useCall();
 
     const handleAccept = async () => {
         setIsAnswering(true);
