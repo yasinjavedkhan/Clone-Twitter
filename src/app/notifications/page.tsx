@@ -145,15 +145,15 @@ export default function Notifications() {
                                 
                                 <div className="flex flex-col flex-1 min-w-0">
                                     <div className="flex justify-between items-start gap-2">
-                                        <span className={`font-bold text-[16px] truncate ${!notif.read ? 'text-[var(--tw-text-main)]' : 'text-[var(--tw-text-muted)]'}`}>
+                                        <span className={`font-extrabold text-[17px] tracking-tight truncate ${!notif.read ? 'text-[var(--tw-text-main)]' : 'text-[var(--tw-text-muted)] opacity-80'}`}>
                                             {notif.title}
                                         </span>
-                                        <span className="text-[var(--tw-text-muted)] text-[12px] whitespace-nowrap font-medium mt-0.5">
+                                        <span className="text-[var(--tw-text-muted)] text-[13px] whitespace-nowrap font-bold mt-1">
                                             {notif.createdAt?.toDate ? formatDistanceToNow(notif.createdAt.toDate()) : 'Now'}
                                         </span>
                                     </div>
-                                    <p className={`text-[14px] leading-snug mt-1 transition-colors
-                                        ${!notif.read ? 'text-[var(--tw-text-main)]' : 'text-[var(--tw-text-muted)]'}`}>
+                                    <p className={`text-[15px] leading-normal font-medium mt-0.5 transition-colors
+                                        ${!notif.read ? 'text-[var(--tw-text-main)]' : 'text-[var(--tw-text-muted)] opacity-90'}`}>
                                         {notif.message}
                                     </p>
                                 </div>
