@@ -12,14 +12,17 @@ import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { sendPushNotification } from "@/lib/notifications";
+import { Suspense } from "react";
 
-export default function ComposePage() {
+function ComposeContent() {
     const { user, userData } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const initialContent = searchParams.get("content") || "";
 
-    const [content, setContent] = useState("");
+    const [content, setContent] = useState(initialContent);
     const [isTweeting, setIsTweeting] = useState(false);
     const [mediaFiles, setMediaFiles] = useState<{ file: File; type: 'image' | 'video'; preview: string }[]>([]);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -330,5 +333,13 @@ export default function ComposePage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function ComposePage() {
+    return (
+        <Suspense fallback={null}>
+            <ComposeContent />
+        </Suspense>
     );
 }

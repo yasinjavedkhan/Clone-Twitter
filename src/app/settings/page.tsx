@@ -34,12 +34,6 @@ export default function Settings() {
             href: "/settings/accessibility"
         },
         {
-            title: "Install App",
-            icon: <Smartphone className="w-5 h-5" />,
-            description: "Step-by-step instructions to add our app to your home screen for the best experience.",
-            href: "/settings/install"
-        },
-        {
             title: "Resources",
             icon: <HelpCircle className="w-5 h-5" />,
             description: "Find helpful links to help you use the app.",

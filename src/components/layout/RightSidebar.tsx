@@ -16,9 +16,21 @@ export default function RightSidebar() {
     const [searchQuery, setSearchQuery] = useState("");
     const [following, setFollowing] = useState<Record<string, boolean>>({});
     const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
+    const [topNews, setTopNews] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchData = async () => {
+            // Fetch Top News
+            try {
+                const newsRes = await fetch("/api/news?category=TOP");
+                const newsData = await newsRes.json();
+                if (newsData.success) {
+                    setTopNews(newsData.articles.slice(0, 4)); // Only show top 4
+                }
+            } catch (err) {
+                console.error("Error fetching sidebar news:", err);
+            }
+
             if (!user) return;
 
             // Fetch following status
@@ -99,14 +111,41 @@ export default function RightSidebar() {
                         />
                     </form>
 
-                    {/* Trending Box - Only show if there's any content (customizable later) */}
-                    <div className="bg-[var(--tw-bg-card)] rounded-2xl overflow-hidden mb-4 p-4 border border-[var(--tw-border-main)]">
-                        <h2 className="font-extrabold text-xl mb-4 text-[var(--tw-text-main)]">What's happening</h2>
-                        <p className="text-[var(--tw-text-muted)] text-[15px]">No trending topics right now. Check back later!</p>
+                    {/* Trending Box - Now showing Top News */}
+                    <div className="bg-[var(--tw-bg-card)] rounded-2xl overflow-hidden mb-4 border border-[var(--tw-border-main)]">
+                        <h2 className="font-extrabold text-xl px-4 py-3 text-[var(--tw-text-main)]">What's happening</h2>
+                        <div className="flex flex-col">
+                            {topNews.length > 0 ? (
+                                topNews.map((news, idx) => (
+                                    <Link 
+                                        key={idx} 
+                                        href="/live-news" 
+                                        className="px-4 py-3 hover:bg-[var(--tw-text-main)]/5 transition flex flex-col gap-0.5"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[13px] text-[var(--tw-text-muted)] font-medium uppercase tracking-tight">
+                                                {news.source || "Breaking News"}
+                                            </span>
+                                        </div>
+                                        <h3 className="font-bold text-[15px] leading-tight text-[var(--tw-text-main)] line-clamp-2">
+                                            {news.title}
+                                        </h3>
+                                        <span className="text-[13px] text-[var(--tw-text-muted)]">
+                                            Live News Update
+                                        </span>
+                                    </Link>
+                                ))
+                            ) : (
+                                <p className="px-4 py-3 text-[var(--tw-text-muted)] text-[15px]">No trending topics right now. Check back later!</p>
+                            )}
+                        </div>
+                        <Link href="/live-news" className="block text-[var(--color-twitter-blue)] px-4 py-4 hover:bg-white/5 w-full text-left transition text-[15px]">
+                            Show more
+                        </Link>
                     </div>
 
-                    {/* Who to follow */}
-                    {suggestedUsers.length > 0 && (
+                    {/* Who to follow - Hidden on Live News page per user request */}
+                    {suggestedUsers.length > 0 && pathname !== "/live-news" && (
                         <div className="bg-[var(--tw-bg-card)] rounded-2xl overflow-hidden border border-[var(--tw-border-main)]">
                             <h2 className="font-extrabold text-xl px-4 py-3 text-[var(--tw-text-main)]">Who to follow</h2>
 

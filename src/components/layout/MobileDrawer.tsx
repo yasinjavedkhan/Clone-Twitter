@@ -14,7 +14,8 @@ import {
     X,
     Sparkles,
     Smartphone,
-    MoonStar
+    MoonStar,
+    Tv
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Avatar from "@/components/ui/Avatar";
@@ -29,10 +30,10 @@ const NAV_ITEMS = [
     { label: "Notifications", href: "/notifications", icon: Bell },
     { label: "Messages", href: "/messages", icon: Mail },
     { label: "Grok", href: "/grok", icon: Sparkles },
+    { label: "Live News", href: "/live-news", icon: Tv },
     { label: "Bookmarks", href: "/bookmarks", icon: Bookmark },
     { label: "Profile", href: "/profile", icon: User },
     { label: "Settings", href: "/settings", icon: Settings },
-    { label: "Install App", href: "/settings/install", icon: Smartphone },
 ];
 
 interface MobileDrawerProps {
