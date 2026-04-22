@@ -716,12 +716,12 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                 >
                                     <div 
                                         className={cn(
-                                            "w-fit max-w-[85%] sm:max-w-[70%] px-2.5 py-1.5 rounded-2xl select-none touch-none shadow-sm relative group",
+                                            "w-fit max-w-[85%] sm:max-w-[70%] px-5 py-3 rounded-[26px] select-none touch-none shadow-md relative group transition-all duration-200",
                                             isMine 
-                                                ? "background-gradient text-white rounded-br-none shadow-indigo-500/20" 
+                                                ? "background-gradient text-white rounded-br-[4px] shadow-blue-500/10 border border-white/10" 
                                                 : msg.isDeletedForEveryone 
-                                                    ? "bg-transparent border border-[var(--tw-border-main)] text-[var(--tw-text-muted)] italic rounded-2xl rounded-tl-none"
-                                                    : "bg-[var(--tw-bg-card)] text-[var(--tw-text-main)] rounded-bl-none shadow-sm"
+                                                    ? "bg-transparent border border-[var(--tw-border-main)] text-[var(--tw-text-muted)] italic rounded-tl-[4px]"
+                                                    : "bg-[var(--tw-bg-card)] text-[var(--tw-text-main)] rounded-bl-[4px] shadow-sm border border-[var(--tw-border-main)]/50"
                                         )}
                                         onTouchStart={() => startPress(msg.id)}
                                         onTouchEnd={endPress}
@@ -752,27 +752,30 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                             </div>
                                         )}
                                         
-                                        <div className="flex flex-col min-w-[40px]">
-                                            <p className="text-[13px] sm:text-[14px] whitespace-pre-wrap break-words leading-tight pr-1">
+                                        <div className="flex flex-col min-w-[60px]">
+                                            <p className={cn(
+                                                "text-[16px] sm:text-[17px] whitespace-pre-wrap break-words leading-relaxed pr-1 font-medium tracking-tight",
+                                                msg.type === 'call' && "text-[18px] sm:text-[19px] font-bold flex items-center gap-2"
+                                            )}>
                                                 {msg.text}
                                             </p>
                                             
                                             <div className={cn(
-                                                "flex items-center justify-end gap-1 mt-0.5 self-end select-none",
-                                                isMine ? "text-white" : "text-zinc-300"
+                                                "flex items-center justify-end gap-1.5 mt-1 self-end select-none",
+                                                isMine ? "text-white/90" : "text-[var(--tw-text-muted)]"
                                             )}>
                                                 {msg.isEdited && (
-                                                    <span className="text-[8px] italic mr-0.5">edited</span>
+                                                    <span className="text-[9px] italic mr-0.5">edited</span>
                                                 )}
-                                                <span className="text-[11px] font-semibold leading-none drop-shadow-sm">
+                                                <span className="text-[11px] font-bold leading-none">
                                                     {msg.createdAt ? format(msgDate, 'h:mm a') : '...'}
                                                 </span>
                                                 {isMine && !msg.isDeletedForEveryone && (
                                                     <div className="flex items-center ml-0.5">
                                                         {msg.read ? (
-                                                            <CheckCheck className="w-3.5 h-3.5 text-white drop-shadow-sm" />
+                                                            <CheckCheck className="w-4 h-4 text-white drop-shadow-sm" />
                                                         ) : (
-                                                            <Check className="w-3.5 h-3.5 text-white/70 drop-shadow-sm" />
+                                                            <Check className="w-4 h-4 text-white/70 drop-shadow-sm" />
                                                         )}
                                                     </div>
                                                 )}
@@ -790,7 +793,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             </div>
 
             {/* Input Area - FLEX-NONE (Stays at bottom) */}
-            <div className="flex-none bg-black border-t border-gray-800 pb-[env(safe-area-inset-bottom)] z-[30] relative overflow-visible">
+            <div className="flex-none bg-[var(--tw-bg-main)] border-t border-[var(--tw-border-main)] pb-[env(safe-area-inset-bottom)] z-[30] relative overflow-visible">
                 
                 {/* Floating Typing Indicator Bubble - specifically for mobile keyboard visibility */}
                 {otherUserIsTyping && (
