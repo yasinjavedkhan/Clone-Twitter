@@ -4,7 +4,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 // Your VAPID key from Firebase Console → Project Settings → Cloud Messaging
-const VAPID_KEY = (process.env.NEXT_PUBLIC_FCM_VAPID_KEY || "BJ-iGROgllfJWNW-T5chkp1hGw3rhHMAyehMQ5Yb6qFCbbfIgRvrlvR3jdE3zyG4tNNQMXczzY1i3I4ZqyhVrrJQ").replace(/['"]/g, '').trim();
+const VAPID_KEY = (process.env.NEXT_PUBLIC_FCM_VAPID_KEY || "BCcmN4vF9H1SQSK-h9ATcbPyOaab-smwsGOI-d8GSstu1Lwos0DeoGYr_epF3o9pY911wVSLqPM2v33FH2hWLVA").replace(/['"]/g, '').trim();
 
 export async function requestNotificationPermission(userId: string): Promise<string | null> {
     try {
@@ -13,13 +13,15 @@ export async function requestNotificationPermission(userId: string): Promise<str
             return null;
         }
 
-        console.log("FCM: Initializing v29 (Stable Mode)");
-        if (!VAPID_KEY) {
-            console.error("FCM Error: NEXT_PUBLIC_FCM_VAPID_KEY is missing from environment variables.");
+        console.log("FCM: Initializing v30 (Ultra Stable Mode)");
+        if (!VAPID_KEY || VAPID_KEY.length < 20) {
+            const errorMsg = "FCM Error: VAPID Key is invalid or missing. Please check your .env.local file.";
+            console.error(errorMsg);
+            if (typeof window !== "undefined") window.alert(errorMsg);
             return null;
         }
 
-        console.log(`FCM Debug: Using VAPID: ${VAPID_KEY.substring(0, 5)}...${VAPID_KEY.substring(VAPID_KEY.length - 5)} (Length: ${VAPID_KEY.length})`);
+        console.log(`FCM Debug: Using VAPID: ${VAPID_KEY.substring(0, 10)}...`);
         
         console.log(`FCM Debug: Firebase App is using API KEY: ${app.options.apiKey?.substring(0, 10)}... (Length: ${app.options.apiKey?.length})`);
 
@@ -35,21 +37,28 @@ export async function requestNotificationPermission(userId: string): Promise<str
             return null;
         }
 
-        let registration = await window.navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+        let registration = await window.navigator.serviceWorker.getRegistration();
         
-        if (!registration) {
-            console.log("FCM: Registering new service worker...");
-            registration = await window.navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        if (!registration || !registration.active) {
+            console.log("FCM: Registering/Updating service worker...");
+            registration = await window.navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                scope: '/'
+            });
+            // Force update to ensure we have the latest SW code
+            await registration.update();
         }
 
-        // Wait for SW to be active if it's currently installing or waiting
-        if (registration.installing) {
-          console.log("FCM: Waiting for service worker to finish installing...");
-          await new Promise<void>((resolve) => {
-            registration!.installing!.addEventListener('statechange', (e: any) => {
-              if (e.target.state === 'activated') resolve();
+        // Ensure the service worker is fully active and controlling the page
+        if (registration.installing || registration.waiting) {
+            console.log("FCM: Waiting for SW activation...");
+            await new Promise<void>((resolve) => {
+                const sw = registration!.installing || registration!.waiting;
+                sw?.addEventListener('statechange', (e: any) => {
+                    if (e.target.state === 'activated') resolve();
+                });
+                // Safety timeout
+                setTimeout(resolve, 2000);
             });
-          });
         }
 
         const messaging = getMessaging(app);
@@ -79,14 +88,16 @@ export async function requestNotificationPermission(userId: string): Promise<str
     } catch (error: any) {
         console.error("CRITICAL FCM Error:", error);
         
+        let friendlyMsg = `Notification Error: ${error.message}`;
+        
         if (error.code === 'messaging/token-subscribe-failed' || error.message?.includes('401') || error.message?.includes('403')) {
-          console.error("DIAGNOSTIC HINT: This is usually a setup issue in Google Cloud Console:");
-          console.error("1. YOU MUST ENABLE the 'Firebase Cloud Messaging API' in the Google Cloud Library.");
-          console.error("2. Ensure your API Key (AIzaSy...) has no restrictions or allows FCM.");
-          console.error("3. If testing on Vercel, add 'clone-twitter-fmya.vercel.app' to Authorized Domains in Firebase.");
-          console.error("Link: https://console.cloud.google.com/apis/library/fcmregistrations.googleapis.com");
+          friendlyMsg = "🚫 FCM Setup Blocked: Please ensure 'Firebase Cloud Messaging API' is enabled in Google Cloud Console and your domain is authorized.";
+          console.error("DIAGNOSTIC HINT: https://console.cloud.google.com/apis/library/fcmregistrations.googleapis.com");
+        } else if (error.code === 'messaging/permission-blocked') {
+          friendlyMsg = "🚫 Notifications Blocked: Please click the lock icon 🔒 in your browser and Allow notifications.";
         }
         
+        if (typeof window !== "undefined") window.alert(friendlyMsg);
         return null;
     }
 }
