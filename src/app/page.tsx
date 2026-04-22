@@ -404,9 +404,9 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Tweet Input */}
+      {/* Tweet Input Area */}
       {user && (
-        <div className="p-4 border-b border-[var(--tw-border-main)] flex gap-4">
+        <div className="p-4 border-b border-[var(--tw-border-main)] flex gap-4 hover:bg-[var(--tw-text-main)]/[0.01] transition-colors">
           <Link href={`/profile/${user.uid}`} className="shrink-0 hover:opacity-90 transition">
             <Avatar
               src={userData?.profileImage}
@@ -416,7 +416,7 @@ export default function Home() {
           </Link>
           <div className="flex-grow">
             <textarea
-              className="w-full bg-transparent text-xl outline-none resize-none placeholder-[var(--tw-text-muted)] min-h-[50px] text-[var(--tw-text-main)]"
+              className="w-full bg-transparent text-[20px] outline-none resize-none placeholder-[var(--tw-text-muted)] min-h-[50px] text-[var(--tw-text-main)] font-medium leading-relaxed"
               placeholder="What's happening?"
               value={content}
               onChange={(e) => {
@@ -426,11 +426,11 @@ export default function Home() {
               }}
               rows={1}
             />
-            <div className="flex flex-col mt-2">
+            <div className="flex flex-col mt-3">
               <div className="relative">
                 <button 
                   onClick={() => setShowReplySettings(!showReplySettings)} 
-                  className="flex items-center gap-1.5 text-[var(--color-twitter-blue)] text-sm font-bold pb-2 hover:bg-blue-500/10 px-3 py-1 -ml-2 rounded-full transition w-fit mb-2"
+                  className="flex items-center gap-2 text-[var(--color-twitter-blue)] text-[14px] font-bold pb-2 hover:bg-blue-500/10 px-3 py-1.5 -ml-2 rounded-full transition-all duration-200 w-fit mb-3"
                 >
                   <Globe className="w-4 h-4" />
                   <span>
@@ -443,7 +443,7 @@ export default function Home() {
                 {showReplySettings && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowReplySettings(false)} />
-                    <div className="absolute top-10 left-0 bg-[var(--tw-bg-main)] border border-[var(--tw-border-main)] rounded-2xl shadow-xl z-50 w-72 overflow-hidden py-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="absolute top-10 left-0 bg-[var(--tw-bg-card)] border border-[var(--tw-border-main)] rounded-2xl shadow-2xl z-50 w-72 overflow-hidden py-2" onClick={(e) => e.stopPropagation()}>
                       <div className="px-4 py-2 font-bold text-[var(--tw-text-main)] text-[15px]">Who can reply?</div>
                       <div className="px-4 pb-2 text-sm text-[var(--tw-text-muted)] mb-2 border-b border-[var(--tw-border-main)]">
                         Choose who can reply to this post. Anyone mentioned can always reply.
@@ -452,28 +452,28 @@ export default function Home() {
                         onClick={() => { setReplySetting('everyone'); setShowReplySettings(false); }} 
                         className={cn("w-full text-left px-4 py-3 hover:bg-[var(--tw-text-main)]/5 transition flex items-center gap-3", replySetting === 'everyone' && "bg-[var(--tw-text-main)]/5")}
                       >
-                        <div className="bg-blue-500 text-white p-2 rounded-full"><Globe className="w-5 h-5" /></div>
+                        <div className="bg-[var(--color-twitter-blue)] text-white p-2 rounded-full"><Globe className="w-5 h-5" /></div>
                         <span className="font-bold text-[15px] text-[var(--tw-text-main)]">Everyone</span>
                       </button>
                       <button 
                         onClick={() => { setReplySetting('followers'); setShowReplySettings(false); }} 
                         className={cn("w-full text-left px-4 py-3 hover:bg-[var(--tw-text-main)]/5 transition flex items-center gap-3", replySetting === 'followers' && "bg-[var(--tw-text-main)]/5")}
                       >
-                        <div className="bg-blue-500 text-white p-2 rounded-full"><Users className="w-5 h-5" /></div>
+                        <div className="bg-[var(--color-twitter-blue)] text-white p-2 rounded-full"><Users className="w-5 h-5" /></div>
                         <span className="font-bold text-[15px] text-[var(--tw-text-main)]">Followers</span>
                       </button>
                       <button 
                         onClick={() => { setReplySetting('following'); setShowReplySettings(false); }} 
                         className={cn("w-full text-left px-4 py-3 hover:bg-[var(--tw-text-main)]/5 transition flex items-center gap-3", replySetting === 'following' && "bg-[var(--tw-text-main)]/5")}
                       >
-                        <div className="bg-blue-500 text-white p-2 rounded-full"><User className="w-5 h-5" /></div>
+                        <div className="bg-[var(--color-twitter-blue)] text-white p-2 rounded-full"><User className="w-5 h-5" /></div>
                         <span className="font-bold text-[15px] text-[var(--tw-text-main)]">People you follow</span>
                       </button>
                       <button 
                         onClick={() => { setReplySetting('mentions'); setShowReplySettings(false); }} 
                         className={cn("w-full text-left px-4 py-3 hover:bg-[var(--tw-text-main)]/5 transition flex items-center gap-3", replySetting === 'mentions' && "bg-[var(--tw-text-main)]/5")}
                       >
-                        <div className="bg-blue-500 text-white p-2 text-[18px] font-bold leading-5 text-center flex items-center justify-center rounded-full w-9 h-9">@</div>
+                        <div className="bg-[var(--color-twitter-blue)] text-white p-2 text-[18px] font-bold leading-5 text-center flex items-center justify-center rounded-full w-9 h-9">@</div>
                         <span className="font-bold text-[15px] text-[var(--tw-text-main)]">Only people you mention</span>
                       </button>
                     </div>
@@ -481,7 +481,7 @@ export default function Home() {
                 )}
               </div>
               
-              <div className="w-full h-[1px] bg-[var(--tw-border-main)] mb-3 ml-1 mr-4"></div>
+              <div className="w-full h-[1px] bg-[var(--tw-border-main)]/50 mb-4"></div>
 
               {mediaFiles.length > 0 && (
                 <div className={cn(
@@ -645,7 +645,7 @@ export default function Home() {
                 <Button
                   onClick={handleTweet}
                   disabled={(!content.trim() && mediaFiles.length === 0) || isTweeting}
-                  className="px-5 py-1.5 twitter-button-primary"
+                  className="px-6 py-2 twitter-button-primary shadow-blue-500/20"
                 >
                   {isTweeting ? "Posting..." : "Post"}
                 </Button>

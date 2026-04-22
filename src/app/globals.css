@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
 @theme {
-  --color-twitter-blue: #4f46e5;
-  --color-twitter-black: var(--tw-bg-main);
-  --color-twitter-gray: var(--tw-bg-card);
-  --color-twitter-border: var(--tw-border-main);
-  --color-accent-gradient: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
-  --glass-bg: var(--tw-glass-bg);
-  --glass-border: var(--tw-glass-border);
+  --color-twitter-blue: #1d9bf0;
+  --color-twitter-black: #000000;
+  --color-twitter-gray: #09090b;
+  --color-twitter-border: rgba(255, 255, 255, 0.08);
+  --color-accent-gradient: linear-gradient(135deg, #1d9bf0 0%, #1a8cd8 100%);
+  --glass-bg: rgba(0, 0, 0, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
 }
 
 :root {
-  --tw-bg-main: #020617;
-  --tw-bg-card: #0f172a;
-  --tw-text-main: #f1f5f9;
-  --tw-text-muted: #94a3b8;
-  --tw-border-main: rgba(255, 255, 255, 0.1);
-  --tw-glass-bg: rgba(15, 23, 42, 0.6);
-  --tw-glass-border: rgba(255, 255, 255, 0.08);
+  --tw-bg-main: #000000;
+  --tw-bg-card: #09090b;
+  --tw-text-main: #f8fafc;
+  --tw-text-muted: #71717a;
+  --tw-border-main: rgba(255, 255, 255, 0.08);
+  --tw-glass-bg: rgba(9, 9, 11, 0.8);
+  --tw-glass-border: rgba(255, 255, 255, 0.1);
   --tw-input-bg: rgba(255, 255, 255, 0.03);
 }
 
@@ -63,23 +63,23 @@
 @layer components {
   .glass-card {
     background: var(--tw-glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--tw-glass-border);
   }
 
   .twitter-button {
-    @apply inline-flex items-center justify-center rounded-full font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95;
+    @apply inline-flex items-center justify-center rounded-full font-bold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95;
   }
 
   .twitter-button-primary {
     background: var(--color-accent-gradient);
-    @apply text-white shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:brightness-110;
+    @apply text-white shadow-md shadow-blue-500/10 hover:shadow-blue-500/20 hover:brightness-105;
   }
 
   .twitter-input {
     background: var(--tw-input-bg);
-    @apply border border-[var(--tw-border-main)] rounded-xl p-3 text-[var(--tw-text-main)] focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all duration-300 w-full;
+    @apply border border-[var(--tw-border-main)] rounded-2xl p-4 text-[var(--tw-text-main)] focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all duration-200 w-full;
   }
 
   .background-gradient {

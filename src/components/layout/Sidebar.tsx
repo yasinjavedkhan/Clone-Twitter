@@ -84,8 +84,8 @@ export default function Sidebar({ onOpenCompose }: SidebarProps) {
 
     return (
         <aside className="fixed left-0 top-0 h-screen w-20 xl:w-64 border-r border-[var(--tw-border-main)] hidden sm:flex flex-col items-center xl:items-stretch px-2 xl:px-4 py-4 z-50 bg-[var(--tw-bg-main)]">
-            <Link href="/" className="flex items-center justify-center xl:justify-start p-3 w-fit rounded-full hover:bg-[var(--tw-text-main)]/10 transition mb-4">
-                <svg viewBox="0 0 24 24" className="w-8 h-8 text-[var(--tw-text-main)] fill-current">
+            <Link href="/" className="flex items-center justify-center xl:justify-start p-3 w-fit rounded-full hover:bg-[var(--tw-text-main)]/10 transition-all duration-300 mb-6 group">
+                <svg viewBox="0 0 24 24" className="w-8 h-8 text-[var(--tw-text-main)] fill-current transform group-hover:scale-105 transition-transform">
                     <path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z"></path>
                 </svg>
             </Link>
@@ -98,24 +98,24 @@ export default function Sidebar({ onOpenCompose }: SidebarProps) {
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex items-center gap-4 p-3 rounded-full hover:bg-[var(--tw-text-main)]/10 transition w-fit xl:w-full ${isActive ? 'font-bold' : ''}`}
+                            className={`flex items-center gap-4 p-3 rounded-full hover:bg-[var(--tw-text-main)]/10 transition-all duration-200 w-fit xl:w-full ${isActive ? 'font-bold' : ''}`}
                         >
                             <div className="relative">
-                                <Icon className={`w-7 h-7 shrink-0 ${isActive ? 'fill-current' : ''}`} fill={isActive ? "currentColor" : "none"} strokeWidth={isActive ? 2.5 : 2} />
+                                <Icon className={`w-[26px] h-[26px] shrink-0 ${isActive ? 'fill-current' : ''}`} fill={isActive ? "currentColor" : "none"} strokeWidth={isActive ? 2.5 : 2} />
                                 {item.hasBadge && (item.badgeType === 'messages' ? unreadMessagesCount : unreadCount) > 0 && (
-                                    <div className="absolute -top-1 -right-1 bg-twitter-blue text-white text-[11px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-[var(--tw-bg-main)] px-1">
+                                    <div className="absolute -top-1 -right-1 bg-[var(--color-twitter-blue)] text-white text-[11px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-[var(--tw-bg-main)] px-1 shadow-sm">
                                         {(item.badgeType === 'messages' ? unreadMessagesCount : unreadCount) > 9 ? "9+" : (item.badgeType === 'messages' ? unreadMessagesCount : unreadCount)}
                                     </div>
                                 )}
                             </div>
-                            <span className="hidden xl:inline text-xl">{item.label}</span>
+                            <span className="hidden xl:inline text-[19px]">{item.label}</span>
                         </Link>
                     );
                 })}
 
                 {user ? (
                     <>
-                        <button onClick={() => router.push('/compose/post')} className="twitter-button twitter-button-primary py-3.5 px-4 mt-4 text-[17px] w-full hidden xl:flex">
+                        <button onClick={() => router.push('/compose/post')} className="twitter-button twitter-button-primary py-3 px-4 mt-6 text-[17px] w-full hidden xl:flex shadow-blue-500/10">
                             Post
                         </button>
                         <button onClick={() => router.push('/compose/post')} className="w-12 h-12 bg-[var(--tw-text-main)] text-[var(--tw-bg-main)] rounded-full flex items-center justify-center hover:opacity-90 transition mt-2 mx-auto xl:hidden shadow-md">
