@@ -31,11 +31,21 @@ export async function requestNotificationPermission(userId: string): Promise<str
             return null;
         }
 
-        // 1. Force unregister ALL existing service workers to clear stale VAPID keys
+        // 1. Force unregister ALL existing service workers
         const registrations = await window.navigator.serviceWorker.getRegistrations();
         for (let reg of registrations) {
             await reg.unregister();
             console.log("FCM: Unregistered stale service worker");
+        }
+
+        // 2. Clear Firebase-related IndexedDB to fix "storage error"
+        try {
+            if (typeof indexedDB !== "undefined") {
+                indexedDB.deleteDatabase("firebase-messaging-database");
+                console.log("FCM: Cleared messaging database to fix storage errors");
+            }
+        } catch (dbErr) {
+            console.warn("FCM: Could not clear IndexedDB:", dbErr);
         }
 
         console.log("FCM: Registering fresh service worker...");
