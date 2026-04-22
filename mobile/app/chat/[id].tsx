@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Send, ChevronLeft, Phone, Video, X, Mic, MicOff, VideoOff, Maximize2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 
 // Configuration for API requests
 const IS_PROD = true; // Set to false for local testing
@@ -166,20 +166,35 @@ export default function ChatDetailScreen() {
         }
     };
 
-    const renderMessage = ({ item }: { item: any }) => {
+    const renderMessage = ({ item, index }: { item: any, index: number }) => {
         const isMine = item.senderId === user?.uid;
+        const msgDate = item.createdAt?.toDate ? item.createdAt.toDate() : (item.createdAt instanceof Date ? item.createdAt : new Date());
+        
         return (
-            <View style={[{ alignItems: isMine ? 'flex-end' : 'flex-start', alignSelf: 'stretch', marginBottom: 10 }]}>
-                <View style={[styles.messageBubble, isMine ? styles.myMessage : styles.theirMessage, { marginBottom: 2 }]}>
-                    <Text style={[styles.messageText, isMine ? styles.myMessageText : styles.theirMessageText]}>
+            <View style={[{ alignItems: isMine ? 'flex-end' : 'flex-start', alignSelf: 'stretch', marginBottom: 12 }]}>
+                <View style={[
+                    styles.messageBubble, 
+                    isMine ? styles.myMessage : styles.theirMessage,
+                    item.type === 'call' && { backgroundColor: '#1d9bf020', borderWidth: 1, borderColor: '#1d9bf040', width: '90%' }
+                ]}>
+                    <Text style={[
+                        styles.messageText, 
+                        isMine ? styles.myMessageText : styles.theirMessageText,
+                        item.type === 'call' && { color: '#1d9bf0', fontWeight: 'bold', fontSize: 17 }
+                    ]}>
                         {item.text}
                     </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 4, gap: 4 }}>
+                        <Text style={{ fontSize: 10, color: isMine ? 'rgba(255,255,255,0.7)' : '#71767b', fontWeight: '600' }}>
+                            {format(msgDate, 'h:mm a')}
+                        </Text>
+                        {isMine && (
+                            <Text style={{ fontSize: 10, color: item.read ? '#fff' : 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>
+                                {item.read ? '✓✓' : '✓'}
+                            </Text>
+                        )}
+                    </View>
                 </View>
-                {isMine && (
-                    <Text style={{ fontSize: 10, color: item.read ? '#1d9bf0' : '#71767b', marginRight: 5, fontWeight: 'bold' }}>
-                        {item.read ? '• Seen' : '• Sent'}
-                    </Text>
-                )}
             </View>
         );
     };
@@ -316,80 +331,100 @@ export default function ChatDetailScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: '#000000',
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 10,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
         borderBottomWidth: 0.5,
-        borderBottomColor: '#2f3336',
+        borderBottomColor: 'rgba(255,255,255,0.1)',
+        backgroundColor: '#000000',
     },
     backButton: {
-        marginRight: 15,
+        marginRight: 12,
     },
     headerTitle: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
+        color: '#ffffff',
+        fontSize: 19,
+        fontWeight: '800',
+        letterSpacing: -0.5,
     },
     messagesList: {
-        padding: 15,
+        padding: 16,
+        paddingBottom: 32,
     },
     messageBubble: {
-        maxWidth: '80%',
-        padding: 12,
-        borderRadius: 20,
+        maxWidth: '85%',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 22,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 1,
     },
     myMessage: {
         alignSelf: 'flex-end',
         backgroundColor: '#1d9bf0',
-        borderBottomRightRadius: 2,
+        borderBottomRightRadius: 4,
     },
     theirMessage: {
         alignSelf: 'flex-start',
-        backgroundColor: '#2f3336',
-        borderBottomLeftRadius: 2,
+        backgroundColor: '#16181c',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.05)',
+        borderBottomLeftRadius: 4,
     },
     messageText: {
         fontSize: 16,
-        lineHeight: 20,
+        lineHeight: 22,
+        fontWeight: '500',
     },
     myMessageText: {
-        color: '#fff',
+        color: '#ffffff',
     },
     theirMessageText: {
-        color: '#fff',
+        color: '#f8f9f9',
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 10,
-        paddingHorizontal: 15,
+        padding: 12,
+        paddingHorizontal: 16,
         borderTopWidth: 0.5,
-        borderTopColor: '#2f3336',
-        backgroundColor: '#000',
+        borderTopColor: 'rgba(255,255,255,0.1)',
+        backgroundColor: '#000000',
     },
     input: {
         flex: 1,
         backgroundColor: '#16181c',
-        color: '#fff',
-        borderRadius: 20,
-        paddingHorizontal: 15,
-        paddingVertical: 8,
+        color: '#ffffff',
+        borderRadius: 24,
+        paddingHorizontal: 18,
+        paddingVertical: 10,
         fontSize: 16,
-        maxHeight: 100,
+        maxHeight: 120,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
     },
     sendButton: {
-        marginLeft: 10,
-        padding: 5,
+        marginLeft: 12,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(29, 155, 240, 0.1)',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     headerActions: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 20,
+        gap: 18,
     },
     headerIcon: {
-        padding: 5,
+        padding: 6,
     },
 });
