@@ -338,7 +338,7 @@ export default function ChatDetailScreen() {
                                     updateDoc(doc(db, "conversations", id as string), {
                                         [`typing.${user.uid}`]: false
                                     }).catch(() => {});
-                                }, 1000);
+                                }, 20);
                             }
                         }}
                         multiline

@@ -898,7 +898,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                                 if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
                                                 typingTimeoutRef.current = setTimeout(() => {
                                                     updateDoc(doc(db, "conversations", conversationId), { [`typing.${user.uid}`]: false }).catch(() => {});
-                                                }, 1000);
+                                                }, 20);
                                         }
                                     }}
                                     placeholder="Start a new message"
