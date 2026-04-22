@@ -4,7 +4,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 // Your VAPID key from Firebase Console → Project Settings → Cloud Messaging
-const VAPID_KEY = "BCcmN4vF9H1SQSK-h9ATcbPyOaab-smwsGOI-d8GSstu1Lwos0DeoGYr_epF3o9pY911wVSLqPM2v33FH2hWLVA";
+const VAPID_KEY = "BJ_fGROgIFJWNW_T5dhkp1hGw3rhHMAyehMQ5Yb6qFCbbfIgRvrlvR3jdE3zyG4tNNQMXczzY1i3I4ZqyhVrrJQ";
 
 export async function requestNotificationPermission(userId: string): Promise<string | null> {
     try {
@@ -72,11 +72,9 @@ export async function requestNotificationPermission(userId: string): Promise<str
         
         const messaging = getMessaging(app);
         
-        // Pass the VAPID key directly to getToken. The SDK handles 
-        // Base64URL vs Standard Base64 automatically.
+        // Simplified getToken: let the SDK find the /firebase-messaging-sw.js automatically
         const token = await getToken(messaging, {
-            vapidKey: VAPID_KEY,
-            serviceWorkerRegistration: registration,
+            vapidKey: VAPID_KEY
         });
 
         if (token) {
