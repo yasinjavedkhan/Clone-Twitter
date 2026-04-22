@@ -897,7 +897,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                         }
                                     }}
                                     placeholder="Start a new message"
-                                    className="flex-grow bg-[#202327] rounded-2xl py-2 px-4 outline-none focus:ring-1 focus:ring-twitter-blue transition text-[15px] min-w-0"
+                                    className="flex-grow bg-[var(--tw-bg-card)] border border-[var(--tw-border-main)] rounded-[24px] py-3 px-5 outline-none focus:ring-1 focus:ring-[var(--color-twitter-blue)] transition text-[16px] min-w-0 text-[var(--tw-text-main)] placeholder:text-[var(--tw-text-muted)]"
                                 />
                                 {(!newMessage.trim() && mediaFiles.length === 0) ? (
                                     <button
