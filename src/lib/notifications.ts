@@ -67,9 +67,10 @@ export async function requestNotificationPermission(userId: string): Promise<str
             });
         }
 
-        const messaging = getMessaging(app);
-        
         console.log("FCM: Requesting token with VAPID key...");
+        if (typeof window !== "undefined") window.alert("Step 1: Service Worker Registered. Requesting FCM Token...");
+        
+        const messaging = getMessaging(app);
         
         // Pass the VAPID key directly to getToken. The SDK handles 
         // Base64URL vs Standard Base64 automatically.
@@ -80,15 +81,15 @@ export async function requestNotificationPermission(userId: string): Promise<str
 
         if (token) {
             console.log("FCM: Token generated successfully. Length:", token.length);
+            if (typeof window !== "undefined") window.alert("Step 2: Token Generated! Now saving to Database...");
+            
             // Save token to Firestore
             await updateDoc(doc(db, "users", userId), {
                 fcmToken: token,
                 fcmTokenUpdated: new Date(),
             });
             console.log("FCM: Token saved to Firestore for user:", userId);
-            if (typeof window !== "undefined") {
-                window.alert("🎉 Success! Notification token has been saved to the server.");
-            }
+            if (typeof window !== "undefined") window.alert("Step 3: Database Updated! Notification system is READY. ✅");
             return token;
         }
 
