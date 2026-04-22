@@ -31,24 +31,21 @@ export async function requestNotificationPermission(userId: string): Promise<str
             return null;
         }
 
-        // 1. Ensure Service Worker is registered AND active
-        if (typeof window === "undefined" || !("serviceWorker" in window.navigator)) {
-            console.warn("FCM: Service workers not supported in this browser.");
-            return null;
+        // 1. Force unregister ALL existing service workers to clear stale VAPID keys
+        const registrations = await window.navigator.serviceWorker.getRegistrations();
+        for (let reg of registrations) {
+            await reg.unregister();
+            console.log("FCM: Unregistered stale service worker");
         }
 
-        let registration = await window.navigator.serviceWorker.getRegistration();
+        console.log("FCM: Registering fresh service worker...");
+        let registration = await window.navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+            scope: '/'
+        });
         
-        if (!registration || !registration.active) {
-            console.log("FCM: Registering/Updating service worker...");
-            registration = await window.navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-                scope: '/'
-            });
-            // Force update to ensure we have the latest SW code
-            await registration.update();
-        }
+        await registration.update();
 
-        // Ensure the service worker is fully active and controlling the page
+        // Wait for SW to be active if it's currently installing or waiting
         if (registration.installing || registration.waiting) {
             console.log("FCM: Waiting for SW activation...");
             await new Promise<void>((resolve) => {
@@ -56,8 +53,7 @@ export async function requestNotificationPermission(userId: string): Promise<str
                 sw?.addEventListener('statechange', (e: any) => {
                     if (e.target.state === 'activated') resolve();
                 });
-                // Safety timeout
-                setTimeout(resolve, 2000);
+                setTimeout(resolve, 2000); // Safety timeout
             });
         }
 
