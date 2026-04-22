@@ -716,12 +716,12 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                 >
                                     <div 
                                         className={cn(
-                                            "w-fit max-w-[85%] sm:max-w-[70%] px-3.5 py-2 rounded-[22px] select-none touch-none shadow-sm relative group transition-all duration-200",
+                                            "w-fit max-w-[85%] sm:max-w-[70%] px-4 py-2 rounded-[20px] select-none touch-none shadow-sm relative group transition-all duration-200",
                                             isMine 
-                                                ? "background-gradient text-white rounded-br-[4px] shadow-blue-500/10 border border-white/10" 
+                                                ? "background-gradient text-white rounded-br-[4px] border border-white/5" 
                                                 : msg.isDeletedForEveryone 
                                                     ? "bg-transparent border border-[var(--tw-border-main)] text-[var(--tw-text-muted)] italic rounded-tl-[4px]"
-                                                    : "bg-[var(--tw-bg-card)] text-[var(--tw-text-main)] rounded-bl-[4px] shadow-sm border border-[var(--tw-border-main)]/50"
+                                                    : "bg-[var(--tw-bg-card)] text-[var(--tw-text-main)] rounded-bl-[4px] border border-[var(--tw-border-main)]/40"
                                         )}
                                         onTouchStart={() => startPress(msg.id)}
                                         onTouchEnd={endPress}
@@ -753,10 +753,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                         )}
                                         
                                         <div className="flex flex-col min-w-[50px]">
-                                            <p className={cn(
-                                                "text-[14px] sm:text-[15px] whitespace-pre-wrap break-words leading-relaxed pr-1 font-medium tracking-tight",
-                                                msg.type === 'call' && "text-[15px] sm:text-[16px] font-bold flex items-center gap-2"
-                                            )}>
+                                            <p className="text-[15px] whitespace-pre-wrap break-words leading-[1.4] pr-1 font-medium tracking-normal">
                                                 {msg.text}
                                             </p>
                                             
@@ -767,15 +764,15 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                                 {msg.isEdited && (
                                                     <span className="text-[9px] italic mr-0.5">edited</span>
                                                 )}
-                                                <span className="text-[11px] font-bold leading-none">
+                                                <span className="text-[10px] font-bold opacity-70 tabular-nums">
                                                     {msg.createdAt ? format(msgDate, 'h:mm a') : '...'}
                                                 </span>
                                                 {isMine && !msg.isDeletedForEveryone && (
                                                     <div className="flex items-center ml-0.5">
                                                         {msg.read ? (
-                                                            <CheckCheck className="w-4 h-4 text-white drop-shadow-sm" />
+                                                            <CheckCheck className="w-3.5 h-3.5 text-white/90" />
                                                         ) : (
-                                                            <Check className="w-4 h-4 text-white/70 drop-shadow-sm" />
+                                                            <Check className="w-3.5 h-3.5 text-white/60" />
                                                         )}
                                                     </div>
                                                 )}
