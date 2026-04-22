@@ -12,6 +12,8 @@ const firebaseConfig = {
   appId: "1:249903575848:web:9d1f7443118293a6cf161d"
 };
 
+console.log("🔥 Firebase Config Active (Hardcoded):", firebaseConfig.apiKey.substring(0, 10) + "...");
+
 // Initialize Firebase only if there are no existing apps to prevent Hot Module Replacement (HMR) issues in Next.js
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
