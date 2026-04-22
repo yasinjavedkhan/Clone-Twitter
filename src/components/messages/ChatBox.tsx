@@ -716,7 +716,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                 >
                                     <div 
                                         className={cn(
-                                            "w-fit max-w-[85%] sm:max-w-[70%] px-5 py-3 rounded-[26px] select-none touch-none shadow-md relative group transition-all duration-200",
+                                            "w-fit max-w-[85%] sm:max-w-[70%] px-3.5 py-2 rounded-[22px] select-none touch-none shadow-sm relative group transition-all duration-200",
                                             isMine 
                                                 ? "background-gradient text-white rounded-br-[4px] shadow-blue-500/10 border border-white/10" 
                                                 : msg.isDeletedForEveryone 
@@ -752,10 +752,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                             </div>
                                         )}
                                         
-                                        <div className="flex flex-col min-w-[60px]">
+                                        <div className="flex flex-col min-w-[50px]">
                                             <p className={cn(
-                                                "text-[16px] sm:text-[17px] whitespace-pre-wrap break-words leading-relaxed pr-1 font-medium tracking-tight",
-                                                msg.type === 'call' && "text-[18px] sm:text-[19px] font-bold flex items-center gap-2"
+                                                "text-[14px] sm:text-[15px] whitespace-pre-wrap break-words leading-relaxed pr-1 font-medium tracking-tight",
+                                                msg.type === 'call' && "text-[15px] sm:text-[16px] font-bold flex items-center gap-2"
                                             )}>
                                                 {msg.text}
                                             </p>
