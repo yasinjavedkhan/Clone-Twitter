@@ -31,44 +31,25 @@ export async function requestNotificationPermission(userId: string): Promise<str
             return null;
         }
 
-        // 1. Force unregister ALL existing service workers
-        const registrations = await window.navigator.serviceWorker.getRegistrations();
-        for (let reg of registrations) {
-            await reg.unregister();
-            console.log("FCM: Unregistered stale service worker");
-        }
-
-        // 2. Clear Firebase-related IndexedDB to fix "storage error"
-        try {
-            if (typeof indexedDB !== "undefined") {
-                indexedDB.deleteDatabase("firebase-messaging-database");
-                console.log("FCM: Cleared messaging database to fix storage errors");
-            }
-        } catch (dbErr) {
-            console.warn("FCM: Could not clear IndexedDB:", dbErr);
-        }
-
-        console.log("FCM: Registering fresh service worker...");
-        let registration = await window.navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-            scope: '/'
-        });
+        // 1. Check for existing registration or register new one
+        let registration = await window.navigator.serviceWorker.getRegistration();
         
-        await registration.update();
-
-        // Wait for SW to be active if it's currently installing or waiting
-        if (registration.installing || registration.waiting) {
-            console.log("FCM: Waiting for SW activation...");
-            await new Promise<void>((resolve) => {
-                const sw = registration!.installing || registration!.waiting;
-                sw?.addEventListener('statechange', (e: any) => {
-                    if (e.target.state === 'activated') resolve();
-                });
-                setTimeout(resolve, 2000); // Safety timeout
+        if (!registration) {
+            console.log("FCM: Registering new service worker...");
+            registration = await window.navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                scope: '/'
             });
         }
 
-        console.log("FCM: Requesting token with VAPID key...");
-        if (typeof window !== "undefined") window.alert("Step 1: Service Worker Registered. Requesting FCM Token...");
+        // 2. Wait for the service worker to be fully READY
+        console.log("FCM: Waiting for service worker to be ready...");
+        registration = await window.navigator.serviceWorker.ready;
+        
+        // Force update just in case the file changed
+        await registration.update();
+
+        console.log("FCM: Service worker is ready and active.");
+        if (typeof window !== "undefined") window.alert("Step 1: Service Worker is READY. Requesting Token...");
         
         const messaging = getMessaging(app);
         
