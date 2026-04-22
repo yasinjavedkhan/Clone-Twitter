@@ -4,7 +4,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 // Your VAPID key from Firebase Console → Project Settings → Cloud Messaging
-const VAPID_KEY = (process.env.NEXT_PUBLIC_FCM_VAPID_KEY || "BCcmN4vF9H1SQSK-h9ATcbPyOaab-smwsGOI-d8GSstu1Lwos0DeoGYr_epF3o9pY911wVSLqPM2v33FH2hWLVA").replace(/['"]/g, '').trim();
+const VAPID_KEY = "BCcmN4vF9H1SQSK-h9ATcbPyOaab-smwsGOI-d8GSstu1Lwos0DeoGYr_epF3o9pY911wVSLqPM2v33FH2hWLVA";
 
 export async function requestNotificationPermission(userId: string): Promise<string | null> {
     try {
@@ -86,6 +86,9 @@ export async function requestNotificationPermission(userId: string): Promise<str
                 fcmTokenUpdated: new Date(),
             });
             console.log("FCM: Token saved to Firestore for user:", userId);
+            if (typeof window !== "undefined") {
+                window.alert("🎉 Success! Notification token has been saved to the server.");
+            }
             return token;
         }
 
