@@ -895,10 +895,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                         setNewMessage(e.target.value);
                                         if (user?.uid && conversationId) {
                                             updateDoc(doc(db, "conversations", conversationId), { [`typing.${user.uid}`]: true }).catch(() => {});
-                                            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-                                            typingTimeoutRef.current = setTimeout(() => {
-                                                updateDoc(doc(db, "conversations", conversationId), { [`typing.${user.uid}`]: false }).catch(() => {});
-                                            }, 2000);
+                                                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                                                typingTimeoutRef.current = setTimeout(() => {
+                                                    updateDoc(doc(db, "conversations", conversationId), { [`typing.${user.uid}`]: false }).catch(() => {});
+                                                }, 1000);
                                         }
                                     }}
                                     placeholder="Start a new message"
