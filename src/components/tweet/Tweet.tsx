@@ -221,17 +221,28 @@ const VideoItem = ({ url }: { url: string }) => {
         }
     };
 
+    // Generate a poster URL for Cloudinary videos
+    const posterUrl = url.includes('cloudinary.com') 
+        ? url.replace(/\.[^/.]+$/, ".jpg").replace("/video/upload/", "/video/upload/so_0/")
+        : undefined;
+
     return (
-        <div className="relative w-full h-full group/video bg-[var(--tw-bg-card)] rounded-xl overflow-hidden">
+        <div className="relative w-full h-full group/video bg-gray-900 rounded-xl overflow-hidden">
             <video
                 ref={videoRef}
                 src={url}
+                poster={posterUrl}
                 className="w-full h-full object-cover pointer-events-none"
                 playsInline
-                muted={true}
-                preload="auto"
+                muted={isMuted}
+                preload="metadata"
                 onEnded={handleVideoEnd}
             />
+            {/* Loading state indicator */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                 <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            </div>
+
             {/* Mute/Unmute Button (Dedicated) */}
             <button 
                 onClick={toggleMute}
@@ -690,15 +701,15 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                 >{tweet.content}</p>
 
                 {/* Media - double tap to like, triple tap for comments */}
-                {tweet.mediaUrls && tweet.mediaUrls.length > 0 && (
+                {tweet.mediaUrls && tweet.mediaUrls.filter(u => u && u.trim()).length > 0 && (
                     <div 
                         className={cn(
                             "mt-3 overflow-hidden rounded-2xl border border-[var(--tw-border-main)] grid gap-0.5",
-                            tweet.mediaUrls.length === 1 ? "grid-cols-1 w-full" : "grid-cols-2",
-                            tweet.mediaUrls.length === 3 ? "grid-rows-2" : ""
+                            tweet.mediaUrls.filter(u => u && u.trim()).length === 1 ? "grid-cols-1 w-full" : "grid-cols-2",
+                            tweet.mediaUrls.filter(u => u && u.trim()).length === 3 ? "grid-rows-2" : ""
                         )}
                     >
-                        {tweet.mediaUrls.map((url: string, index: number) => {
+                        {tweet.mediaUrls.filter(u => u && u.trim()).map((url: string, index: number) => {
                             const isVideo = url.toLowerCase().includes('.mp4') || 
                                            url.toLowerCase().includes('.mov') || 
                                            url.toLowerCase().includes('.webm') ||
@@ -709,9 +720,9 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                                     key={index} 
                                     className={cn(
                                         "relative overflow-hidden bg-[var(--tw-bg-card)] cursor-pointer group",
-                                        tweet.mediaUrls!.length === 1 
-                                            ? "aspect-[4/3] max-h-[350px] w-full" 
-                                            : tweet.mediaUrls!.length === 3 && index === 0 
+                                        tweet.mediaUrls!.filter(u => u && u.trim()).length === 1 
+                                            ? "aspect-[4/3] max-h-[450px] w-full" 
+                                            : tweet.mediaUrls!.filter(u => u && u.trim()).length === 3 && index === 0 
                                                 ? "row-span-2" 
                                                 : "aspect-video"
                                     )}
@@ -731,8 +742,8 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                                             src={url}
                                             alt="Tweet media"
                                             className={cn(
-                                                "w-full h-full transition duration-200 group-hover:opacity-95",
-                                                tweet.mediaUrls!.length === 1 ? "object-cover" : "object-cover"
+                                                "w-full h-full transition duration-200 group-hover:opacity-95 bg-gray-900",
+                                                tweet.mediaUrls!.filter(u => u && u.trim()).length === 1 ? "object-cover" : "object-cover"
                                             )}
                                         />
                                     )}

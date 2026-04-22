@@ -373,6 +373,7 @@ export default function VideosContent() {
                         <video
                             ref={el => { videoRefs.current[idx] = el; }}
                             src={video.videoUrl}
+                            poster={video.videoUrl.includes('cloudinary.com') ? video.videoUrl.replace(/\.[^/.]+$/, ".jpg").replace("/video/upload/", "/video/upload/so_0/") : undefined}
                             className="h-full w-full object-contain"
                             loop playsInline muted={muted}
                             onClick={() => {
