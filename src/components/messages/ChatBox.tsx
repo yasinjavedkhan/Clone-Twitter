@@ -451,6 +451,14 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         setEditingMessageId(null);
         setIsSending(true);
 
+        // Clear typing status immediately when clicking send
+        if (user?.uid && conversationId) {
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            updateDoc(doc(db, "conversations", conversationId), {
+                [`typing.${user.uid}`]: false
+            }).catch(() => {});
+        }
+
         try {
             if (isEditing && currentEditId) {
                 await updateDoc(doc(db, "conversations", conversationId, "messages", currentEditId), {
@@ -890,7 +898,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                                             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
                                             typingTimeoutRef.current = setTimeout(() => {
                                                 updateDoc(doc(db, "conversations", conversationId), { [`typing.${user.uid}`]: false }).catch(() => {});
-                                            }, 4000);
+                                            }, 2000);
                                         }
                                     }}
                                     placeholder="Start a new message"

@@ -21,6 +21,7 @@ export default function ChatDetailScreen() {
     const router = useRouter();
     const flatListRef = useRef<FlatList>(null);
     const [otherUserData, setOtherUserData] = useState<any>(null);
+    const typingTimeoutRef = useRef<any>(null);
 
     // Force re-render frequently (3s) to keep presence text accurate
     const [, setTick] = useState(0);
@@ -151,6 +152,15 @@ export default function ChatDetailScreen() {
         };
 
         setNewMessage("");
+
+        // Clear typing status immediately
+        if (user?.uid && id) {
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            updateDoc(doc(db, "conversations", id as string), {
+                [`typing.${user.uid}`]: false
+            }).catch(() => {});
+        }
+
         await addDoc(collection(db, `conversations/${id}/messages`), msg);
 
         // Update unread count for the other user
@@ -316,7 +326,21 @@ export default function ChatDetailScreen() {
                         placeholder="Start a message"
                         placeholderTextColor="#71767b"
                         value={newMessage}
-                        onChangeText={setNewMessage}
+                        onChangeText={(text) => {
+                            setNewMessage(text);
+                            if (user?.uid && id) {
+                                updateDoc(doc(db, "conversations", id as string), {
+                                    [`typing.${user.uid}`]: true
+                                }).catch(() => {});
+                                
+                                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                                typingTimeoutRef.current = setTimeout(() => {
+                                    updateDoc(doc(db, "conversations", id as string), {
+                                        [`typing.${user.uid}`]: false
+                                    }).catch(() => {});
+                                }, 2000);
+                            }
+                        }}
                         multiline
                     />
                     <TouchableOpacity onPress={sendMessage} style={styles.sendButton} disabled={!newMessage.trim()}>
