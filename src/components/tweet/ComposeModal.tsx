@@ -86,19 +86,19 @@ export default function ComposeModal({ isOpen, onClose }: ComposeModalProps) {
                         setComposeLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
                     } catch (error) {
                         console.error("Error getting location:", error);
-                        alert("Could not fetch location.");
+                        console.error("Could not fetch location.");
                     } finally {
                         setIsFetchingLocation(false);
                     }
                 },
                 (error) => {
                     console.error("Geolocation error:", error);
-                    alert("Location access denied.");
+                    console.error("Location access denied.");
                     setIsFetchingLocation(false);
                 }
             );
         } else {
-            alert("Geolocation not supported.");
+            console.error("Geolocation not supported.");
             setIsFetchingLocation(false);
         }
     };
@@ -161,9 +161,9 @@ export default function ComposeModal({ isOpen, onClose }: ComposeModalProps) {
         } catch (error: any) {
             console.error("Error creating tweet:", error);
             if (error.code?.includes('storage/')) {
-                alert("Media upload failed. Your Firebase Storage is likely not fully active.");
+                console.error("Media upload failed. Your Firebase Storage might be inactive.");
             } else {
-                alert("Error posting tweet. Please try again.");
+                console.error("Error posting tweet. Please try again.");
             }
         } finally {
             setIsTweeting(false);

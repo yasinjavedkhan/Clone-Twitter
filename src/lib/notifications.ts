@@ -17,7 +17,6 @@ export async function requestNotificationPermission(userId: string): Promise<str
         if (!VAPID_KEY || VAPID_KEY.length < 20) {
             const errorMsg = "FCM Error: VAPID Key is invalid or missing. Please check your .env.local file.";
             console.error(errorMsg);
-            if (typeof window !== "undefined") window.alert(errorMsg);
             return null;
         }
 
@@ -49,7 +48,6 @@ export async function requestNotificationPermission(userId: string): Promise<str
         await registration.update();
 
         console.log("FCM: Service worker is ready and active.");
-        if (typeof window !== "undefined") window.alert("Step 1: Service Worker is READY. Requesting Token...");
         
         const messaging = getMessaging(app);
         
@@ -60,7 +58,6 @@ export async function requestNotificationPermission(userId: string): Promise<str
 
         if (token) {
             console.log("FCM: Token generated successfully. Length:", token.length);
-            if (typeof window !== "undefined") window.alert("Step 2: Token Generated! Now saving to Database...");
             
             // Save token to Firestore
             await updateDoc(doc(db, "users", userId), {
@@ -68,7 +65,6 @@ export async function requestNotificationPermission(userId: string): Promise<str
                 fcmTokenUpdated: new Date(),
             });
             console.log("FCM: Token saved to Firestore for user:", userId);
-            if (typeof window !== "undefined") window.alert("Step 3: Database Updated! Notification system is READY. ✅");
             return token;
         }
 
@@ -86,7 +82,6 @@ export async function requestNotificationPermission(userId: string): Promise<str
           friendlyMsg = "🚫 Notifications Blocked: Please click the lock icon 🔒 in your browser and Allow notifications.";
         }
         
-        if (typeof window !== "undefined") window.alert(friendlyMsg);
         return null;
     }
 }

@@ -95,7 +95,6 @@ export default function EditProfileModal({ isOpen, onClose, onSave }: EditProfil
             onClose();
         } catch (error: any) {
             console.error("Error updating profile:", error);
-            alert(`Failed to update profile: ${error.message || "Unknown error"}`);
         } finally {
             setIsSaving(false);
         }

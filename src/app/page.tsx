@@ -200,19 +200,19 @@ export default function Home() {
                     setTweetLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
                 } catch (error) {
                     console.error("Error getting location:", error);
-                    alert("Could not fetch location.");
+                    console.error("Could not fetch location.");
                 } finally {
                     setIsFetchingLocation(false);
                 }
             },
             (error) => {
                 console.error("Geolocation error:", error);
-                alert("Location access denied.");
+                console.error("Location access denied.");
                 setIsFetchingLocation(false);
             }
         );
     } else {
-        alert("Geolocation not supported.");
+        console.error("Geolocation not supported.");
         setIsFetchingLocation(false);
     }
   };
@@ -310,9 +310,9 @@ export default function Home() {
     } catch (error: any) {
       console.error("Error creating tweet:", error);
       if (error.code?.includes('storage/')) {
-        alert("Media upload failed. This is likely because your Firebase Storage is not yet fully active or requires an upgrade. You can still post text-only tweets!");
+        console.error("Media upload failed. Your Firebase Storage might be inactive.");
       } else {
-        alert("Error posting tweet. Please try again.");
+        console.error("Error posting tweet. Please try again.");
       }
     } finally {
       setIsTweeting(false);

@@ -173,7 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     msg = "🚫 Domain Permission Denied: Your website is not yet authorized in the Firebase console. Please add 'clone-twitter-fmya.vercel.app' to your Authorized Domains.";
                 }
                 setError(msg);
-                if (typeof window !== 'undefined') window.alert(msg);
+
             }
         });
     }, []);
@@ -212,7 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 } catch (redirErr: any) {
                     const msg = `Sign-in failed: ${redirErr.message} (Code: ${redirErr.code})`;
                     setError(msg);
-                    window.alert(msg);
+
                     setLoading(false);
                 }
                 return;
@@ -228,7 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
 
             setError(msg);
-            if (typeof window !== 'undefined') window.alert(msg);
+
             setLoading(false);
         }
     };

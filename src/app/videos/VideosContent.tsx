@@ -285,7 +285,6 @@ export default function VideosContent() {
             catch (e) { console.error(e); }
         } else {
             window.navigator.clipboard.writeText(shareUrl);
-            alert("Link copied to clipboard!");
         }
     };
 

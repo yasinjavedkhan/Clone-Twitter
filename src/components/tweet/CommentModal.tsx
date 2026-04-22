@@ -143,19 +143,19 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
                         setCommentLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
                     } catch (error) {
                         console.error("Error getting location:", error);
-                        alert("Could not fetch location.");
+                        console.error("Could not fetch location.");
                     } finally {
                         setIsFetchingLocation(false);
                     }
                 },
                 (error) => {
                     console.error("Geolocation error:", error);
-                    alert("Location access denied.");
+                    console.error("Location access denied.");
                     setIsFetchingLocation(false);
                 }
             );
         } else {
-            alert("Geolocation not supported.");
+            console.error("Geolocation not supported.");
             setIsFetchingLocation(false);
         }
     };
@@ -248,9 +248,9 @@ export default function CommentModal({ tweet, author, isOpen, onClose }: Comment
         } catch (error: any) {
             console.error("Error posting comment:", error);
             if (error.code?.includes('storage/')) {
-                alert("Media upload failed. Your reply could not be posted with media. Please try text only.");
+                console.error("Media upload failed. Your reply could not be posted with media.");
             } else {
-                alert("Failed to post comment.");
+                console.error("Failed to post comment.");
             }
         } finally {
             setIsSubmitting(false);

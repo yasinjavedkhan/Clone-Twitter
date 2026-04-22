@@ -593,7 +593,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
             }
         } catch (error: any) {
             console.error("Error toggling bookmark:", error);
-            alert("Error bookmarking: " + error.message);
+
         } finally {
             setIsBookmarking(false);
         }
@@ -619,7 +619,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
         } else {
             // Fallback: Copy to clipboard
             window.navigator.clipboard.writeText(shareUrl);
-            alert("Link copied to clipboard!");
+
         }
     };
 
@@ -765,7 +765,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                             if (canReply) {
                                 setIsCommentModalOpen(true); 
                             } else {
-                                alert(replyError || "You do not have permission to reply to this post.");
+
                             }
                         }}
                         title={canReply ? "Reply" : "You can't reply to this tweet"}
