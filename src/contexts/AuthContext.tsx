@@ -9,6 +9,8 @@ import {
     signInWithRedirect,
     getRedirectResult,
     signOut as firebaseSignOut,
+    setPersistence,
+    browserLocalPersistence,
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot, updateDoc } from "firebase/firestore";
@@ -42,6 +44,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const hasRequestedNotifications = useRef(false);
 
     useEffect(() => {
+        // Enforce local persistence to keep users signed in across restarts/long inactivity
+        setPersistence(auth, browserLocalPersistence).catch(err => {
+            console.error("AuthContext: Persistence Error:", err);
+        });
+
         let unsubscribeUser: (() => void) | null = null;
 
         const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
