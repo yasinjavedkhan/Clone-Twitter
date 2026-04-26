@@ -13,6 +13,8 @@ import { uploadToCloudinary } from "@/lib/cloudinary";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { useCall } from "@/contexts/CallContext";
+import { userCache } from "@/lib/cache";
+import Avatar from "@/components/ui/Avatar";
 
 const formatDateSeparator = (date: Date) => {
     const now = new Date();
@@ -212,16 +214,38 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
 
         const setupUserListener = async () => {
             try {
-                const convDoc = await getDoc(doc(db, "conversations", conversationId));
-                if (convDoc.exists()) {
-                    const participants = convDoc.data().participants;
-                    const otherId = participants.find((p: string) => p !== user.uid) || user.uid;
+                // INSTANT OPTIMIZATION: Derive otherId from conversationId format (uid1_uid2)
+                // This removes the need to wait for getDoc(conversations)
+                let otherId = null;
+                if (conversationId.includes("_")) {
+                    const parts = conversationId.split("_");
+                    otherId = parts.find(p => p !== user.uid) || user.uid;
+                }
 
+                // If not in standard format, fallback to fetching conversation doc
+                if (!otherId) {
+                    const convDoc = await getDoc(doc(db, "conversations", conversationId));
+                    if (convDoc.exists()) {
+                        const participants = convDoc.data().participants;
+                        otherId = participants.find((p: string) => p !== user.uid) || user.uid;
+                    }
+                }
+
+                if (otherId) {
+                    // Try to get from cache immediately for "fatak se" (instant) display
+                    const cached = userCache.get(otherId);
+                    if (cached) {
+                        setOtherUser({ userId: otherId, ...cached, isSelf: otherId === user.uid });
+                    }
+
+                    // Setup real-time listener for presence/updates
                     unsubUser = onSnapshot(doc(db, "users", otherId), (docSnap) => {
                         if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            userCache.set(otherId!, data); // Update cache
                             setOtherUser({ 
                                 userId: docSnap.id, 
-                                ...docSnap.data(),
+                                ...data,
                                 isSelf: otherId === user.uid 
                             });
                         }
@@ -232,6 +256,8 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             }
         };
 
+        // Reset user when switching conversations
+        setOtherUser(null);
         setupUserListener();
         return () => unsubUser?.();
     }, [conversationId, user]);
@@ -608,16 +634,14 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                     href={otherUser?.userId ? `/profile/${otherUser.userId}` : "#"} 
                     className="flex items-center gap-3 sm:gap-4 flex-grow min-w-0 group hover:opacity-80 transition-opacity"
                 >
-                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0 font-bold text-white uppercase overflow-hidden text-lg">
-                        {otherUser?.profileImage ? (
-                            <img src={otherUser.profileImage} className="w-full h-full rounded-full object-cover" alt="Avatar" />
-                        ) : (
-                            (otherUser?.displayName || otherUser?.username || "?")[0]
-                        )}
-                    </div>
+                    <Avatar 
+                        src={otherUser?.profileImage} 
+                        fallbackText={otherUser?.displayName || otherUser?.username} 
+                        size="md"
+                    />
                     <div className="flex flex-col min-w-0 flex-1">
                         <h2 className="font-bold text-white text-[16px] sm:text-[17px] leading-tight truncate group-hover:underline">
-                            {otherUser?.displayName || otherUser?.username || (conversationId ? "..." : "Select a chat")}
+                            {otherUser?.displayName || otherUser?.username || (conversationId && otherUser ? "..." : (conversationId ? "" : "Select a chat"))}
                             {otherUser?.isSelf ? " (You)" : ""}
                         </h2>
                         <div className="flex items-center gap-1.5 truncate h-5">
