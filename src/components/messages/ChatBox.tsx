@@ -664,10 +664,13 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 </Link>
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                     {otherUser && otherUser.userId !== user?.uid && (
-                        <>
-                        <>
+                        <div className="flex items-center gap-1 sm:gap-2">
                             <button 
                                 onClick={() => {
+                                    if (!isUserActive(otherUser.lastSeen)) {
+                                        setShowOfflineOverlay(true);
+                                        return;
+                                    }
                                     recordCallEvent('voice');
                                     startCall(otherUser, 'voice', conversationId);
                                 }}
@@ -678,6 +681,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             </button>
                             <button 
                                 onClick={() => {
+                                    if (!isUserActive(otherUser.lastSeen)) {
+                                        setShowOfflineOverlay(true);
+                                        return;
+                                    }
                                     recordCallEvent('video');
                                     startCall(otherUser, 'video', conversationId);
                                 }}
@@ -686,8 +693,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                             >
                                 <Video className="w-5 h-5" />
                             </button>
-                        </>
-                        </>
+                        </div>
                     )}
                     <button className="p-2 hover:bg-white/10 rounded-full text-white transition-colors hidden sm:block">
                         <Info className="w-5 h-5" />
