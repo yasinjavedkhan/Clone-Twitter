@@ -142,7 +142,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 setMessages(sorted);
                 // Remove optimistic messages that have been confirmed by Firestore
                 setOptimisticMessages(prev => prev.filter(opt => 
-                    !msgs.some(m => m.senderId === opt.senderId && m.text === opt.text)
+                    !(msgs as any[]).some(m => m.senderId === opt.senderId && m.text === opt.text)
                 ));
                 setLoadingMessages(false);
 
