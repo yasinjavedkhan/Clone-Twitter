@@ -99,6 +99,7 @@ export default function MobileNav() {
                     <Link
                         key={item.href}
                         href={item.href}
+                        replace
                         className="p-1.5 relative group"
                     >
                         <Icon

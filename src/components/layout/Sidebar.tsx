@@ -98,6 +98,7 @@ export default function Sidebar({ onOpenCompose }: SidebarProps) {
                         <Link
                             key={item.href}
                             href={item.href}
+                            replace
                             className={`flex items-center gap-4 p-3 rounded-full hover:bg-[var(--tw-text-main)]/10 transition-all duration-200 w-fit xl:w-full ${isActive ? 'font-bold' : ''}`}
                         >
                             <div className="relative">
