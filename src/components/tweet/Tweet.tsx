@@ -276,6 +276,17 @@ const Tweet = memo(({ tweet }: TweetProps) => {
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const [mounted, setMounted] = useState(false);
     useEffect(() => { setMounted(true); }, []);
+    
+    // OPTIMISTIC UI STATES
+    const [localLikesCount, setLocalLikesCount] = useState(tweet.likesCount);
+    const [localRetweetsCount, setLocalRetweetsCount] = useState(tweet.retweetsCount);
+    
+    // Sync local counts with props when database updates
+    useEffect(() => {
+        setLocalLikesCount(tweet.likesCount);
+        setLocalRetweetsCount(tweet.retweetsCount);
+    }, [tweet.likesCount, tweet.retweetsCount]);
+
     const [isFollowing, setIsFollowing] = useState(false);
     const [isFollowingTweet, setIsFollowingTweet] = useState(false);
     const [hasBookmarked, setHasBookmarked] = useState(false);
@@ -498,16 +509,20 @@ const Tweet = memo(({ tweet }: TweetProps) => {
 
     const handleLike = async () => {
         if (!user || isLiking) return;
-        setIsLiking(true);
+        // OPTIMISTIC UPDATE
+        const originalHasLiked = hasLiked;
+        const originalCount = localLikesCount;
+        
+        setHasLiked(!originalHasLiked);
+        setLocalLikesCount(prev => originalHasLiked ? prev - 1 : prev + 1);
 
         const likeRef = doc(db, "likes", `${user.uid}_${tweet.id}`);
         const tweetRef = doc(db, "tweets", tweet.id);
 
         try {
-            if (hasLiked) {
+            if (originalHasLiked) {
                 await deleteDoc(likeRef);
                 await updateDoc(tweetRef, { likesCount: increment(-1) });
-                setHasLiked(false);
             } else {
                 await setDoc(likeRef, {
                     userId: user.uid,
@@ -515,7 +530,6 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                     createdAt: serverTimestamp()
                 });
                 await updateDoc(tweetRef, { likesCount: increment(1) });
-                setHasLiked(true);
 
                 // Send push notification to tweet author
                 if (tweet.userId !== user.uid) {
@@ -534,6 +548,9 @@ const Tweet = memo(({ tweet }: TweetProps) => {
             }
         } catch (error) {
             console.error("Error toggling like:", error);
+            // Rollback on error
+            setHasLiked(originalHasLiked);
+            setLocalLikesCount(originalCount);
         } finally {
             setIsLiking(false);
         }
@@ -541,16 +558,20 @@ const Tweet = memo(({ tweet }: TweetProps) => {
 
     const handleRetweet = async () => {
         if (!user || isRetweeting) return;
-        setIsRetweeting(true);
+        // OPTIMISTIC UPDATE
+        const originalHasRetweeted = hasRetweeted;
+        const originalCount = localRetweetsCount;
+
+        setHasRetweeted(!originalHasRetweeted);
+        setLocalRetweetsCount(prev => originalHasRetweeted ? prev - 1 : prev + 1);
 
         const retweetRef = doc(db, "retweets", `${user.uid}_${tweet.id}`);
         const tweetRef = doc(db, "tweets", tweet.id);
 
         try {
-            if (hasRetweeted) {
+            if (originalHasRetweeted) {
                 await deleteDoc(retweetRef);
                 await updateDoc(tweetRef, { retweetsCount: increment(-1) });
-                setHasRetweeted(false);
             } else {
                 await setDoc(retweetRef, {
                     userId: user.uid,
@@ -558,7 +579,6 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                     createdAt: serverTimestamp()
                 });
                 await updateDoc(tweetRef, { retweetsCount: increment(1) });
-                setHasRetweeted(true);
 
                 // Send push notification to tweet author
                 if (tweet.userId !== user.uid) {
@@ -577,6 +597,9 @@ const Tweet = memo(({ tweet }: TweetProps) => {
             }
         } catch (error) {
             console.error("Error toggling retweet:", error);
+            // Rollback on error
+            setHasRetweeted(originalHasRetweeted);
+            setLocalRetweetsCount(originalCount);
         } finally {
             setIsRetweeting(false);
         }
@@ -795,7 +818,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                         <div className="p-2 rounded-full group-hover:bg-green-500/10 transition">
                             <Repeat2 className={cn("w-[18.75px] h-[18.75px]", { "text-green-500": hasRetweeted })} />
                         </div>
-                        <span className={cn("text-[13px]", { "text-green-500": hasRetweeted })}>{tweet.retweetsCount || 0}</span>
+                        <span className={cn("text-[13px]", { "text-green-500": hasRetweeted })}>{localRetweetsCount || 0}</span>
                     </button>
 
                     <button
@@ -806,7 +829,7 @@ const Tweet = memo(({ tweet }: TweetProps) => {
                         <div className="p-2 rounded-full group-hover:bg-pink-500/10 transition">
                             <Heart className={cn("w-[18.75px] h-[18.75px]", { "fill-pink-500 text-pink-500": hasLiked })} />
                         </div>
-                        <span className={cn("text-[13px]", { "text-pink-500": hasLiked })}>{tweet.likesCount || 0}</span>
+                        <span className={cn("text-[13px]", { "text-pink-500": hasLiked })}>{localLikesCount || 0}</span>
                     </button>
 
                     <button

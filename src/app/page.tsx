@@ -15,6 +15,7 @@ import Avatar from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useTheme } from "@/contexts/ThemeContext";
+import TweetSkeleton from "@/components/tweet/TweetSkeleton";
 
 // Lazy-load the heavy emoji picker
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
@@ -46,6 +47,7 @@ export default function Home() {
 
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [lastDoc, setLastDoc] = useState<any>(null);
 
   useEffect(() => {
@@ -59,6 +61,7 @@ export default function Home() {
       setTweets(tweetsData);
       setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
       setHasMore(snapshot.docs.length === 50);
+      setIsInitialLoading(false);
     });
 
     return () => unsubscribe();
@@ -675,7 +678,13 @@ export default function Home() {
         >
           {/* For You Feed Page */}
           <div className="w-1/2 flex flex-col min-h-screen border-r border-[var(--tw-border-main)]">
-            {tweets.length === 0 ? (
+            {isInitialLoading ? (
+              <>
+                {[...Array(5)].map((_, i) => (
+                  <TweetSkeleton key={`skeleton-${i}`} />
+                ))}
+              </>
+            ) : tweets.length === 0 ? (
               <div className="p-12 text-center text-[var(--tw-text-muted)]">
                 <p className="text-xl font-bold text-[var(--tw-text-main)] mb-2">No tweets yet.</p>
                 <p className="text-[15px]">Be the first to post!</p>

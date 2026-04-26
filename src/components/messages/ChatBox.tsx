@@ -30,6 +30,7 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
     const searchParams = useSearchParams();
     const { user, userData } = useAuth();
     const [messages, setMessages] = useState<any[]>([]);
+    const [optimisticMessages, setOptimisticMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [otherUser, setOtherUser] = useState<any>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -139,6 +140,10 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                 });
 
                 setMessages(sorted);
+                // Remove optimistic messages that have been confirmed by Firestore
+                setOptimisticMessages(prev => prev.filter(opt => 
+                    !msgs.some(m => m.senderId === opt.senderId && m.text === opt.text)
+                ));
                 setLoadingMessages(false);
 
                 // Scroll to bottom logic - check if we should jump or scroll
@@ -428,6 +433,19 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
             const participants = convDoc.data()?.participants || [];
             const otherId = participants.find((p: string) => p !== user.uid);
 
+            // OPTIMISTIC UPDATE
+            const tempId = "voice_" + Date.now();
+            const optimisticMsg = {
+                id: tempId,
+                senderId: user.uid,
+                text: "",
+                audioUrl,
+                createdAt: { seconds: Date.now() / 1000 },
+                isOptimistic: true,
+                status: 'sending'
+            };
+            setOptimisticMessages(prev => [...prev, optimisticMsg]);
+
             await addDoc(collection(db, "conversations", conversationId, "messages"), {
                 senderId: user.uid,
                 text: "",
@@ -476,6 +494,21 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
         setMediaFiles([]);
         setEditingMessageId(null);
         setIsSending(true);
+
+        // OPTIMISTIC UPDATE for text/media
+        if (!isEditing) {
+            const tempId = "msg_" + Date.now();
+            const optimisticMsg = {
+                id: tempId,
+                senderId: user.uid,
+                text,
+                mediaUrls: currentMedia.map(m => m.preview), // Use local previews instantly
+                createdAt: { seconds: Date.now() / 1000 },
+                isOptimistic: true,
+                status: 'sending'
+            };
+            setOptimisticMessages(prev => [...prev, optimisticMsg]);
+        }
 
         // Clear typing status immediately when clicking send
         if (user?.uid && conversationId) {
@@ -729,29 +762,39 @@ export default function ChatBox({ conversationId }: { conversationId: string }) 
                         </p>
                     </div>
                 ) : (
-                    messages.map((msg, index) => {
-                        const isMine = msg.senderId === user?.uid;
-                        if (msg.deletedBy && msg.deletedBy.includes(user?.uid)) return null;
+                    [...messages, ...optimisticMessages]
+                        .sort((a: any, b: any) => {
+                            const getTime = (m: any) => {
+                                if (m.createdAt?.seconds) return m.createdAt.seconds;
+                                if (m.createdAt instanceof Date) return m.createdAt.getTime() / 1000;
+                                if (typeof m.createdAt === 'number') return m.createdAt / 1000;
+                                return Date.now() / 1000;
+                            };
+                            return getTime(a) - getTime(b);
+                        })
+                        .map((msg, index, allMsgs) => {
+                            const isMine = msg.senderId === user?.uid;
+                            if (msg.deletedBy && msg.deletedBy.includes(user?.uid)) return null;
 
-                        const msgDate = msg.createdAt?.toDate ? msg.createdAt.toDate() : (msg.createdAt instanceof Date ? msg.createdAt : new Date());
-                        const prevMsg = index > 0 ? messages[index - 1] : null;
-                        const prevDate = prevMsg?.createdAt?.toDate ? prevMsg.createdAt.toDate() : (prevMsg?.createdAt instanceof Date ? prevMsg.createdAt : null);
-                        
-                        const showDateSeparator = !prevDate || msgDate.toDateString() !== prevDate.toDateString();
+                            const msgDate = msg.createdAt?.toDate ? msg.createdAt.toDate() : (msg.createdAt instanceof Date ? msg.createdAt : (msg.createdAt?.seconds ? new Date(msg.createdAt.seconds * 1000) : new Date()));
+                            const prevMsg = index > 0 ? allMsgs[index - 1] : null;
+                            const prevDate = prevMsg?.createdAt?.toDate ? prevMsg.createdAt.toDate() : (prevMsg?.createdAt instanceof Date ? prevMsg.createdAt : (prevMsg?.createdAt?.seconds ? new Date(prevMsg.createdAt.seconds * 1000) : null));
+                            
+                            const showDateSeparator = !prevDate || msgDate.toDateString() !== prevDate.toDateString();
 
-                        return (
-                            <div key={msg.id} className="flex flex-col gap-4">
-                                {showDateSeparator && (
-                                    <div className="flex justify-center my-2">
-                                        <div className="bg-[var(--tw-bg-card)] text-[var(--tw-text-muted)] text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-[var(--tw-border-main)] shadow-sm uppercase tracking-wider opacity-80">
-                                            {formatDateSeparator(msgDate)}
+                            return (
+                                <div key={msg.id} className="flex flex-col gap-4">
+                                    {showDateSeparator && (
+                                        <div className="flex justify-center my-2">
+                                            <div className="bg-[var(--tw-bg-card)] text-[var(--tw-text-muted)] text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-[var(--tw-border-main)] shadow-sm uppercase tracking-wider opacity-80">
+                                                {formatDateSeparator(msgDate)}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                                <div 
-                                    id={`msg-${msg.id}`} // Unique ID for smart scrolling
-                                    className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
-                                >
+                                    )}
+                                    <div 
+                                        id={`msg-${msg.id}`} // Unique ID for smart scrolling
+                                        className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'} ${msg.isOptimistic ? 'opacity-70' : ''}`}
+                                    >
                                     <div 
                                         className={cn(
                                             "w-fit max-w-[85%] sm:max-w-[70%] px-4 py-2 rounded-[20px] select-none touch-none shadow-sm relative group transition-all duration-200",
